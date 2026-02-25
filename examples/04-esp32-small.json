@@ -1,0 +1,97 @@
+{
+  "type": "obj",
+  "x": 0,
+  "y": 0,
+  "w": 320,
+  "h": 240,
+  "styles": {
+    "bg_color": "#003a57",
+    "bg_opa": 255,
+    "text_color": "#212121",
+    "text_font_size": 16,
+    "border_width": 0,
+    "border_color": "#000000",
+    "radius": 0,
+    "pad_top": 0,
+    "pad_bottom": 0,
+    "pad_left": 0,
+    "pad_right": 0,
+    "pad_gap": 10,
+    "opa": 255
+  },
+  "children": [
+    {
+      "type": "arc",
+      "x": 100,
+      "y": 47,
+      "w": 120,
+      "h": 120,
+      "value": 72,
+      "min": 0,
+      "max": 100,
+      "styles": {
+        "bg_color": "#ffffff",
+        "bg_opa": 0,
+        "text_color": "#212121",
+        "text_font_size": 16,
+        "border_width": 0,
+        "border_color": "#000000",
+        "radius": 0,
+        "pad_top": 0,
+        "pad_bottom": 0,
+        "pad_left": 0,
+        "pad_right": 0,
+        "pad_gap": 0,
+        "opa": 255
+      },
+      "children": [
+        {
+          "type": "label",
+          "x": 36,
+          "y": 47,
+          "w": 48,
+          "h": 27,
+          "text": "72%",
+          "styles": {
+            "bg_color": "#ffffff",
+            "bg_opa": 0,
+            "text_color": "#ffffff",
+            "text_font_size": 27,
+            "border_width": 0,
+            "border_color": "#000000",
+            "radius": 0,
+            "pad_top": 0,
+            "pad_bottom": 0,
+            "pad_left": 0,
+            "pad_right": 0,
+            "pad_gap": 0,
+            "opa": 255
+          }
+        }
+      ]
+    },
+    {
+      "type": "label",
+      "x": 110,
+      "y": 177,
+      "w": 99,
+      "h": 16,
+      "text": "Sensor Active",
+      "styles": {
+        "bg_color": "#ffffff",
+        "bg_opa": 0,
+        "text_color": "#4caf50",
+        "text_font_size": 16,
+        "border_width": 0,
+        "border_color": "#000000",
+        "radius": 0,
+        "pad_top": 0,
+        "pad_bottom": 0,
+        "pad_left": 0,
+        "pad_right": 0,
+        "pad_gap": 0,
+        "opa": 255
+      }
+    }
+  ]
+}

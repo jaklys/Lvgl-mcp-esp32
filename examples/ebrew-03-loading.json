@@ -1,0 +1,95 @@
+{
+  "type": "obj",
+  "x": 0,
+  "y": 0,
+  "w": 800,
+  "h": 480,
+  "styles": {
+    "bg_color": "#ffffff",
+    "bg_opa": 255,
+    "text_color": "#212121",
+    "text_font_size": 16,
+    "border_width": 0,
+    "border_color": "#000000",
+    "radius": 0,
+    "pad_top": 0,
+    "pad_bottom": 0,
+    "pad_left": 0,
+    "pad_right": 0,
+    "pad_gap": 11,
+    "opa": 255
+  },
+  "children": [
+    {
+      "type": "label",
+      "x": 349,
+      "y": 177,
+      "w": 103,
+      "h": 27,
+      "text": "E-BREW",
+      "styles": {
+        "bg_color": "#ffffff",
+        "bg_opa": 0,
+        "text_color": "#d4af37",
+        "text_font_size": 27,
+        "border_width": 0,
+        "border_color": "#000000",
+        "radius": 0,
+        "pad_top": 0,
+        "pad_bottom": 0,
+        "pad_left": 0,
+        "pad_right": 0,
+        "pad_gap": 0,
+        "opa": 255
+      }
+    },
+    {
+      "type": "label",
+      "x": 350,
+      "y": 251,
+      "w": 100,
+      "h": 18,
+      "text": "Inicializace...",
+      "styles": {
+        "bg_color": "#ffffff",
+        "bg_opa": 0,
+        "text_color": "#666666",
+        "text_font_size": 18,
+        "border_width": 0,
+        "border_color": "#000000",
+        "radius": 0,
+        "pad_top": 0,
+        "pad_bottom": 0,
+        "pad_left": 0,
+        "pad_right": 0,
+        "pad_gap": 0,
+        "opa": 255
+      }
+    },
+    {
+      "type": "bar",
+      "x": 250,
+      "y": 290,
+      "w": 300,
+      "h": 20,
+      "value": 45,
+      "min": 0,
+      "max": 100,
+      "styles": {
+        "bg_color": "#e0e0e0",
+        "bg_opa": 51,
+        "text_color": "#2196f3",
+        "text_font_size": 16,
+        "border_width": 0,
+        "border_color": "#000000",
+        "radius": 32767,
+        "pad_top": 0,
+        "pad_bottom": 0,
+        "pad_left": 0,
+        "pad_right": 0,
+        "pad_gap": 0,
+        "opa": 255
+      }
+    }
+  ]
+}
