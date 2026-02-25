@@ -65,6 +65,13 @@ static void dump_obj(FILE *f, lv_obj_t *obj, int depth)
     int32_t w = lv_obj_get_width(obj);
     int32_t h = lv_obj_get_height(obj);
 
+    /* Pre-declare all variables (MSVC C89) */
+    lv_color_t bg_color, text_color, border_color;
+    lv_opa_t bg_opa, opa;
+    const lv_font_t *font;
+    int32_t border_w, radius, pad_t, pad_b, pad_l, pad_r, pad_gap;
+    uint32_t child_count;
+
     indent(f, depth);
     fprintf(f, "{\n");
 
@@ -90,12 +97,18 @@ static void dump_obj(FILE *f, lv_obj_t *obj, int depth)
     else if (cls == &lv_slider_class) {
         fprintf(f, ",\n");
         indent(f, depth + 1);
-        fprintf(f, "\"value\": %d", (int)lv_slider_get_value(obj));
+        fprintf(f, "\"value\": %d, \"min\": %d, \"max\": %d",
+                (int)lv_slider_get_value(obj),
+                (int)lv_slider_get_min_value(obj),
+                (int)lv_slider_get_max_value(obj));
     }
     else if (cls == &lv_bar_class) {
         fprintf(f, ",\n");
         indent(f, depth + 1);
-        fprintf(f, "\"value\": %d", (int)lv_bar_get_value(obj));
+        fprintf(f, "\"value\": %d, \"min\": %d, \"max\": %d",
+                (int)lv_bar_get_value(obj),
+                (int)lv_bar_get_min_value(obj),
+                (int)lv_bar_get_max_value(obj));
     }
     else if (cls == &lv_checkbox_class || cls == &lv_switch_class) {
         fprintf(f, ",\n");
@@ -116,11 +129,64 @@ static void dump_obj(FILE *f, lv_obj_t *obj, int depth)
     else if (cls == &lv_arc_class) {
         fprintf(f, ",\n");
         indent(f, depth + 1);
-        fprintf(f, "\"value\": %d", (int)lv_arc_get_value(obj));
+        fprintf(f, "\"value\": %d, \"min\": %d, \"max\": %d",
+                (int)lv_arc_get_value(obj),
+                (int)lv_arc_get_min_value(obj),
+                (int)lv_arc_get_max_value(obj));
     }
 
+    /* Style properties */
+    fprintf(f, ",\n");
+    indent(f, depth + 1);
+    fprintf(f, "\"styles\": {\n");
+
+    /* Background */
+    bg_color = lv_obj_get_style_bg_color(obj, LV_PART_MAIN);
+    bg_opa = lv_obj_get_style_bg_opa(obj, LV_PART_MAIN);
+    indent(f, depth + 2);
+    fprintf(f, "\"bg_color\": \"#%02x%02x%02x\", \"bg_opa\": %d,\n",
+            bg_color.red, bg_color.green, bg_color.blue, (int)bg_opa);
+
+    /* Text (applicable to all — LVGL inherits text styles) */
+    text_color = lv_obj_get_style_text_color(obj, LV_PART_MAIN);
+    font = lv_obj_get_style_text_font(obj, LV_PART_MAIN);
+    indent(f, depth + 2);
+    fprintf(f, "\"text_color\": \"#%02x%02x%02x\", \"text_font_size\": %d,\n",
+            text_color.red, text_color.green, text_color.blue,
+            font ? (int)font->line_height : 0);
+
+    /* Border */
+    border_w = lv_obj_get_style_border_width(obj, LV_PART_MAIN);
+    border_color = lv_obj_get_style_border_color(obj, LV_PART_MAIN);
+    indent(f, depth + 2);
+    fprintf(f, "\"border_width\": %d, \"border_color\": \"#%02x%02x%02x\",\n",
+            (int)border_w, border_color.red, border_color.green, border_color.blue);
+
+    /* Radius */
+    radius = lv_obj_get_style_radius(obj, LV_PART_MAIN);
+    indent(f, depth + 2);
+    fprintf(f, "\"radius\": %d,\n", (int)radius);
+
+    /* Padding */
+    pad_t = lv_obj_get_style_pad_top(obj, LV_PART_MAIN);
+    pad_b = lv_obj_get_style_pad_bottom(obj, LV_PART_MAIN);
+    pad_l = lv_obj_get_style_pad_left(obj, LV_PART_MAIN);
+    pad_r = lv_obj_get_style_pad_right(obj, LV_PART_MAIN);
+    pad_gap = lv_obj_get_style_pad_row(obj, LV_PART_MAIN);
+    indent(f, depth + 2);
+    fprintf(f, "\"pad_top\": %d, \"pad_bottom\": %d, \"pad_left\": %d, \"pad_right\": %d, \"pad_gap\": %d,\n",
+            (int)pad_t, (int)pad_b, (int)pad_l, (int)pad_r, (int)pad_gap);
+
+    /* Opacity */
+    opa = lv_obj_get_style_opa(obj, LV_PART_MAIN);
+    indent(f, depth + 2);
+    fprintf(f, "\"opa\": %d\n", (int)opa);
+
+    indent(f, depth + 1);
+    fprintf(f, "}");
+
     /* Recurse into children */
-    uint32_t child_count = lv_obj_get_child_count(obj);
+    child_count = lv_obj_get_child_count(obj);
     if (child_count > 0) {
         fprintf(f, ",\n");
         indent(f, depth + 1);

@@ -12,6 +12,9 @@ mcp-server/dist/
 *.o
 *.obj
 
+# Test output (generated PNGs and JSONs)
+test-output/
+
 # Environment config
 .env
 build.log
