@@ -1,0 +1,158 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows Release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      # Build simulator
+      - name: Build simulator
+        run: |
+          cmake -S simulator -B simulator/build -G Ninja -DCMAKE_C_COMPILER=cl
+          cmake --build simulator/build --config Release
+
+      # Smoke test simulator
+      - name: Smoke test simulator
+        run: |
+          simulator\build\lvgl_sim.exe --output-png simulator\build\test.png --output-json simulator\build\test.json
+          if (!(Test-Path simulator\build\test.png)) { throw "PNG not generated" }
+          Write-Host "Simulator OK"
+
+      # Build MCP server
+      - name: Build MCP server
+        working-directory: mcp-server
+        run: |
+          npm ci
+          npx tsc
+
+      # Integration test
+      - name: Integration test
+        working-directory: mcp-server
+        run: |
+          $init = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0.1"}}}'
+          $result = $init | node dist/index.js 2>$null
+          if ($result -match '"lvgl-simulator"') {
+            Write-Host "MCP server OK"
+          } else {
+            throw "MCP server did not respond correctly"
+          }
+
+      # Package release archive
+      - name: Package release
+        run: |
+          New-Item -ItemType Directory -Force -Path release\simulator
+          New-Item -ItemType Directory -Force -Path release\mcp-server
+
+          # Simulator binary
+          Copy-Item simulator\build\lvgl_sim.exe release\simulator\
+          Copy-Item simulator\templates\ release\simulator\templates\ -Recurse
+
+          # MCP server (dist + deps)
+          Copy-Item mcp-server\dist\ release\mcp-server\dist\ -Recurse
+          Copy-Item mcp-server\package.json release\mcp-server\
+          Copy-Item mcp-server\package-lock.json release\mcp-server\
+
+          # Install production deps only
+          Push-Location release\mcp-server
+          npm ci --omit=dev
+          Pop-Location
+
+          # Config example
+          @"
+          {
+            "mcpServers": {
+              "lvgl-simulator": {
+                "command": "node",
+                "args": ["PATH_TO/mcp-server/dist/index.js"],
+                "env": {
+                  "LVGL_SIM_PATH": "PATH_TO/simulator/lvgl_sim.exe"
+                }
+              }
+            }
+          }
+          "@ | Out-File -Encoding utf8 release\claude-config-example.json
+
+          # Zip it
+          Compress-Archive -Path release\* -DestinationPath lvgl-mcp-esp32-windows-x64.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lvgl-mcp-esp32-windows-x64
+          path: lvgl-mcp-esp32-windows-x64.zip
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: lvgl-mcp-esp32-windows-x64
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          cat <<'NOTES' > release-notes.md
+          ## LVGL MCP Server for ESP32
+
+          Headless LVGL simulator with MCP integration for visual UI development feedback.
+
+          ### What's included
+          - `simulator/lvgl_sim.exe` — Headless LVGL 9.2 renderer (Windows x64, MSVC)
+          - `mcp-server/` — Node.js MCP server (stdio transport)
+
+          ### Quick setup
+          1. Extract the archive
+          2. Add to your Claude Code config (`.claude/settings.json`):
+          ```json
+          {
+            "mcpServers": {
+              "lvgl-simulator": {
+                "command": "node",
+                "args": ["<path>/mcp-server/dist/index.js"]
+              }
+            }
+          }
+          ```
+          3. Use `lvgl_render` / `lvgl_render_full` tools in Claude
+
+          ### Requirements
+          - Windows 10/11 x64
+          - Node.js 22+
+          - MSVC runtime (included with most Windows installs)
+          NOTES
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.notes.outputs.tag }}
+          name: ${{ steps.notes.outputs.tag }}
+          body_path: release-notes.md
+          files: lvgl-mcp-esp32-windows-x64.zip
+          draft: false
+          prerelease: false
