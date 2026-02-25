@@ -42,7 +42,7 @@ const manager = new SimulatorManager(projectRoot);
 // Create MCP server
 const server = new McpServer({
   name: "lvgl-simulator",
-  version: "1.0.0",
+  version: "1.2.0",
 });
 
 // Register tools

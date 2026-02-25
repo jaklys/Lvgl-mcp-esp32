@@ -1,6 +1,6 @@
 {
   "name": "lvgl-mcp-server",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "MCP server for LVGL headless simulator - visual feedback loop for ESP32 UI development",
   "type": "module",
   "main": "dist/index.js",
@@ -34,9 +34,6 @@
   "engines": {
     "node": ">=18"
   },
-  "os": [
-    "win32"
-  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
     "zod": "^3.23.0"
