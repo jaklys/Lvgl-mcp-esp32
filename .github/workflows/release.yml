@@ -85,7 +85,7 @@ jobs:
 
           # Install production deps only
           Push-Location release\mcp-server
-          npm ci --omit=dev
+          npm ci --omit=dev --ignore-scripts
           Pop-Location
 
           # Config example
