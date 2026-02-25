@@ -1,0 +1,4 @@
+[submodule "simulator/lib/lvgl"]
+	path = simulator/lib/lvgl
+	url = https://github.com/lvgl/lvgl.git
+	branch = release/v9.2

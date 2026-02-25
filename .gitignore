@@ -1,0 +1,24 @@
+# Build outputs
+simulator/build/
+mcp-server/node_modules/
+mcp-server/dist/
+
+# Tools (downloaded by setup script)
+.tools/
+
+# Compiled binaries
+*.exe
+*.dll
+*.o
+*.obj
+
+# Environment config
+.env
+build.log
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Editor
+.vscode/settings.json
