@@ -6,18 +6,30 @@ import { registerInspectTools } from "./tools/inspect.js";
 import { registerConfigTools } from "./tools/config.js";
 import { registerResources } from "./resources/api-reference.js";
 import * as path from "node:path";
+import { existsSync } from "node:fs";
 
-// Determine project root (grandparent of dist/ or src/)
-// When running from dist/index.js, dirname is mcp-server/dist/, go up twice.
-// When running from src/index.ts via tsx, dirname is mcp-server/src/, go up twice.
-// Allow override via environment variable.
-const projectRoot =
-  process.env["LVGL_PROJECT_ROOT"] ??
-  path.resolve(
-    import.meta.dirname ?? path.dirname(new URL(import.meta.url).pathname),
-    "..",
-    ".."
-  );
+// Determine project root — supports two modes:
+//
+// 1. Dev mode (git clone): LVGL_PROJECT_ROOT env var, or auto-detect as grandparent
+//    of dist/index.js → mcp-server/ → Lvgl-mcp-esp32/
+//
+// 2. npm mode (npx lvgl-mcp-server): simulator/ is downloaded by postinstall
+//    next to dist/ inside the npm package directory.
+const dirname =
+  import.meta.dirname ?? path.dirname(new URL(import.meta.url).pathname);
+const packageDir = path.resolve(dirname, "..");
+
+let projectRoot: string;
+if (process.env["LVGL_PROJECT_ROOT"]) {
+  // Explicit override — always wins
+  projectRoot = process.env["LVGL_PROJECT_ROOT"];
+} else if (existsSync(path.join(packageDir, "simulator"))) {
+  // npm mode: simulator/ was downloaded by postinstall into the package dir
+  projectRoot = packageDir;
+} else {
+  // Dev mode: dist/ is inside mcp-server/ which is inside the project root
+  projectRoot = path.resolve(dirname, "..", "..");
+}
 
 // CRITICAL: Never use console.log in stdio MCP servers — it corrupts JSON-RPC.
 // Use console.error for all debug/diagnostic output.
@@ -30,7 +42,7 @@ const manager = new SimulatorManager(projectRoot);
 // Create MCP server
 const server = new McpServer({
   name: "lvgl-simulator",
-  version: "0.1.0",
+  version: "1.0.0",
 });
 
 // Register tools

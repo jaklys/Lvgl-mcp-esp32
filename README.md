@@ -15,20 +15,44 @@ MCP (Model Context Protocol) server that gives Claude visual feedback when writi
                                          └──────────────────┘
 ```
 
-## Prerequisites
+## Quick start (npm)
+
+```powershell
+npm install -g lvgl-mcp-server
+```
+
+The simulator binary is downloaded automatically from GitHub Releases during install.
+
+Add to your Claude Code config (`.claude/settings.json` or global settings):
+
+```json
+{
+  "mcpServers": {
+    "lvgl-simulator": {
+      "command": "npx",
+      "args": ["lvgl-mcp-server"]
+    }
+  }
+}
+```
+
+Done. Claude now has `lvgl_render`, `lvgl_render_full`, `lvgl_inspect`, and other LVGL tools.
+
+### Prerequisites
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Windows | 10/11 | No WSL required |
+| Windows | 10/11 x64 | No WSL required |
 | Visual Studio Build Tools | 2019+ | Only the C/C++ build tools workload (`cl.exe`) |
-| CMake | 3.16+ | Included with ESP-IDF (`C:\Espressif\tools\cmake\`) |
-| Ninja | 1.10+ | Included with ESP-IDF (`C:\Espressif\tools\ninja\`) |
+| CMake | 3.16+ | Included with ESP-IDF or install separately |
+| Ninja | 1.10+ | Included with ESP-IDF or install separately |
 | Node.js | 18+ | For the MCP server |
-| Git | 2.x | For submodules |
 
 If you have ESP-IDF installed, CMake and Ninja are already available.
 
-## Setup
+## Setup from source (alternative)
+
+If you prefer to build from source instead of using npm:
 
 ### 1. Clone
 
@@ -63,8 +87,6 @@ npm run build
 ```
 
 ### 3. Configure Claude Code
-
-Add the server to your Claude Code MCP settings. Open `.claude/settings.json` (project-level) or your global settings and add:
 
 ```json
 {

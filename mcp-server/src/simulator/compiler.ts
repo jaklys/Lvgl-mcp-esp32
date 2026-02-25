@@ -21,6 +21,53 @@ export interface CompilerConfig {
   vcvarsallPath?: string; // For MSVC environment setup
 }
 
+import { existsSync } from "node:fs";
+
+/**
+ * Find vcvarsall.bat by scanning common Visual Studio install paths.
+ */
+function findVcvarsall(): string | undefined {
+  if (process.env["VCVARSALL_PATH"]) {
+    return process.env["VCVARSALL_PATH"];
+  }
+
+  const programFiles = "C:\\Program Files";
+  const programFilesX86 = "C:\\Program Files (x86)";
+  const editions = ["BuildTools", "Community", "Professional", "Enterprise"];
+  const years = ["2022", "2019"];
+
+  for (const year of years) {
+    for (const edition of editions) {
+      for (const root of [programFilesX86, programFiles]) {
+        const candidate = path.join(
+          root,
+          "Microsoft Visual Studio",
+          year,
+          edition,
+          "VC",
+          "Auxiliary",
+          "Build",
+          "vcvarsall.bat"
+        );
+        if (existsSync(candidate)) {
+          return candidate;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Find a tool on common paths or PATH.
+ */
+function findTool(envVar: string, espIdfPath: string, name: string): string {
+  if (process.env[envVar]) return process.env[envVar]!;
+  if (existsSync(espIdfPath)) return espIdfPath;
+  // Fall back to bare name — will be resolved via PATH
+  return name;
+}
+
 /**
  * Detects available build tools and returns a CompilerConfig.
  * Prefers MSVC if vcvarsall.bat is found, otherwise falls back to GCC.
@@ -29,20 +76,18 @@ export function detectCompilerConfig(projectRoot: string): CompilerConfig {
   const simulatorDir = path.join(projectRoot, "simulator");
   const buildDir = path.join(simulatorDir, "build");
 
-  // Check for ESP-IDF CMake and Ninja first
-  const espCmake = "C:\\Espressif\\tools\\cmake\\3.30.2\\bin\\cmake.exe";
-  const espNinja = "C:\\Espressif\\tools\\ninja\\1.12.1\\ninja.exe";
+  const cmakePath = findTool(
+    "CMAKE_PATH",
+    "C:\\Espressif\\tools\\cmake\\3.30.2\\bin\\cmake.exe",
+    "cmake"
+  );
+  const ninjaPath = findTool(
+    "NINJA_PATH",
+    "C:\\Espressif\\tools\\ninja\\1.12.1\\ninja.exe",
+    "ninja"
+  );
 
-  const cmakePath = process.env["CMAKE_PATH"] || espCmake;
-  const ninjaPath = process.env["NINJA_PATH"] || espNinja;
-
-  // Check for MSVC
-  const vcvarsallPath =
-    process.env["VCVARSALL_PATH"] ||
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Auxiliary\\Build\\vcvarsall.bat";
-
-  // Check for GCC
-  const gccPath = process.env["GCC_PATH"] || "gcc";
+  const vcvarsallPath = findVcvarsall();
 
   return {
     cmakePath,

@@ -3,6 +3,9 @@ simulator/build/
 mcp-server/node_modules/
 mcp-server/dist/
 
+# npm postinstall downloads (simulator inside mcp-server/)
+mcp-server/simulator/
+
 # Tools (downloaded by setup script)
 .tools/
 

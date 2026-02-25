@@ -1,14 +1,42 @@
 {
   "name": "lvgl-mcp-server",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "MCP server for LVGL headless simulator - visual feedback loop for ESP32 UI development",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "lvgl-mcp-server": "bin/lvgl-mcp-server.mjs"
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "scripts/postinstall.mjs"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "postinstall": "node scripts/postinstall.mjs"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaklys/Lvgl-mcp-esp32"
+  },
+  "keywords": [
+    "mcp",
+    "lvgl",
+    "esp32",
+    "simulator",
+    "headless",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "win32"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
     "zod": "^3.23.0"

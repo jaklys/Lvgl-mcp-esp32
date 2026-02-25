@@ -62,12 +62,24 @@ jobs:
           New-Item -ItemType Directory -Force -Path release\simulator
           New-Item -ItemType Directory -Force -Path release\mcp-server
 
-          # Simulator binary
-          Copy-Item simulator\build\lvgl_sim.exe release\simulator\
+          # Full simulator directory (source + build artifacts for incremental compilation)
+          Copy-Item simulator\CMakeLists.txt release\simulator\
+          Copy-Item simulator\lv_conf.h release\simulator\
+          Copy-Item simulator\main.c release\simulator\
+          Copy-Item simulator\hal\ release\simulator\hal\ -Recurse
+          Copy-Item simulator\export\ release\simulator\export\ -Recurse
           Copy-Item simulator\templates\ release\simulator\templates\ -Recurse
+          Copy-Item simulator\lib\ release\simulator\lib\ -Recurse
+
+          # Build artifacts (prebuilt LVGL lib + exe + CMake cache)
+          Copy-Item simulator\build\ release\simulator\build\ -Recurse
+          # Remove test outputs from build dir
+          Remove-Item release\simulator\build\test.png -ErrorAction SilentlyContinue
+          Remove-Item release\simulator\build\test.json -ErrorAction SilentlyContinue
 
           # MCP server (dist + deps)
           Copy-Item mcp-server\dist\ release\mcp-server\dist\ -Recurse
+          Copy-Item mcp-server\bin\ release\mcp-server\bin\ -Recurse
           Copy-Item mcp-server\package.json release\mcp-server\
           Copy-Item mcp-server\package-lock.json release\mcp-server\
 
@@ -81,11 +93,8 @@ jobs:
           {
             "mcpServers": {
               "lvgl-simulator": {
-                "command": "node",
-                "args": ["PATH_TO/mcp-server/dist/index.js"],
-                "env": {
-                  "LVGL_SIM_PATH": "PATH_TO/simulator/lvgl_sim.exe"
-                }
+                "command": "npx",
+                "args": ["lvgl-mcp-server"]
               }
             }
           }
@@ -122,29 +131,39 @@ jobs:
 
           Headless LVGL simulator with MCP integration for visual UI development feedback.
 
-          ### What's included
-          - `simulator/lvgl_sim.exe` — Headless LVGL 9.2 renderer (Windows x64, MSVC)
-          - `mcp-server/` — Node.js MCP server (stdio transport)
+          ### Install via npm (recommended)
 
-          ### Quick setup
-          1. Extract the archive
-          2. Add to your Claude Code config (`.claude/settings.json`):
+          ```
+          npm install -g lvgl-mcp-server
+          ```
+
+          Then add to `.claude/settings.json`:
           ```json
           {
             "mcpServers": {
               "lvgl-simulator": {
-                "command": "node",
-                "args": ["<path>/mcp-server/dist/index.js"]
+                "command": "npx",
+                "args": ["lvgl-mcp-server"]
               }
             }
           }
           ```
-          3. Use `lvgl_render` / `lvgl_render_full` tools in Claude
+
+          The simulator binary is downloaded automatically on install.
+
+          ### Manual install (from zip)
+          1. Extract the archive
+          2. `cd mcp-server && npm ci --omit=dev`
+          3. Add to Claude Code config with full paths to `mcp-server/dist/index.js`
+
+          ### What's included
+          - `simulator/` — Full LVGL 9.2 headless renderer (source + prebuilt, Windows x64 MSVC)
+          - `mcp-server/` — Node.js MCP server (stdio transport)
 
           ### Requirements
           - Windows 10/11 x64
-          - Node.js 22+
-          - MSVC runtime (included with most Windows installs)
+          - Node.js 18+
+          - Visual Studio Build Tools 2019+ (for incremental compilation)
           NOTES
 
       - name: Create release
