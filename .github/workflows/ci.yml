@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-mcp-server:
+    name: Build MCP Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mcp-server
+        run: npm ci
+
+      - name: TypeScript compile
+        working-directory: mcp-server
+        run: npx tsc --noEmit
+
+  build-simulator:
+    name: Build Simulator (Windows/MSVC)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: cmake -S simulator -B simulator/build -G Ninja -DCMAKE_C_COMPILER=cl
+
+      - name: Build
+        run: cmake --build simulator/build
+
+      - name: Smoke test
+        run: |
+          simulator\build\lvgl_sim.exe --output-png simulator\build\test.png --output-json simulator\build\test.json
+          if (!(Test-Path simulator\build\test.png)) { throw "PNG not generated" }
+          if (!(Test-Path simulator\build\test.json)) { throw "JSON not generated" }
+          Write-Host "Simulator smoke test passed"
+          Get-Content simulator\build\test.json
+
+      - name: Upload test screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshot
+          path: simulator/build/test.png
+
+  integration-test:
+    name: Integration Test (Windows)
+    runs-on: windows-latest
+    needs: [build-mcp-server, build-simulator]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build simulator
+        run: |
+          cmake -S simulator -B simulator/build -G Ninja -DCMAKE_C_COMPILER=cl
+          cmake --build simulator/build
+
+      - name: Build MCP server
+        working-directory: mcp-server
+        run: |
+          npm ci
+          npx tsc
+
+      - name: MCP server responds to initialize
+        working-directory: mcp-server
+        run: |
+          $init = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0.1"}}}'
+          $result = $init | node dist/index.js 2>$null
+          if ($result -match '"lvgl-simulator"') {
+            Write-Host "MCP server initialize OK"
+          } else {
+            throw "MCP server did not respond correctly: $result"
+          }
