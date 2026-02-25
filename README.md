@@ -116,7 +116,7 @@ lv_obj_center(label);
 
 Returns:
 - PNG screenshot of the rendered UI
-- JSON widget tree (type, position, size, text content, values)
+- JSON widget tree with full style information (see [JSON output format](#json-output-format))
 - Render time
 
 You can override the resolution per-call:
@@ -158,7 +158,7 @@ void create_ui(void) {
 
 ### `lvgl_inspect` — Get the widget tree
 
-Returns a JSON representation of every widget: type, position, size, plus widget-specific data (label text, slider value, checkbox state, etc.).
+Returns a JSON representation of every widget: type, position, size, computed styles, plus widget-specific data (label text, slider value/min/max, checkbox state, etc.).
 
 ```
 Use lvgl_inspect on the last rendered UI
@@ -169,15 +169,32 @@ Example output:
 {
   "type": "obj",
   "x": 0, "y": 0, "w": 800, "h": 480,
+  "styles": {
+    "bg_color": "#ffffff", "bg_opa": 255,
+    "text_color": "#212121", "text_font_size": 16,
+    "border_width": 0, "border_color": "#000000",
+    "radius": 0,
+    "pad_top": 0, "pad_bottom": 0, "pad_left": 0, "pad_right": 0, "pad_gap": 11,
+    "opa": 255
+  },
   "children": [
     {
       "type": "btn",
       "x": 300, "y": 215, "w": 200, "h": 50,
+      "styles": {
+        "bg_color": "#2196f3", "bg_opa": 255,
+        "text_color": "#ffffff", "text_font_size": 14,
+        "border_width": 0, "border_color": "#000000",
+        "radius": 12,
+        "pad_top": 11, "pad_bottom": 11, "pad_left": 20, "pad_right": 20, "pad_gap": 4,
+        "opa": 255
+      },
       "children": [
         {
           "type": "label",
           "x": 56, "y": 14, "w": 87, "h": 21,
-          "text": "Click Me!"
+          "text": "Click Me!",
+          "styles": { "text_color": "#ffffff", "text_font_size": 14, "..." : "..." }
         }
       ]
     }
@@ -202,6 +219,74 @@ Common ESP32 display sizes:
 
 MCP resource with a quick reference for LVGL 9.2 widgets, styles, layouts, colors, and symbols. Claude can read this to write correct code without guessing.
 
+## JSON output format
+
+Every widget node in the JSON tree includes:
+
+| Field | Description |
+|-------|-------------|
+| `type` | Widget class name (`obj`, `btn`, `label`, `slider`, `bar`, `arc`, `switch`, `checkbox`, `dropdown`, `textarea`, `chart`, `table`, ...) |
+| `x`, `y` | Position relative to parent (pixels) |
+| `w`, `h` | Size (pixels) |
+| `styles` | Computed style properties (see below) |
+| `text` | Label text (for `label` widgets) |
+| `value` | Current value (for `slider`, `bar`, `arc`) |
+| `min`, `max` | Range (for `slider`, `bar`, `arc`) |
+| `checked` | State (for `checkbox`, `switch`) |
+| `children` | Nested child widgets |
+
+### Style properties
+
+Every node includes a `styles` object with computed (resolved) values:
+
+```json
+{
+  "bg_color": "#2196f3",
+  "bg_opa": 255,
+  "text_color": "#ffffff",
+  "text_font_size": 16,
+  "border_width": 2,
+  "border_color": "#d4af37",
+  "radius": 12,
+  "pad_top": 10,
+  "pad_bottom": 10,
+  "pad_left": 20,
+  "pad_right": 20,
+  "pad_gap": 8,
+  "opa": 255
+}
+```
+
+Colors are in `#rrggbb` hex format. Opacity values range from 0 (transparent) to 255 (opaque). Font size is in pixels.
+
+## Examples
+
+The [examples/](examples/) directory contains rendered output from the MCP server — PNG screenshots and corresponding JSON widget trees.
+
+### Demo renders
+
+| Screenshot | JSON | Description |
+|-----------|------|-------------|
+| [01-button-slider.png](examples/01-button-slider.png) | [JSON](examples/01-button-slider.json) | Button + slider basic layout |
+| [02-dashboard.png](examples/02-dashboard.png) | [JSON](examples/02-dashboard.json) | Multi-card dashboard |
+| [03-esp32-small.png](examples/03-esp32-small.png) | [JSON](examples/03-inspect.json) | ESP32 status at 320x240 |
+| [04-esp32-small.png](examples/04-esp32-small.png) | [JSON](examples/04-esp32-small.json) | ESP32 status (alternate) |
+
+### E-BREW brewery control screens (real project)
+
+All 8 screens from the [E-BREW](https://github.com/jaklys/New-EbrewDisplay) brewery controller rendered through the simulator at 800x480:
+
+| Screenshot | JSON | Screen |
+|-----------|------|--------|
+| [ebrew-01-menu.png](examples/ebrew-01-menu.png) | [JSON](examples/ebrew-01-menu.json) | Main menu (3x2 tile grid) |
+| [ebrew-02-overview.png](examples/ebrew-02-overview.png) | [JSON](examples/ebrew-02-overview.json) | Overview (temperatures + controls) |
+| [ebrew-03-loading.png](examples/ebrew-03-loading.png) | [JSON](examples/ebrew-03-loading.json) | Loading splash screen |
+| [ebrew-04-pump.png](examples/ebrew-04-pump.png) | [JSON](examples/ebrew-04-pump.json) | Pump control |
+| [ebrew-05-control.png](examples/ebrew-05-control.png) | [JSON](examples/ebrew-05-control.json) | Relay switches |
+| [ebrew-06-thermostats.png](examples/ebrew-06-thermostats.png) | [JSON](examples/ebrew-06-thermostats.json) | Thermostat settings |
+| [ebrew-07-graphs.png](examples/ebrew-07-graphs.png) | [JSON](examples/ebrew-07-graphs.json) | Temperature graphs |
+| [ebrew-08-sysinfo.png](examples/ebrew-08-sysinfo.png) | [JSON](examples/ebrew-08-sysinfo.json) | System info |
+
 ## How it works internally
 
 1. Claude sends C code via the `lvgl_render` tool
@@ -225,7 +310,7 @@ Lvgl-mcp-esp32/
 │   │   └── display_driver.c      Framebuffer-only display (no SDL/window)
 │   ├── export/
 │   │   ├── screenshot.c          Framebuffer → PNG (stb_image_write)
-│   │   └── widget_tree.c         lv_obj tree → JSON
+│   │   └── widget_tree.c         lv_obj tree → JSON (with styles)
 │   ├── templates/
 │   │   └── user_code_wrapper.c   Template for wrapping code snippets
 │   └── lib/
@@ -236,13 +321,20 @@ Lvgl-mcp-esp32/
 │       ├── index.ts              Entry point, stdio transport
 │       ├── tools/
 │       │   ├── render.ts         lvgl_render + lvgl_render_full
-│       │   ├── inspect.ts        lvgl_inspect
+│       │   ├── inspect.ts        lvgl_inspect + lvgl_get_styles
 │       │   └── config.ts         lvgl_set_resolution
 │       ├── simulator/
 │       │   ├── compiler.ts       Invokes CMake/MSVC, manages user code
 │       │   └── manager.ts        Orchestrates compile → run → collect
 │       └── resources/
 │           └── api-reference.ts  LVGL API cheat sheet
+├── examples/                     Example renders (PNG + JSON)
+│   ├── 01-button-slider.*        Basic widget demo
+│   ├── 02-dashboard.*            Multi-card layout
+│   └── ebrew-01..08-*.*          E-BREW brewery controller (8 screens)
+├── .github/workflows/
+│   ├── ci.yml                    CI: build + test on push/PR
+│   └── release.yml               Release: build + package on v* tag
 ├── scripts/
 │   ├── setup.ps1                 Full setup (validate tools, build all)
 │   └── build.bat                 Quick rebuild (simulator only)
