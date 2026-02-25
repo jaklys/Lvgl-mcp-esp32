@@ -175,3 +175,27 @@ jobs:
           files: lvgl-mcp-esp32-windows-x64.zip
           draft: false
           prerelease: false
+
+  publish-npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: build-windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Build MCP server
+        working-directory: mcp-server
+        run: |
+          npm ci
+          npx tsc
+
+      - name: Publish to npm
+        working-directory: mcp-server
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
