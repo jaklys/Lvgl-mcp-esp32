@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+    branches: ["release/v*"]
   workflow_dispatch:
     inputs:
       tag:
@@ -245,7 +246,14 @@ jobs:
         env:
           INPUT_TAG: ${{ inputs.tag }}
         run: |
-          TAG="${INPUT_TAG:-${GITHUB_REF#refs/tags/}}"
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG=${GITHUB_REF#refs/tags/}
+          else
+            # release/v* branch push: derive the tag from the package version
+            TAG="v$(node -p "require('./mcp-server/package.json').version")"
+          fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           cat <<'NOTES' > release-notes.md
           ## LVGL MCP Server for ESP32
