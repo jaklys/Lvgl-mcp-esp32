@@ -1,7 +1,7 @@
 /**
  * @file lv_conf.h
  * Configuration file for LVGL headless simulator
- * Based on lv_conf_template.h for v9.2
+ * Based on lv_conf_template.h for v9.5.0
  */
 
 /* clang-format off */
