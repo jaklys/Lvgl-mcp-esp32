@@ -27,7 +27,7 @@ jobs:
       # Build simulator
       - name: Build simulator
         run: |
-          cmake -S simulator -B simulator/build -G Ninja -DCMAKE_C_COMPILER=cl
+          cmake -S simulator -B simulator/build -G Ninja -DCMAKE_C_COMPILER=cl -DCMAKE_BUILD_TYPE=Release
           cmake --build simulator/build --config Release
 
       # Smoke test simulator
@@ -71,11 +71,16 @@ jobs:
           Copy-Item simulator\templates\ release\simulator\templates\ -Recurse
           Copy-Item simulator\lib\ release\simulator\lib\ -Recurse
 
-          # Build artifacts (prebuilt LVGL lib + exe + CMake cache)
+          # Build artifacts (prebuilt LVGL lib + exe)
           Copy-Item simulator\build\ release\simulator\build\ -Recurse
           # Remove test outputs from build dir
           Remove-Item release\simulator\build\test.png -ErrorAction SilentlyContinue
           Remove-Item release\simulator\build\test.json -ErrorAction SilentlyContinue
+          # Strip machine-specific CMake cache/generator files (breaks reconfigure on user machines)
+          Remove-Item release\simulator\build\CMakeCache.txt -ErrorAction SilentlyContinue
+          Remove-Item release\simulator\build\CMakeFiles\ -Recurse -Force -ErrorAction SilentlyContinue
+          Get-ChildItem release\simulator\build\ -Recurse -Filter '.ninja*' -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+          Get-ChildItem release\simulator\build\ -Recurse -Include 'build.ninja','rules.ninja','.ninja_deps','.ninja_log' -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 
           # MCP server (dist + deps)
           Copy-Item mcp-server\dist\ release\mcp-server\dist\ -Recurse
@@ -109,17 +114,125 @@ jobs:
           name: lvgl-mcp-esp32-windows-x64
           path: lvgl-mcp-esp32-windows-x64.zip
 
+  build-linux:
+    name: Build Linux Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+
+      # Build simulator
+      - name: Build simulator
+        run: |
+          cmake -S simulator -B simulator/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build simulator/build
+
+      # Smoke test simulator
+      - name: Smoke test simulator
+        run: |
+          ./simulator/build/lvgl_sim --output-png simulator/build/test.png --output-json simulator/build/test.json
+          if [ ! -s simulator/build/test.png ]; then echo "PNG not generated"; exit 1; fi
+          echo "Simulator OK"
+
+      # Build MCP server
+      - name: Build MCP server
+        working-directory: mcp-server
+        run: |
+          npm ci
+          npx tsc
+
+      # Integration test
+      - name: Integration test
+        working-directory: mcp-server
+        run: |
+          init='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0.1"}}}'
+          result=$(echo "$init" | node dist/index.js 2>/dev/null)
+          if echo "$result" | grep -q '"lvgl-simulator"'; then
+            echo "MCP server OK"
+          else
+            echo "MCP server did not respond correctly: $result"
+            exit 1
+          fi
+
+      # Package release archive
+      - name: Package release
+        run: |
+          mkdir -p release/simulator release/mcp-server
+
+          # Full simulator directory (source + build artifacts for incremental compilation)
+          cp simulator/CMakeLists.txt release/simulator/
+          cp simulator/lv_conf.h release/simulator/
+          cp simulator/main.c release/simulator/
+          cp -r simulator/hal release/simulator/hal
+          cp -r simulator/export release/simulator/export
+          cp -r simulator/templates release/simulator/templates
+          cp -r simulator/lib release/simulator/lib
+
+          # Build artifacts (prebuilt LVGL lib + binary)
+          cp -r simulator/build release/simulator/build
+          # Remove test outputs from build dir
+          rm -f release/simulator/build/test.png release/simulator/build/test.json
+          # Strip machine-specific CMake cache/generator files (breaks reconfigure on user machines)
+          rm -f release/simulator/build/CMakeCache.txt
+          rm -rf release/simulator/build/CMakeFiles
+          find release/simulator/build -name '.ninja*' -type f -delete
+          find release/simulator/build -name 'build.ninja' -type f -delete
+          find release/simulator/build -name 'rules.ninja' -type f -delete
+
+          # MCP server (dist + deps)
+          cp -r mcp-server/dist release/mcp-server/dist
+          cp -r mcp-server/bin release/mcp-server/bin
+          cp mcp-server/package.json release/mcp-server/
+          cp mcp-server/package-lock.json release/mcp-server/
+
+          # Install production deps only
+          ( cd release/mcp-server && npm ci --omit=dev --ignore-scripts )
+
+          # Config example
+          cat > release/claude-config-example.json <<'JSON'
+          {
+            "mcpServers": {
+              "lvgl-simulator": {
+                "command": "npx",
+                "args": ["lvgl-mcp-server"]
+              }
+            }
+          }
+          JSON
+
+          # Tarball with simulator/ at archive root
+          tar -czf lvgl-mcp-esp32-linux-x64.tar.gz -C release .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lvgl-mcp-esp32-linux-x64
+          path: lvgl-mcp-esp32-linux-x64.tar.gz
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: build-windows
+    needs: [build-windows, build-linux]
     steps:
       - uses: actions/checkout@v4
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: lvgl-mcp-esp32-windows-x64
+          pattern: lvgl-mcp-esp32-*-x64
+          merge-multiple: true
 
       - name: Generate release notes
         id: notes
@@ -151,19 +264,28 @@ jobs:
 
           The simulator binary is downloaded automatically on install.
 
-          ### Manual install (from zip)
-          1. Extract the archive
+          ### Manual install (from archive)
+          1. Extract the archive (`.zip` on Windows, `.tar.gz` on Linux)
           2. `cd mcp-server && npm ci --omit=dev`
           3. Add to Claude Code config with full paths to `mcp-server/dist/index.js`
 
           ### What's included
-          - `simulator/` — Full LVGL 9.2 headless renderer (source + prebuilt, Windows x64 MSVC)
+          - `simulator/` — Full LVGL 9.5 headless renderer (source + prebuilt binary)
+            - Windows x64 (MSVC) in the `.zip`
+            - Linux x64 (GCC) in the `.tar.gz`
           - `mcp-server/` — Node.js MCP server (stdio transport)
 
           ### Requirements
+
+          **Windows**
           - Windows 10/11 x64
           - Node.js 18+
           - Visual Studio Build Tools 2019+ (for incremental compilation)
+
+          **Linux**
+          - Linux x64
+          - Node.js 18+
+          - gcc or clang, cmake ≥ 3.16, and ninja or make (for incremental compilation)
           NOTES
 
       - name: Create release
@@ -172,14 +294,16 @@ jobs:
           tag_name: ${{ steps.notes.outputs.tag }}
           name: ${{ steps.notes.outputs.tag }}
           body_path: release-notes.md
-          files: lvgl-mcp-esp32-windows-x64.zip
+          files: |
+            lvgl-mcp-esp32-windows-x64.zip
+            lvgl-mcp-esp32-linux-x64.tar.gz
           draft: false
           prerelease: false
 
   publish-npm:
     name: Publish to npm
     runs-on: ubuntu-latest
-    needs: build-windows
+    needs: [build-windows, build-linux]
     steps:
       - uses: actions/checkout@v4
 
