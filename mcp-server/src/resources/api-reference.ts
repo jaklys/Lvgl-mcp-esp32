@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SimulatorManager } from "../simulator/manager.js";
 
-const LVGL_API_CHEATSHEET = `# LVGL 9.2 API Quick Reference
+const LVGL_API_CHEATSHEET = `# LVGL 9.5 API Quick Reference
 
 ## Screen & Display
 \`\`\`c
@@ -250,7 +250,7 @@ export function registerResources(
     "api-reference",
     "lvgl://api-reference",
     {
-      description: "LVGL 9.2 API quick reference — widgets, styles, layouts, colors",
+      description: "LVGL 9.5 API quick reference — widgets, styles, layouts, colors",
       mimeType: "text/markdown",
     },
     async (uri) => ({
