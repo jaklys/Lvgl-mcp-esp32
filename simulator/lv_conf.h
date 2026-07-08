@@ -284,7 +284,7 @@
  * 3RD PARTS LIBRARIES
  *====================*/
 
-#define LV_FS_DEFAULT_DRIVE_LETTER '\0'
+#define LV_FS_DEFAULT_DRIVER_LETTER '\0'
 #define LV_USE_FS_STDIO 0
 #define LV_USE_FS_POSIX 0
 #define LV_USE_FS_WIN32 0
