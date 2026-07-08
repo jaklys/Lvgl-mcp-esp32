@@ -153,7 +153,7 @@ static void dump_obj(FILE *f, lv_obj_t *obj, int depth)
     indent(f, depth + 2);
     fprintf(f, "\"text_color\": \"#%02x%02x%02x\", \"text_font_size\": %d,\n",
             text_color.red, text_color.green, text_color.blue,
-            font ? (int)font->line_height : 0);
+            font ? (int)lv_font_get_line_height(font) : 0);
 
     /* Border */
     border_w = lv_obj_get_style_border_width(obj, LV_PART_MAIN);

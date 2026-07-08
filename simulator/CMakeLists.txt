@@ -3,11 +3,9 @@ project(lvgl_simulator C)
 
 # ---------- LVGL configuration ----------
 # lv_conf.h lives in this directory (next to the lvgl/ folder)
-set(LV_CONF_PATH
-    "${CMAKE_CURRENT_SOURCE_DIR}/lv_conf.h"
-    CACHE STRING "Path to lv_conf.h")
-set(LV_CONF_BUILD_DISABLE_EXAMPLES ON CACHE BOOL "" FORCE)
-set(LV_CONF_BUILD_DISABLE_DEMOS ON CACHE BOOL "" FORCE)
+set(LV_BUILD_CONF_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lv_conf.h" CACHE PATH "Path to lv_conf.h")
+set(CONFIG_LV_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(CONFIG_LV_BUILD_DEMOS OFF CACHE BOOL "" FORCE)
 
 # Add LVGL as a subdirectory
 add_subdirectory(lib/lvgl)
@@ -48,8 +46,8 @@ target_include_directories(lvgl_sim PRIVATE
 
 target_link_libraries(lvgl_sim PRIVATE lvgl)
 
-# MinGW needs explicit math library; MSVC includes it in CRT
-if(MINGW)
+# Unix/MinGW need explicit math library; MSVC includes it in CRT
+if(UNIX OR MINGW)
     target_link_libraries(lvgl_sim PRIVATE m)
 endif()
 

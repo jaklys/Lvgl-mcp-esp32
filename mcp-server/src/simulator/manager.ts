@@ -129,7 +129,7 @@ export class SimulatorManager {
       width: this.width,
       height: this.height,
       colorDepth: 32,
-      lvglVersion: "9.2.x",
+      lvglVersion: "9.5.0",
     };
   }
 }
