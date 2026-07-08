@@ -1,6 +1,6 @@
 # LVGL MCP Server for ESP32 Development
 
-MCP (Model Context Protocol) server that gives Claude visual feedback when writing LVGL UI code for ESP32. It compiles C code snippets in a headless LVGL simulator on Windows, captures a PNG screenshot and a JSON widget tree, and returns them through the MCP protocol. No hardware, no flashing, no SDL window needed.
+MCP (Model Context Protocol) server that gives Claude visual feedback when writing LVGL UI code for ESP32. It compiles C code snippets in a headless LVGL simulator on Windows and Linux, captures a PNG screenshot and a JSON widget tree, and returns them through the MCP protocol. No hardware, no flashing, no SDL window needed.
 
 ```
 ┌─────────────┐     stdio (JSON-RPC)    ┌──────────────────┐
@@ -10,7 +10,7 @@ MCP (Model Context Protocol) server that gives Claude visual feedback when writi
                                                   │ compile + run
                                          ┌────────▼─────────┐
                                          │  LVGL Simulator   │
-                                         │  (headless, MSVC) │
+                                         │  (headless C)     │
                                          │  → PNG + JSON     │
                                          └──────────────────┘
 ```
@@ -40,6 +40,10 @@ Done. Claude now has `lvgl_render`, `lvgl_render_full`, `lvgl_inspect`, and othe
 
 ### Prerequisites
 
+The prebuilt binary ships for Windows x64 and Linux x64. To build the simulator from source you need a C toolchain, CMake, and a build generator.
+
+**Windows**
+
 | Tool | Version | Notes |
 |------|---------|-------|
 | Windows | 10/11 x64 | No WSL required |
@@ -50,26 +54,50 @@ Done. Claude now has `lvgl_render`, `lvgl_render_full`, `lvgl_inspect`, and othe
 
 If you have ESP-IDF installed, CMake and Ninja are already available.
 
+**Linux**
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Linux | x64 | Any modern distribution |
+| gcc or clang | recent | C compiler (`cc` by default; override with `CC`) |
+| CMake | 3.16+ | Build configuration |
+| Ninja or Make | any | Ninja preferred; falls back to Unix Makefiles |
+| Node.js | 18+ | For the MCP server |
+
+On Debian/Ubuntu, install the build dependencies in one line:
+
+```bash
+sudo apt install build-essential cmake ninja-build
+```
+
 ## Setup from source (alternative)
 
 If you prefer to build from source instead of using npm:
 
 ### 1. Clone
 
+Windows (PowerShell):
 ```powershell
 git clone --recursive https://github.com/jaklys/Lvgl-mcp-esp32.git
 cd Lvgl-mcp-esp32
 ```
 
+Linux (bash):
+```bash
+git clone --recursive https://github.com/jaklys/Lvgl-mcp-esp32.git
+cd Lvgl-mcp-esp32
+```
+
 If you already cloned without `--recursive`:
-```powershell
+```bash
 git submodule update --init --recursive
 ```
 
 ### 2. Build everything
 
-The setup script validates tools, builds the simulator, and builds the MCP server:
+The setup script validates tools, builds the simulator, and builds the MCP server.
 
+Windows (PowerShell):
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
 ```
@@ -86,8 +114,27 @@ npm install
 npm run build
 ```
 
+Linux (bash):
+```bash
+# Full setup: validate tools, build simulator, build MCP server, print config snippet
+./scripts/setup.sh
+```
+
+Or build just the simulator:
+
+```bash
+# Simulator (uses cc by default; Ninja if available, else Make)
+./scripts/build.sh
+
+# MCP server
+cd mcp-server
+npm install
+npm run build
+```
+
 ### 3. Configure Claude Code
 
+Windows:
 ```json
 {
   "mcpServers": {
@@ -99,7 +146,19 @@ npm run build
 }
 ```
 
-Replace the path with your actual project location. Forward slashes work on Windows.
+Linux:
+```json
+{
+  "mcpServers": {
+    "lvgl-simulator": {
+      "command": "node",
+      "args": ["/home/YOUR_USER/path/to/Lvgl-mcp-esp32/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+Replace the path with your actual project location. Forward slashes work on Windows too.
 
 You can also set the project root explicitly if the auto-detection doesn't work:
 
@@ -108,9 +167,9 @@ You can also set the project root explicitly if the auto-detection doesn't work:
   "mcpServers": {
     "lvgl-simulator": {
       "command": "node",
-      "args": ["C:/Users/YOUR_USER/path/to/Lvgl-mcp-esp32/mcp-server/dist/index.js"],
+      "args": ["/home/YOUR_USER/path/to/Lvgl-mcp-esp32/mcp-server/dist/index.js"],
       "env": {
-        "LVGL_PROJECT_ROOT": "C:/Users/YOUR_USER/path/to/Lvgl-mcp-esp32"
+        "LVGL_PROJECT_ROOT": "/home/YOUR_USER/path/to/Lvgl-mcp-esp32"
       }
     }
   }
@@ -189,7 +248,7 @@ Use lvgl_inspect on the last rendered UI
 Example output:
 ```json
 {
-  "type": "obj",
+  "type": "lv_obj",
   "x": 0, "y": 0, "w": 800, "h": 480,
   "styles": {
     "bg_color": "#ffffff", "bg_opa": 255,
@@ -201,7 +260,7 @@ Example output:
   },
   "children": [
     {
-      "type": "btn",
+      "type": "lv_button",
       "x": 300, "y": 215, "w": 200, "h": 50,
       "styles": {
         "bg_color": "#2196f3", "bg_opa": 255,
@@ -213,7 +272,7 @@ Example output:
       },
       "children": [
         {
-          "type": "label",
+          "type": "lv_label",
           "x": 56, "y": 14, "w": 87, "h": 21,
           "text": "Click Me!",
           "styles": { "text_color": "#ffffff", "text_font_size": 14, "..." : "..." }
@@ -239,7 +298,7 @@ Common ESP32 display sizes:
 
 ### `lvgl://api-reference` — LVGL API cheat sheet
 
-MCP resource with a quick reference for LVGL 9.2 widgets, styles, layouts, colors, and symbols. Claude can read this to write correct code without guessing.
+MCP resource with a quick reference for LVGL 9.5 widgets, styles, layouts, colors, and symbols. Claude can read this to write correct code without guessing.
 
 ## JSON output format
 
@@ -247,14 +306,14 @@ Every widget node in the JSON tree includes:
 
 | Field | Description |
 |-------|-------------|
-| `type` | Widget class name (`obj`, `btn`, `label`, `slider`, `bar`, `arc`, `switch`, `checkbox`, `dropdown`, `textarea`, `chart`, `table`, ...) |
+| `type` | Widget class name (`lv_obj`, `lv_button`, `lv_label`, `lv_slider`, `lv_bar`, `lv_arc`, `lv_switch`, `lv_checkbox`, `lv_dropdown`, `lv_textarea`, `lv_chart`, `lv_table`, ...) |
 | `x`, `y` | Position relative to parent (pixels) |
 | `w`, `h` | Size (pixels) |
 | `styles` | Computed style properties (see below) |
-| `text` | Label text (for `label` widgets) |
-| `value` | Current value (for `slider`, `bar`, `arc`) |
-| `min`, `max` | Range (for `slider`, `bar`, `arc`) |
-| `checked` | State (for `checkbox`, `switch`) |
+| `text` | Label text (for `lv_label` widgets) |
+| `value` | Current value (for `lv_slider`, `lv_bar`, `lv_arc`) |
+| `min`, `max` | Range (for `lv_slider`, `lv_bar`, `lv_arc`) |
+| `checked` | State (for `lv_checkbox`, `lv_switch`) |
 | `children` | Nested child widgets |
 
 ### Style properties
@@ -284,6 +343,8 @@ Colors are in `#rrggbb` hex format. Opacity values range from 0 (transparent) to
 ## Examples
 
 The [examples/](examples/) directory contains rendered output from the MCP server — PNG screenshots and corresponding JSON widget trees.
+
+> Note: these example renders were produced with LVGL 9.2 and may differ slightly when re-rendered with LVGL 9.5. The pre-2.0 example JSONs also use the old short widget type names (`obj`, `btn`, `label`, ...) instead of the prefixed names (`lv_obj`, `lv_button`, `lv_label`, ...) emitted since LVGL 9.5.
 
 ### Demo renders
 
@@ -315,17 +376,17 @@ All 8 screens from the [E-BREW](https://github.com/jaklys/New-EbrewDisplay) brew
 2. The MCP server wraps the snippet in a template (adds `#include "lvgl.h"` and `create_ui()` boilerplate)
 3. The wrapped code is written to `simulator/build/user_code.c`
 4. CMake incrementally recompiles only the changed file and links against the pre-built LVGL library
-5. The resulting `lvgl_sim.exe` runs headless: initializes LVGL, creates a framebuffer display, calls `create_ui()`, ticks the timer 10 times, then exports a PNG and a JSON widget tree
+5. The resulting simulator binary (`lvgl_sim.exe` on Windows, `lvgl_sim` on Linux) runs headless: initializes LVGL, creates a framebuffer display, calls `create_ui()`, ticks the timer 10 times, then exports a PNG and a JSON widget tree
 6. The MCP server reads the PNG, base64-encodes it, and returns it alongside the widget tree
 
-Compilation uses MSVC (`cl.exe`) via a temporary batch file that sets up the Visual Studio environment. Incremental builds only recompile the user code file (~1-2 seconds).
+Compilation uses MSVC (`cl.exe`) on Windows — via a temporary batch file that sets up the Visual Studio environment — and gcc/clang (`cc` by default) on Linux. Incremental builds only recompile the user code file (~1-2 seconds).
 
 ## Project structure
 
 ```
 Lvgl-mcp-esp32/
 ├── simulator/                    Headless LVGL renderer (C)
-│   ├── CMakeLists.txt            Build config (Ninja + MSVC)
+│   ├── CMakeLists.txt            Build config (Ninja/Make + MSVC or gcc/clang)
 │   ├── lv_conf.h                 LVGL config (32bpp, all widgets, snapshot)
 │   ├── main.c                    CLI: --width --height --output-png --output-json
 │   ├── hal/
@@ -336,7 +397,7 @@ Lvgl-mcp-esp32/
 │   ├── templates/
 │   │   └── user_code_wrapper.c   Template for wrapping code snippets
 │   └── lib/
-│       ├── lvgl/                  LVGL v9.2 (git submodule)
+│       ├── lvgl/                  LVGL v9.5 (git submodule)
 │       └── stb/stb_image_write.h PNG encoder (single header)
 ├── mcp-server/                   MCP server (TypeScript)
 │   └── src/
@@ -358,8 +419,10 @@ Lvgl-mcp-esp32/
 │   ├── ci.yml                    CI: build + test on push/PR
 │   └── release.yml               Release: build + package on v* tag
 ├── scripts/
-│   ├── setup.ps1                 Full setup (validate tools, build all)
-│   └── build.bat                 Quick rebuild (simulator only)
+│   ├── setup.ps1                 Windows: full setup (validate tools, build all)
+│   ├── build.bat                 Windows: quick rebuild (simulator only)
+│   ├── setup.sh                  Linux: full setup (validate tools, build all)
+│   └── build.sh                  Linux: quick rebuild (simulator only)
 └── README.md
 ```
 
@@ -367,7 +430,7 @@ Lvgl-mcp-esp32/
 
 | Setting | Default | Location |
 |---------|---------|----------|
-| LVGL version | v9.2 | Git submodule branch |
+| LVGL version | v9.5.0 | Git submodule branch |
 | Color depth | 32-bit (XRGB8888) | `simulator/lv_conf.h` |
 | Display resolution | 800x480 | `lvgl_set_resolution` tool or CLI args |
 | Available fonts | Montserrat 12, 14, 16, 20, 24 | `simulator/lv_conf.h` |
@@ -380,8 +443,16 @@ Lvgl-mcp-esp32/
 
 **"cl is not recognized"** — The MCP server sets up the MSVC environment automatically via `vcvarsall.bat`. If you're building manually, run `scripts\build.bat` which handles this.
 
+**"cc: command not found" (Linux)** — No C compiler is installed. Install the toolchain with `sudo apt install build-essential` (or the equivalent for your distribution). You can point the build at a specific compiler with the `CC` environment variable.
+
+**"ninja: command not found" (Linux)** — Ninja is optional; the build falls back to Unix Makefiles. To use Ninja, install it with `sudo apt install ninja-build`.
+
 **Render takes >5 seconds** — The first render after server start includes CMake configuration (~1s extra). Subsequent renders are incremental (recompile user_code.c only).
 
 **Wrong colors in PNG** — LVGL uses XRGB8888 which is BGRA in memory on x86. The screenshot exporter handles the byte swizzle. If colors look wrong, check `simulator/export/screenshot.c`.
 
 **"ENOENT: no such file or directory"** — The `LVGL_PROJECT_ROOT` environment variable may be needed. Set it in your MCP server config to the absolute path of the project root.
+
+## Author
+
+[Jan Machaček](https://www.linkedin.com/in/jan-machacek-164255108)
