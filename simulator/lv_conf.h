@@ -1,7 +1,7 @@
 /**
  * @file lv_conf.h
  * Configuration file for LVGL headless simulator
- * Based on lv_conf_template.h for v9.5.0
+ * Based on lv_conf_template.h for v9.6.0
  */
 
 /* clang-format off */
@@ -14,8 +14,9 @@
    COLOR SETTINGS
  *====================*/
 
-/*Color depth: 32 (XRGB8888) for easy PNG export*/
-#define LV_COLOR_DEPTH 32
+/*Default display color format: XRGB8888 for easy PNG export.
+ *(LV_COLOR_DEPTH is derived from this since v9.6)*/
+#define LV_COLOR_FORMAT_DEFAULT LV_COLOR_FORMAT_XRGB8888
 
 /*=========================
    STDLIB WRAPPER SETTINGS
@@ -80,7 +81,7 @@
 
 /* Disable all GPU/hardware accelerators */
 #define LV_USE_DRAW_VGLITE 0
-#define LV_USE_PXP 0
+#define LV_USE_DRAW_PXP 0
 #define LV_USE_DRAW_DAVE2D 0
 #define LV_USE_DRAW_SDL 0
 #define LV_USE_DRAW_VG_LITE 0
@@ -93,7 +94,7 @@
 #define LV_USE_LOG 1
 #if LV_USE_LOG
     #define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
-    #define LV_LOG_PRINTF 1
+    #define LV_LOG_PRINTF 0     /*main.c registers a print callback (stderr + JSON logs)*/
     #define LV_LOG_USE_TIMESTAMP 1
     #define LV_LOG_USE_FILE_LINE 1
     #define LV_LOG_TRACE_MEM        0
@@ -108,13 +109,27 @@
 #endif
 
 /*Asserts*/
+#define LV_USE_ASSERT               1   /*Generic LV_ASSERT(); always on in v9.5*/
 #define LV_USE_ASSERT_NULL          1
 #define LV_USE_ASSERT_MALLOC        1
-#define LV_USE_ASSERT_STYLE         0
+#define LV_USE_ASSERT_STYLE         1
 #define LV_USE_ASSERT_MEM_INTEGRITY 0
-#define LV_USE_ASSERT_OBJ           0
-#define LV_ASSERT_HANDLER_INCLUDE <stdint.h>
-#define LV_ASSERT_HANDLER while(1);
+#define LV_USE_ASSERT_OBJ           1
+
+/*hal/sim_assert.h defines LV_ASSERT_HANDLER as `sim_assert_fail();`, which
+ *flushes all streams and exits with code 3 (resolved via the lv_conf.h dir).*/
+#define LV_ASSERT_USE_CUSTOM_INCLUDE 1
+#define LV_ASSERT_CUSTOM_INCLUDE "hal/sim_assert.h"
+
+/*Runtime argument checks (log + assert on failure, like a device build that
+ *halts in its assert handler)*/
+#define LV_USE_CHECK_ARG 1
+#if LV_USE_CHECK_ARG
+    #define LV_CHECK_ARG_ASSERT_ON_FAIL 1
+    #define LV_CHECK_ARG_LOG_MODE LV_CHECK_ARG_LOG_MODE_VERBOSE
+    #define LV_USE_CHECK_OBJ_CLASSTYPE 0    /*Broken on the v9.6.0 tag*/
+    #define LV_USE_CHECK_OBJ_VALIDITY 0
+#endif
 
 /*Debug*/
 #define LV_USE_REFR_DEBUG 0
@@ -123,11 +138,12 @@
 
 /*Others*/
 #define LV_ENABLE_GLOBAL_CUSTOM 0
-#define LV_CACHE_DEF_SIZE       0
-#define LV_IMAGE_HEADER_CACHE_DEF_CNT 0
-#define LV_GRADIENT_MAX_STOPS   2
+#define LV_CACHE_DEF_SIZE       (8 * 1024 * 1024)
+#define LV_IMAGE_HEADER_CACHE_DEF_CNT 32
+#define LV_GRADIENT_MAX_STOPS   8
 #define LV_COLOR_MIX_ROUND_OFS  0
 #define LV_OBJ_STYLE_CACHE      0
+#define LV_USE_OBJ_NAME         1   /*lv_obj_set_name(), exported as "name"*/
 #define LV_USE_OBJ_ID           0
 #define LV_OBJ_ID_AUTO_ASSIGN   LV_USE_OBJ_ID
 #define LV_USE_OBJ_ID_BUILTIN   1
@@ -158,37 +174,37 @@
  *   FONT USAGE
  *===================*/
 
-#define LV_FONT_MONTSERRAT_8  0
-#define LV_FONT_MONTSERRAT_10 0
+#define LV_FONT_MONTSERRAT_8  1
+#define LV_FONT_MONTSERRAT_10 1
 #define LV_FONT_MONTSERRAT_12 1
 #define LV_FONT_MONTSERRAT_14 1
 #define LV_FONT_MONTSERRAT_16 1
-#define LV_FONT_MONTSERRAT_18 0
+#define LV_FONT_MONTSERRAT_18 1
 #define LV_FONT_MONTSERRAT_20 1
-#define LV_FONT_MONTSERRAT_22 0
+#define LV_FONT_MONTSERRAT_22 1
 #define LV_FONT_MONTSERRAT_24 1
-#define LV_FONT_MONTSERRAT_26 0
-#define LV_FONT_MONTSERRAT_28 0
-#define LV_FONT_MONTSERRAT_30 0
-#define LV_FONT_MONTSERRAT_32 0
-#define LV_FONT_MONTSERRAT_34 0
-#define LV_FONT_MONTSERRAT_36 0
-#define LV_FONT_MONTSERRAT_38 0
-#define LV_FONT_MONTSERRAT_40 0
-#define LV_FONT_MONTSERRAT_42 0
-#define LV_FONT_MONTSERRAT_44 0
-#define LV_FONT_MONTSERRAT_46 0
-#define LV_FONT_MONTSERRAT_48 0
-#define LV_FONT_MONTSERRAT_28_COMPRESSED 0
+#define LV_FONT_MONTSERRAT_26 1
+#define LV_FONT_MONTSERRAT_28 1
+#define LV_FONT_MONTSERRAT_30 1
+#define LV_FONT_MONTSERRAT_32 1
+#define LV_FONT_MONTSERRAT_34 1
+#define LV_FONT_MONTSERRAT_36 1
+#define LV_FONT_MONTSERRAT_38 1
+#define LV_FONT_MONTSERRAT_40 1
+#define LV_FONT_MONTSERRAT_42 1
+#define LV_FONT_MONTSERRAT_44 1
+#define LV_FONT_MONTSERRAT_46 1
+#define LV_FONT_MONTSERRAT_48 1
+#define LV_FONT_MONTSERRAT_28_COMPRESSED 1
 #define LV_FONT_DEJAVU_16_PERSIAN_HEBREW 0
-#define LV_FONT_SIMSUN_14_CJK            0
-#define LV_FONT_SIMSUN_16_CJK            0
-#define LV_FONT_UNSCII_8  0
-#define LV_FONT_UNSCII_16 0
+#define LV_FONT_SOURCE_HAN_SANS_SC_14_CJK 0
+#define LV_FONT_SOURCE_HAN_SANS_SC_16_CJK 0
+#define LV_FONT_UNSCII_8  1
+#define LV_FONT_UNSCII_16 1
 #define LV_FONT_CUSTOM_DECLARE
 #define LV_FONT_DEFAULT &lv_font_montserrat_14
 #define LV_FONT_FMT_TXT_LARGE 0
-#define LV_USE_FONT_COMPRESSED 0
+#define LV_USE_FONT_COMPRESSED 1
 #define LV_USE_FONT_PLACEHOLDER 1
 
 /*=================
@@ -216,8 +232,6 @@
 #define LV_USE_CALENDAR   1
 #if LV_USE_CALENDAR
     #define LV_CALENDAR_WEEK_STARTS_MONDAY 1
-    #define LV_CALENDAR_DEFAULT_DAY_NAMES {"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
-    #define LV_CALENDAR_DEFAULT_MONTH_NAMES {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
     #define LV_USE_CALENDAR_HEADER_ARROW 1
     #define LV_USE_CALENDAR_HEADER_DROPDOWN 1
     #define LV_USE_CALENDAR_CHINESE 0
@@ -285,7 +299,12 @@
  *====================*/
 
 #define LV_FS_DEFAULT_DRIVER_LETTER '\0'
-#define LV_USE_FS_STDIO 0
+#define LV_USE_FS_STDIO 1
+#if LV_USE_FS_STDIO
+    #define LV_FS_STDIO_LETTER 'S'      /*"S:img.png" -> <assets dir>/img.png*/
+    #define LV_FS_STDIO_PATH ""         /*relative to cwd; main.c chdir()s to --assets-dir*/
+    #define LV_FS_STDIO_CACHE_SIZE 0
+#endif
 #define LV_USE_FS_POSIX 0
 #define LV_USE_FS_WIN32 0
 #define LV_USE_FS_FATFS 0
@@ -293,24 +312,24 @@
 #define LV_USE_FS_LITTLEFS 0
 #define LV_USE_FS_ARDUINO_ESP_LITTLEFS 0
 #define LV_USE_FS_ARDUINO_SD 0
-#define LV_USE_LODEPNG 0
+#define LV_USE_LODEPNG 1
 #define LV_USE_LIBPNG 0
-#define LV_USE_BMP 0
-#define LV_USE_TJPGD 0
+#define LV_USE_BMP 1
+#define LV_USE_TJPGD 1
 #define LV_USE_LIBJPEG_TURBO 0
 #define LV_USE_GIF 0
 #define LV_BIN_DECODER_RAM_LOAD 0
 #define LV_USE_RLE 0
-#define LV_USE_QRCODE 0
-#define LV_USE_BARCODE 0
+#define LV_USE_QRCODE 1
+#define LV_USE_BARCODE 1
 #define LV_USE_FREETYPE 0
 #define LV_USE_TINY_TTF 0
 #define LV_USE_RLOTTIE 0
 #define LV_USE_VECTOR_GRAPHIC  0
+#define LV_USE_THORVG 0
 #define LV_USE_THORVG_INTERNAL 0
-#define LV_USE_THORVG_EXTERNAL 0
+#define LV_USE_LZ4 0
 #define LV_USE_LZ4_INTERNAL  0
-#define LV_USE_LZ4_EXTERNAL  0
 #define LV_USE_FFMPEG 0
 
 /*==================
@@ -321,12 +340,13 @@
 #define LV_USE_SYSMON   0
 #define LV_USE_PROFILER 0
 #define LV_USE_MONKEY 0
-#define LV_USE_GRIDNAV 0
-#define LV_USE_FRAGMENT 0
-#define LV_USE_IMGFONT 0
+#define LV_USE_GRIDNAV 1
+#define LV_USE_FRAGMENT 1
+#define LV_USE_IMGFONT 1
 #define LV_USE_OBSERVER 1
 #define LV_USE_IME_PINYIN 0
 #define LV_USE_FILE_EXPLORER 0
+#define LV_USE_TEST 0
 
 /*==================
  * DEVICES

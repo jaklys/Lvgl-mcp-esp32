@@ -1,21 +1,22 @@
 #ifndef SCREENSHOT_H
 #define SCREENSHOT_H
 
-#include <stdint.h>
+#include "lvgl.h"
 
 /**
- * Save the framebuffer as a PNG file.
+ * Save the display's current frame as an RGB PNG file.
  *
- * The framebuffer is expected to be in XRGB8888 format (LVGL 32-bit color depth)
- * with little-endian byte order: B, G, R, X per pixel in memory.
+ * Reads the active draw buffer (lv_display_get_buf_active) using its own
+ * header (stride, color format), so it works for any buffer layout. The PNG
+ * has the display's logical resolution, i.e. width and height are swapped
+ * for 90/270 degree rotation.
  *
- * @param filename   output PNG path
- * @param framebuffer raw pixel data
- * @param width      image width
- * @param height     image height
- * @return 0 on success, -1 on failure
+ * Supported buffer formats: XRGB8888, ARGB8888, RGB888, RGB565.
+ *
+ * @param filename output PNG path
+ * @param disp     display to capture (render it first, e.g. lv_refr_now)
+ * @return 0 on success, -1 on failure (a reason is printed to stderr)
  */
-int screenshot_save_png(const char *filename, const uint8_t *framebuffer,
-                        uint32_t width, uint32_t height);
+int screenshot_save_png(const char *filename, lv_display_t *disp);
 
 #endif /* SCREENSHOT_H */
