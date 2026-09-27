@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /mcp-server
+    schedule:
+      interval: monthly
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # LVGL submodule. A bump must land together with README/CHANGELOG/api-reference
+  # updates and LVGL_TAG in .github/workflows/ci.yml (the pin check fails
+  # otherwise), so treat these PRs as a reminder, not an auto-merge candidate.
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: monthly

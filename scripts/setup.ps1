@@ -1,115 +1,97 @@
-# LVGL MCP Server - Setup Script
-# Validates build tools (MSVC, CMake, Ninja, Node.js), builds simulator and MCP server.
+# LVGL MCP Server - setup script for Windows.
+# Validates the toolchain (Visual Studio C++ tools via vswhere, CMake, Ninja,
+# git, Node.js 20+), builds the simulator (scripts\build.bat) and the MCP
+# server, smoke-tests the binary and prints the MCP client configuration.
+#
+#   powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $SimulatorDir = Join-Path $ProjectRoot "simulator"
 $BuildDir = Join-Path $SimulatorDir "build"
 $McpServerDir = Join-Path $ProjectRoot "mcp-server"
+$BuildBat = Join-Path $PSScriptRoot "build.bat"
+
+function Fail([string]$Message) {
+    Write-Host "[ERROR] $Message" -ForegroundColor Red
+    exit 1
+}
+
+# Runs a native command and stops the script if it exits non-zero.
+function Invoke-Native([string]$What, [scriptblock]$Command) {
+    & $Command
+    if ($LASTEXITCODE -ne 0) { Fail "$What failed (exit code $LASTEXITCODE)." }
+}
 
 Write-Host "=== LVGL MCP Server Setup ===" -ForegroundColor Cyan
 
-# --- Check MSVC ---
-$VcvarsallPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat"
-if (-not (Test-Path $VcvarsallPath)) {
-    $VcvarsallPath = "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat"
+# --- git ---
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Fail "git not found. Install it from https://git-scm.com/download/win"
 }
-if (-not (Test-Path $VcvarsallPath)) {
-    $VcvarsallPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"
-}
-if (-not (Test-Path $VcvarsallPath)) {
-    Write-Host "[ERROR] Visual Studio Build Tools not found." -ForegroundColor Red
-    Write-Host "  Install from: https://visualstudio.microsoft.com/visual-cpp-build-tools/" -ForegroundColor Yellow
-    exit 1
-}
-Write-Host "[OK] MSVC Build Tools: $VcvarsallPath" -ForegroundColor Green
+Write-Host "[OK] $(git --version)" -ForegroundColor Green
 
-# --- Check CMake ---
-$CmakePath = "C:\Espressif\tools\cmake\3.30.2\bin\cmake.exe"
-if (-not (Test-Path $CmakePath)) {
-    $cmake = Get-Command cmake -ErrorAction SilentlyContinue
-    if ($cmake) { $CmakePath = $cmake.Source }
-    else { Write-Host "[ERROR] CMake not found." -ForegroundColor Red; exit 1 }
+# --- Node.js 20+ ---
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Fail "Node.js not found. Install Node.js 20+ from https://nodejs.org/"
 }
-Write-Host "[OK] CMake: $CmakePath" -ForegroundColor Green
+$nodeVersion = (node --version).Trim()
+$nodeMajor = [int]($nodeVersion.TrimStart('v').Split('.')[0])
+if ($nodeMajor -lt 20) { Fail "Node.js 20+ required, found $nodeVersion." }
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) { Fail "npm not found." }
+Write-Host "[OK] Node.js: $nodeVersion" -ForegroundColor Green
 
-# --- Check Ninja ---
-$NinjaPath = "C:\Espressif\tools\ninja\1.12.1\ninja.exe"
-if (-not (Test-Path $NinjaPath)) {
-    $ninja = Get-Command ninja -ErrorAction SilentlyContinue
-    if ($ninja) { $NinjaPath = $ninja.Source }
-    else { Write-Host "[ERROR] Ninja not found." -ForegroundColor Red; exit 1 }
-}
-Write-Host "[OK] Ninja: $NinjaPath" -ForegroundColor Green
-
-# --- Check Node.js ---
-$node = Get-Command node -ErrorAction SilentlyContinue
-if (-not $node) {
-    Write-Host "[ERROR] Node.js not found." -ForegroundColor Red; exit 1
-}
-Write-Host "[OK] Node.js: $(node --version)" -ForegroundColor Green
+# --- MSVC, CMake, Ninja (detection lives in build.bat: vswhere, PATH, ESP-IDF) ---
+Invoke-Native "Toolchain check" { & $BuildBat --check }
 
 # --- Initialize git submodules ---
-$lvglSrc = Join-Path $SimulatorDir "lib\lvgl\src"
-if (-not (Test-Path $lvglSrc)) {
+if (-not (Test-Path (Join-Path $SimulatorDir "lib\lvgl\CMakeLists.txt"))) {
     Write-Host "Initializing git submodules..."
-    Push-Location $ProjectRoot
-    git submodule update --init --recursive
-    Pop-Location
+    Invoke-Native "git submodule update" { git -C $ProjectRoot submodule update --init --recursive }
 }
 Write-Host "[OK] LVGL submodule present" -ForegroundColor Green
 
 # --- Build simulator ---
 Write-Host ""
 Write-Host "Building simulator..." -ForegroundColor Cyan
-New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
-
-$batchContent = @"
-@echo off
-call "$VcvarsallPath" x64 >nul 2>&1
-"$CmakePath" -S "$SimulatorDir" -B "$BuildDir" -G Ninja -DCMAKE_MAKE_PROGRAM="$NinjaPath" -DCMAKE_C_COMPILER=cl
-if errorlevel 1 exit /b 1
-"$CmakePath" --build "$BuildDir"
-"@
-$batchPath = Join-Path $BuildDir "_setup_build.bat"
-$batchContent | Set-Content -Path $batchPath -Encoding ASCII
-& cmd.exe /c $batchPath
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "[ERROR] Simulator build failed." -ForegroundColor Red
-    exit 1
-}
-Write-Host "[OK] Simulator built: $BuildDir\lvgl_sim.exe" -ForegroundColor Green
+Invoke-Native "Simulator build" { & $BuildBat }
+$SimExe = Join-Path $BuildDir "lvgl_sim.exe"
+if (-not (Test-Path $SimExe)) { Fail "Simulator binary not found at $SimExe" }
+Write-Host "[OK] Simulator built: $SimExe" -ForegroundColor Green
 
 # --- Install and build MCP server ---
+# --ignore-scripts: the postinstall download is for npm installs only; in a
+# checkout the server must use the simulator built above.
 Write-Host ""
 Write-Host "Building MCP server..." -ForegroundColor Cyan
 Push-Location $McpServerDir
-npm install
-npm run build
-Pop-Location
+try {
+    Invoke-Native "npm ci" { npm ci --ignore-scripts }
+    Invoke-Native "npm run build" { npm run build }
+} finally {
+    Pop-Location
+}
 Write-Host "[OK] MCP server built: $McpServerDir\dist\index.js" -ForegroundColor Green
 
-# --- Quick test ---
+# --- Smoke test (temp dir, nothing is left in the build dir) ---
 Write-Host ""
-Write-Host "Running quick test..." -ForegroundColor Cyan
-& "$BuildDir\lvgl_sim.exe" --output-png "$BuildDir\test.png" --output-json "$BuildDir\test.json" 2>&1
-if (Test-Path "$BuildDir\test.png") {
-    Write-Host "[OK] Test screenshot generated." -ForegroundColor Green
-} else {
-    Write-Host "[WARN] Test screenshot not generated." -ForegroundColor Yellow
-}
+Write-Host "Running smoke test..." -ForegroundColor Cyan
+Invoke-Native "Smoke test" { node (Join-Path $PSScriptRoot "smoke-test.mjs") $SimExe 320 240 }
 
 Write-Host ""
 Write-Host "=== Setup Complete ===" -ForegroundColor Green
 Write-Host ""
-Write-Host "Add this to your Claude Code MCP settings:" -ForegroundColor Cyan
-$McpServerPath = "$McpServerDir\dist\index.js" -replace '\\','/'
+$McpEntry = (Join-Path $McpServerDir "dist\index.js") -replace '\\', '/'
+Write-Host "Register the server with Claude Code (run inside your ESP32 project):" -ForegroundColor Cyan
+Write-Host "  claude mcp add lvgl-simulator -- node `"$McpEntry`""
+Write-Host ""
+Write-Host "or add this to .mcp.json in your project (Cursor/VS Code use the same shape):" -ForegroundColor Cyan
 Write-Host @"
 {
   "mcpServers": {
     "lvgl-simulator": {
       "command": "node",
-      "args": ["$McpServerPath"]
+      "args": ["$McpEntry"]
     }
   }
 }
