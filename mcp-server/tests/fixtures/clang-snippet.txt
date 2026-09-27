@@ -1,0 +1,11 @@
+snippet.c:2:1: error: call to undeclared function 'undefined_fn'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+    2 | undefined_fn(l);
+      | ^
+snippet.c:3:5: error: incompatible pointer to integer conversion initializing 'int' with an expression of type 'char[4]' [-Wint-conversion]
+    3 | int x = "str";
+      |     ^   ~~~~~
+snippet.c:4:6: error: expected ';' at end of declaration
+    4 | int y
+      |      ^
+      |      ;
+3 errors generated.

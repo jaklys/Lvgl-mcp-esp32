@@ -1,0 +1,12 @@
+snippet.c: In function 'create_ui':
+snippet.c:2:1: error: implicit declaration of function 'undefined_fn' [-Werror=implicit-function-declaration]
+    2 | undefined_fn(l);
+      | ^~~~~~~~~~~~
+snippet.c:3:9: warning: initialization of 'int' from 'char *' makes integer from pointer without a cast [-Wint-conversion]
+    3 | int x = "str";
+      |         ^~~~~
+snippet.c:5:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before '}' token
+snippet.c:3:5: warning: unused variable 'x' [-Wunused-variable]
+    3 | int x = "str";
+      |     ^
+cc1: some warnings being treated as errors

@@ -1,74 +1,228 @@
+#!/usr/bin/env node
 /**
- * E-BREW project screen render test
+ * Render the example set (the screenshots/trees in ../examples) through the
+ * real MCP server over stdio, exactly like an MCP client would.
+ *
+ * Usage:
+ *   npm run build
+ *   node scripts/render-examples.mjs [--out <dir>] [--only name1,name2]
+ *
+ * Defaults to writing into ../examples. The server's simulator lookup applies
+ * (LVGL_SIM_PATH > LVGL_PROJECT_ROOT > ../simulator); LVGL_BUILD_DIR and the
+ * timeout env vars are forwarded too.
+ *
+ * Replaces the old test-demo.mjs / test-ebrew.mjs scripts (same scenarios).
  */
-import { spawn } from "node:child_process";
-import * as readline from "node:readline";
-import * as fs from "node:fs";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const child = spawn("node", ["dist/index.js"], {
-  stdio: ["pipe", "pipe", "pipe"],
-  cwd: import.meta.dirname,
-});
-child.stderr.on("data", (d) => process.stderr.write(`[srv] ${d}`));
+const here = path.dirname(fileURLToPath(import.meta.url));
+const packageDir = path.resolve(here, "..");
 
-const rl = readline.createInterface({ input: child.stdout });
-let nextId = 1;
-const pending = new Map();
-rl.on("line", (line) => {
-  const msg = JSON.parse(line);
-  const cb = pending.get(msg.id);
-  if (cb) { pending.delete(msg.id); cb(msg); }
-});
+function argValue(flag) {
+  const i = process.argv.indexOf(flag);
+  return i >= 0 ? process.argv[i + 1] : undefined;
+}
+const outDir = path.resolve(argValue("--out") ?? path.join(packageDir, "..", "examples"));
+const only = argValue("--only")?.split(",").map((s) => s.trim());
 
-function send(method, params) {
-  return new Promise((resolve) => {
-    const id = nextId++;
-    pending.set(id, resolve);
-    child.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
-  });
+/** @type {Array<{name: string, title: string, tool: string, args: Record<string, unknown>}>} */
+const SCENARIOS = [
+  {
+    name: "01-button-slider",
+    title: "lvgl_render \u2014 Button + slider (480x320)",
+    tool: "lvgl_render",
+    args: {
+    code: `
+      /* Title */
+      lv_obj_t *title = lv_label_create(screen);
+      lv_label_set_text(title, "LVGL Demo");
+      lv_obj_set_style_text_font(title, &lv_font_montserrat_24, 0);
+      lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 20);
+
+      /* Button */
+      lv_obj_t *btn = lv_button_create(screen);
+      lv_obj_set_size(btn, 160, 50);
+      lv_obj_align(btn, LV_ALIGN_CENTER, 0, -30);
+      lv_obj_t *btn_label = lv_label_create(btn);
+      lv_label_set_text(btn_label, LV_SYMBOL_POWER " Power");
+      lv_obj_center(btn_label);
+
+      /* Slider */
+      lv_obj_t *slider = lv_slider_create(screen);
+      lv_obj_set_width(slider, 200);
+      lv_slider_set_value(slider, 70, LV_ANIM_OFF);
+      lv_obj_align(slider, LV_ALIGN_CENTER, 0, 40);
+
+      /* Slider label */
+      lv_obj_t *sl_label = lv_label_create(screen);
+      lv_label_set_text(sl_label, "Brightness: 70%");
+      lv_obj_align(sl_label, LV_ALIGN_CENTER, 0, 70);
+    `,
+    width: 480,
+    height: 320,
+    },
+  },
+  {
+    name: "02-dashboard",
+    title: "lvgl_render_full \u2014 Dashboard (800x480)",
+    tool: "lvgl_render_full",
+    args: {
+    code: `
+#include "lvgl.h"
+
+static lv_obj_t * create_card(lv_obj_t *parent, const char *title, const char *value, lv_color_t color) {
+    lv_obj_t *card = lv_obj_create(parent);
+    lv_obj_set_size(card, 180, 120);
+    lv_obj_set_style_bg_color(card, color, 0);
+    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(card, 12, 0);
+    lv_obj_set_style_pad_all(card, 15, 0);
+    lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(card, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_scrollbar_mode(card, LV_SCROLLBAR_MODE_OFF);
+
+    lv_obj_t *lbl_title = lv_label_create(card);
+    lv_label_set_text(lbl_title, title);
+    lv_obj_set_style_text_color(lbl_title, lv_color_white(), 0);
+    lv_obj_set_style_text_font(lbl_title, &lv_font_montserrat_14, 0);
+
+    lv_obj_t *lbl_value = lv_label_create(card);
+    lv_label_set_text(lbl_value, value);
+    lv_obj_set_style_text_color(lbl_value, lv_color_white(), 0);
+    lv_obj_set_style_text_font(lbl_value, &lv_font_montserrat_24, 0);
+
+    return card;
 }
 
-const outDir = path.join(import.meta.dirname, "..", "test-output");
-fs.mkdirSync(outDir, { recursive: true });
+void create_ui(void) {
+    lv_obj_t *screen = lv_screen_active();
+    lv_obj_set_style_bg_color(screen, lv_color_hex(0x1a1a2e), 0);
+    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
+    lv_obj_set_flex_flow(screen, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_all(screen, 20, 0);
+    lv_obj_set_style_pad_gap(screen, 15, 0);
 
-function savePng(base64, filename) {
-  const p = path.join(outDir, filename);
-  fs.writeFileSync(p, Buffer.from(base64, "base64"));
-  console.log(`  Saved: ${p}`);
+    /* Header */
+    lv_obj_t *header = lv_obj_create(screen);
+    lv_obj_set_size(header, lv_pct(100), 50);
+    lv_obj_set_style_bg_opa(header, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(header, 0, 0);
+    lv_obj_set_style_pad_all(header, 0, 0);
+    lv_obj_set_scrollbar_mode(header, LV_SCROLLBAR_MODE_OFF);
+
+    lv_obj_t *app_title = lv_label_create(header);
+    lv_label_set_text(app_title, LV_SYMBOL_HOME " Smart Home Dashboard");
+    lv_obj_set_style_text_color(app_title, lv_color_white(), 0);
+    lv_obj_set_style_text_font(app_title, &lv_font_montserrat_20, 0);
+    lv_obj_align(app_title, LV_ALIGN_LEFT_MID, 0, 0);
+
+    lv_obj_t *time_lbl = lv_label_create(header);
+    lv_label_set_text(time_lbl, "14:32");
+    lv_obj_set_style_text_color(time_lbl, lv_color_hex(0x888888), 0);
+    lv_obj_set_style_text_font(time_lbl, &lv_font_montserrat_20, 0);
+    lv_obj_align(time_lbl, LV_ALIGN_RIGHT_MID, 0, 0);
+
+    /* Cards row */
+    lv_obj_t *cards = lv_obj_create(screen);
+    lv_obj_set_size(cards, lv_pct(100), 140);
+    lv_obj_set_style_bg_opa(cards, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(cards, 0, 0);
+    lv_obj_set_style_pad_all(cards, 0, 0);
+    lv_obj_set_flex_flow(cards, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(cards, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_scrollbar_mode(cards, LV_SCROLLBAR_MODE_OFF);
+
+    create_card(cards, LV_SYMBOL_TINT " Temperature", "23.5 C", lv_color_hex(0xe74c3c));
+    create_card(cards, LV_SYMBOL_CHARGE " Power", "1.2 kW", lv_color_hex(0x3498db));
+    create_card(cards, LV_SYMBOL_WIFI " Network", "Online", lv_color_hex(0x2ecc71));
+    create_card(cards, LV_SYMBOL_BELL " Alerts", "3 new", lv_color_hex(0xf39c12));
+
+    /* Bottom section: switch + bar */
+    lv_obj_t *bottom = lv_obj_create(screen);
+    lv_obj_set_size(bottom, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_color(bottom, lv_color_hex(0x16213e), 0);
+    lv_obj_set_style_bg_opa(bottom, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(bottom, 12, 0);
+    lv_obj_set_style_pad_all(bottom, 20, 0);
+    lv_obj_set_flex_flow(bottom, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_gap(bottom, 15, 0);
+    lv_obj_set_scrollbar_mode(bottom, LV_SCROLLBAR_MODE_OFF);
+
+    /* Lights row */
+    lv_obj_t *light_row = lv_obj_create(bottom);
+    lv_obj_set_size(light_row, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(light_row, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(light_row, 0, 0);
+    lv_obj_set_style_pad_all(light_row, 0, 0);
+    lv_obj_set_flex_flow(light_row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(light_row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_scrollbar_mode(light_row, LV_SCROLLBAR_MODE_OFF);
+
+    lv_obj_t *light_lbl = lv_label_create(light_row);
+    lv_label_set_text(light_lbl, LV_SYMBOL_EYE_OPEN " Living Room Lights");
+    lv_obj_set_style_text_color(light_lbl, lv_color_white(), 0);
+
+    lv_obj_t *sw = lv_switch_create(light_row);
+    lv_obj_add_state(sw, LV_STATE_CHECKED);
+
+    /* Progress bar */
+    lv_obj_t *prog_lbl = lv_label_create(bottom);
+    lv_label_set_text(prog_lbl, "Energy usage today: 67%");
+    lv_obj_set_style_text_color(prog_lbl, lv_color_hex(0xaaaaaa), 0);
+
+    lv_obj_t *bar = lv_bar_create(bottom);
+    lv_obj_set_size(bar, lv_pct(100), 15);
+    lv_bar_set_value(bar, 67, LV_ANIM_OFF);
+    lv_obj_set_style_bg_color(bar, lv_color_hex(0x0a3d62), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(bar, lv_palette_main(LV_PALETTE_GREEN), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(bar, 5, 0);
+    lv_obj_set_style_radius(bar, 5, LV_PART_INDICATOR);
 }
-function saveJson(data, filename) {
-  const p = path.join(outDir, filename);
-  fs.writeFileSync(p, JSON.stringify(data, null, 2));
-  console.log(`  Saved: ${p}`);
-}
+`,
+    },
+  },
+  {
+    name: "04-esp32-small",
+    title: "lvgl_render \u2014 ESP32 small display (320x240)",
+    tool: "lvgl_render",
+    args: {
+    code: `
+      lv_obj_set_style_bg_color(screen, lv_color_hex(0x003a57), 0);
+      lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
+      lv_obj_set_flex_flow(screen, LV_FLEX_FLOW_COLUMN);
+      lv_obj_set_flex_align(screen, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+      lv_obj_set_style_pad_gap(screen, 10, 0);
 
-function handleResult(r, pngName, jsonName) {
-  if (r.result?.isError) {
-    console.log("  FAILED:", r.result.content[0].text);
-    return;
-  }
-  const img = r.result.content.find((c) => c.type === "image");
-  const time = r.result.content.find((c) => c.type === "text" && c.text.includes("Render time"));
-  const tree = r.result.content.find((c) => c.type === "text" && c.text.startsWith("Widget tree:"));
-  if (img) savePng(img.data, pngName);
-  if (tree) saveJson(JSON.parse(tree.text.replace("Widget tree:\n", "")), jsonName);
-  if (time) console.log(`  ${time.text}`);
-}
+      lv_obj_t *arc = lv_arc_create(screen);
+      lv_obj_set_size(arc, 120, 120);
+      lv_arc_set_value(arc, 72);
+      lv_obj_set_style_arc_color(arc, lv_palette_main(LV_PALETTE_CYAN), LV_PART_INDICATOR);
+      lv_obj_set_style_arc_width(arc, 10, LV_PART_INDICATOR);
+      lv_obj_set_style_arc_width(arc, 10, LV_PART_MAIN);
 
-await send("initialize", {
-  protocolVersion: "2024-11-05",
-  capabilities: {},
-  clientInfo: { name: "ebrew-test", version: "0.1" },
-});
+      lv_obj_t *arc_lbl = lv_label_create(arc);
+      lv_label_set_text(arc_lbl, "72%");
+      lv_obj_set_style_text_font(arc_lbl, &lv_font_montserrat_24, 0);
+      lv_obj_set_style_text_color(arc_lbl, lv_color_white(), 0);
+      lv_obj_center(arc_lbl);
 
-console.log("\n=== E-BREW Screen Render Test ===\n");
-
-// ========== Screen 1: MENU ==========
-console.log("[1] E-BREW Menu Screen (800x480)");
-let r = await send("tools/call", {
-  name: "lvgl_render_full",
-  arguments: {
+      lv_obj_t *status = lv_label_create(screen);
+      lv_label_set_text(status, "Sensor Active");
+      lv_obj_set_style_text_color(status, lv_palette_main(LV_PALETTE_GREEN), 0);
+    `,
+    width: 320,
+    height: 240,
+    },
+  },
+  {
+    name: "ebrew-01-menu",
+    title: "E-BREW Menu Screen (800x480)",
+    tool: "lvgl_render_full",
+    args: {
     code: `#include "lvgl.h"
 
 #define UI_COLOR_GOLD        0xd4af37
@@ -147,15 +301,13 @@ void create_ui(void) {
     }
 }
 `,
+    },
   },
-});
-handleResult(r, "ebrew-01-menu.png", "ebrew-01-menu.json");
-
-// ========== Screen 2: OVERVIEW (PREHLED) ==========
-console.log("\n[2] E-BREW Overview Screen (800x480)");
-r = await send("tools/call", {
-  name: "lvgl_render_full",
-  arguments: {
+  {
+    name: "ebrew-02-overview",
+    title: "E-BREW Overview Screen (800x480)",
+    tool: "lvgl_render_full",
+    args: {
     code: `#include "lvgl.h"
 #include <stdio.h>
 
@@ -305,15 +457,13 @@ void create_ui(void) {
     }
 }
 `,
+    },
   },
-});
-handleResult(r, "ebrew-02-overview.png", "ebrew-02-overview.json");
-
-// ========== Screen 3: LOADING ==========
-console.log("\n[3] E-BREW Loading Screen (800x480)");
-r = await send("tools/call", {
-  name: "lvgl_render_full",
-  arguments: {
+  {
+    name: "ebrew-03-loading",
+    title: "E-BREW Loading Screen (800x480)",
+    tool: "lvgl_render_full",
+    args: {
     code: `#include "lvgl.h"
 
 void create_ui(void) {
@@ -343,15 +493,13 @@ void create_ui(void) {
     lv_bar_set_value(bar, 45, LV_ANIM_OFF);
 }
 `,
+    },
   },
-});
-handleResult(r, "ebrew-03-loading.png", "ebrew-03-loading.json");
-
-// ========== Screen 4: PUMP (CERPADLO) ==========
-console.log("\n[4] E-BREW Pump Screen (800x480)");
-r = await send("tools/call", {
-  name: "lvgl_render_full",
-  arguments: {
+  {
+    name: "ebrew-04-pump",
+    title: "E-BREW Pump Screen (800x480)",
+    tool: "lvgl_render_full",
+    args: {
     code: `#include "lvgl.h"
 
 void create_ui(void) {
@@ -464,15 +612,13 @@ void create_ui(void) {
     }
 }
 `,
+    },
   },
-});
-handleResult(r, "ebrew-04-pump.png", "ebrew-04-pump.json");
-
-// ========== Screen 5: CONTROL (OVLADANI) ==========
-console.log("\n[5] E-BREW Control Screen (800x480)");
-r = await send("tools/call", {
-  name: "lvgl_render_full",
-  arguments: {
+  {
+    name: "ebrew-05-control",
+    title: "E-BREW Control Screen (800x480)",
+    tool: "lvgl_render_full",
+    args: {
     code: `#include "lvgl.h"
 
 void create_ui(void) {
@@ -542,15 +688,13 @@ void create_ui(void) {
     }
 }
 `,
+    },
   },
-});
-handleResult(r, "ebrew-05-control.png", "ebrew-05-control.json");
-
-// ========== Screen 6: THERMOSTATS (TERMOSTATY) ==========
-console.log("\n[6] E-BREW Thermostats Screen (800x480)");
-r = await send("tools/call", {
-  name: "lvgl_render_full",
-  arguments: {
+  {
+    name: "ebrew-06-thermostats",
+    title: "E-BREW Thermostats Screen (800x480)",
+    tool: "lvgl_render_full",
+    args: {
     code: `#include "lvgl.h"
 
 void create_ui(void) {
@@ -759,15 +903,13 @@ void create_ui(void) {
     lv_obj_set_style_pad_all(p_slider, 6, LV_PART_KNOB);
 }
 `,
+    },
   },
-});
-handleResult(r, "ebrew-06-thermostats.png", "ebrew-06-thermostats.json");
-
-// ========== Screen 7: GRAPHS (GRAFY) ==========
-console.log("\n[7] E-BREW Graphs Screen (800x480)");
-r = await send("tools/call", {
-  name: "lvgl_render_full",
-  arguments: {
+  {
+    name: "ebrew-07-graphs",
+    title: "E-BREW Graphs Screen (800x480)",
+    tool: "lvgl_render_full",
+    args: {
     code: `#include "lvgl.h"
 
 void create_ui(void) {
@@ -865,15 +1007,13 @@ void create_ui(void) {
     lv_obj_align(temps, LV_ALIGN_BOTTOM_MID, 0, -30);
 }
 `,
+    },
   },
-});
-handleResult(r, "ebrew-07-graphs.png", "ebrew-07-graphs.json");
-
-// ========== Screen 8: SYSTEM INFO ==========
-console.log("\n[8] E-BREW System Info Screen (800x480)");
-r = await send("tools/call", {
-  name: "lvgl_render_full",
-  arguments: {
+  {
+    name: "ebrew-08-sysinfo",
+    title: "E-BREW System Info Screen (800x480)",
+    tool: "lvgl_render_full",
+    args: {
     code: `#include "lvgl.h"
 
 void create_ui(void) {
@@ -968,11 +1108,78 @@ void create_ui(void) {
     lv_obj_center(ap_lbl);
 }
 `,
+    },
   },
-});
-handleResult(r, "ebrew-08-sysinfo.png", "ebrew-08-sysinfo.json");
+];
 
-console.log("\n=== All 8 E-BREW Screens Rendered ===\n");
-child.stdin.end();
-child.on("exit", () => process.exit(0));
-setTimeout(() => { child.kill(); process.exit(1); }, 300000);
+const serverEntry = path.join(packageDir, "dist", "index.js");
+if (!existsSync(serverEntry)) {
+  console.error(`Missing ${serverEntry} - run "npm run build" first.`);
+  process.exit(1);
+}
+mkdirSync(outDir, { recursive: true });
+
+const transport = new StdioClientTransport({
+  command: process.execPath,
+  args: [serverEntry],
+  env: { ...process.env },
+  stderr: "inherit",
+});
+const client = new Client({ name: "render-examples", version: "1.0.0" });
+await client.connect(transport);
+
+const callOpts = { timeout: 20 * 60_000 }; // first build compiles all of LVGL
+const call = (name, args) => client.callTool({ name, arguments: args }, undefined, callOpts);
+const textOf = (r) => r.content.filter((c) => c.type === "text").map((c) => c.text).join("\n");
+
+function save(file, data) {
+  const p = path.join(outDir, file);
+  writeFileSync(p, data);
+  console.log(`  saved ${p}`);
+}
+
+async function saveTree(file, inspectArgs = {}) {
+  const r = await call("lvgl_inspect", inspectArgs);
+  if (r.isError) throw new Error(textOf(r));
+  const sc = r.structuredContent ?? {};
+  const tree = {
+    format_version: sc.format_version,
+    lvgl_version: sc.lvgl_version,
+    display: sc.display,
+    ...(sc.result ?? {}),
+  };
+  if (sc.truncated) console.log("  note: tree was trimmed by lvgl_inspect's size limit");
+  save(file, JSON.stringify(tree, null, 2) + "\n");
+}
+
+let failures = 0;
+for (const s of SCENARIOS) {
+  if (only && !only.includes(s.name)) continue;
+  console.log(`\n[${s.name}] ${s.title}`);
+  const t0 = Date.now();
+  const r = await call(s.tool, { ...s.args, include_tree: "none" });
+  if (r.isError) {
+    failures++;
+    console.log(`  FAILED:\n${textOf(r)}`);
+    continue;
+  }
+  const img = r.content.find((c) => c.type === "image");
+  save(`${s.name}.png`, Buffer.from(img.data, "base64"));
+  await saveTree(`${s.name}.json`);
+  if (s.name === "02-dashboard") await saveTree("03-inspect.json", { include_styles: false });
+  console.log(`  ${textOf(r).split("\n")[0]} (${Date.now() - t0} ms)`);
+}
+
+if (!only) {
+  console.log("\n[error-handling] lvgl_render - intentional compile error");
+  const r = await call("lvgl_render", { code: "this_function_does_not_exist();" });
+  if (r.isError) console.log(`  error reported as expected: ${textOf(r).split("\n")[0]}`);
+  else {
+    failures++;
+    console.log("  UNEXPECTED: no error returned");
+  }
+}
+
+await client.close();
+console.log(failures ? `\n${failures} scenario(s) failed.` : "\nAll examples rendered.");
+process.exit(failures ? 1 : 0);

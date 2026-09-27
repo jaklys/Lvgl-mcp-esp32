@@ -1,35 +1,34 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { SimulatorManager } from "../simulator/manager.js";
+import type { SimulatorBackend } from "../simulator/types.js";
 
-export function registerConfigTools(
-  server: McpServer,
-  manager: SimulatorManager
-): void {
-  server.tool(
+export function registerConfigTools(server: McpServer, backend: SimulatorBackend): void {
+  server.registerTool(
     "lvgl_set_resolution",
-    "Set the virtual display resolution for LVGL rendering. Common ESP32 display sizes: 320x240, 480x320, 800x480.",
     {
-      width: z
-        .number()
-        .min(100)
-        .max(2048)
-        .describe("Display width in pixels"),
-      height: z
-        .number()
-        .min(100)
-        .max(2048)
-        .describe("Display height in pixels"),
+      title: "Set default display resolution",
+      description:
+        "Set the DEFAULT display resolution used by lvgl_render / lvgl_render_full / lvgl_inspect when a call does not pass width/height (initially 800x480). Per-call width/height never change this default. Common ESP32 panels: 320x240, 240x320, 480x320, 480x272, 800x480, 1024x600, 240x240 (round).",
+      inputSchema: {
+        width: z.number().int().min(16).max(4096).describe("Default display width in px (16..4096)."),
+        height: z.number().int().min(16).max(4096).describe("Default display height in px (16..4096)."),
+      },
+      outputSchema: {
+        width: z.number().int(),
+        height: z.number().int(),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ width, height }) => {
-      manager.setResolution(width, height);
+      backend.setDefaults(width, height);
       return {
         content: [
           {
-            type: "text" as const,
-            text: `Display resolution set to ${width}x${height}. Next render will use this resolution.`,
+            type: "text",
+            text: `Default display resolution set to ${width}x${height}. Renders without explicit width/height will use it.`,
           },
         ],
+        structuredContent: { width, height },
       };
     }
   );
