@@ -1,60 +1,58 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SimulatorManager } from "./simulator/manager.js";
-import { registerRenderTools } from "./tools/render.js";
-import { registerInspectTools } from "./tools/inspect.js";
-import { registerConfigTools } from "./tools/config.js";
-import { registerResources } from "./resources/api-reference.js";
 import * as path from "node:path";
-import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { formatDoctorReport } from "./doctor.js";
+import { readPackageVersion, resolveSimulatorDir } from "./paths.js";
+import { createServer } from "./server.js";
+import { SimulatorManager } from "./simulator/manager.js";
+import { killAllChildren } from "./simulator/process.js";
 
-// Determine project root — supports two modes:
-//
-// 1. Dev mode (git clone): LVGL_PROJECT_ROOT env var, or auto-detect as grandparent
-//    of dist/index.js → mcp-server/ → Lvgl-mcp-esp32/
-//
-// 2. npm mode (npx lvgl-mcp-server): simulator/ is downloaded by postinstall
-//    next to dist/ inside the npm package directory.
-const dirname =
-  import.meta.dirname ?? path.dirname(new URL(import.meta.url).pathname);
-const packageDir = path.resolve(dirname, "..");
+// CRITICAL: never write to stdout in a stdio MCP server - it carries JSON-RPC.
+// All diagnostics go to stderr via console.error.
+const log = (msg: string) => console.error(`[lvgl-mcp] ${msg}`);
 
-let projectRoot: string;
-if (process.env["LVGL_PROJECT_ROOT"]) {
-  // Explicit override — always wins
-  projectRoot = process.env["LVGL_PROJECT_ROOT"];
-} else if (existsSync(path.join(packageDir, "simulator"))) {
-  // npm mode: simulator/ was downloaded by postinstall into the package dir
-  projectRoot = packageDir;
-} else {
-  // Dev mode: dist/ is inside mcp-server/ which is inside the project root
-  projectRoot = path.resolve(dirname, "..", "..");
+const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const version = readPackageVersion(packageDir);
+const location = resolveSimulatorDir(packageDir);
+
+log(`lvgl-mcp-server ${version} starting (node ${process.version}, ${process.platform}-${process.arch})`);
+log(`Simulator directory: ${location.simulatorDir} (from ${location.source})`);
+
+const manager = new SimulatorManager({ simulatorDir: location.simulatorDir, serverVersion: version });
+log(`Build directory: ${manager.compilerConfig.buildDir} (generator ${manager.compilerConfig.generator})`);
+
+const server = createServer({ backend: manager, version });
+
+let shuttingDown = false;
+async function shutdown(reason: string, code = 0): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  log(`Shutting down (${reason}).`);
+  killAllChildren();
+  try {
+    await server.close();
+  } catch {
+    /* ignore */
+  }
+  process.exit(code);
 }
 
-// CRITICAL: Never use console.log in stdio MCP servers — it corrupts JSON-RPC.
-// Use console.error for all debug/diagnostic output.
-console.error(`[lvgl-mcp] Starting LVGL MCP server...`);
-console.error(`[lvgl-mcp] Project root: ${projectRoot}`);
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGHUP", () => void shutdown("SIGHUP"));
+process.stdin.on("end", () => void shutdown("stdin closed"));
+process.stdin.on("close", () => void shutdown("stdin closed"));
+process.on("exit", () => killAllChildren());
 
-// Create simulator manager
-const manager = new SimulatorManager(projectRoot);
-
-// Create MCP server
-const server = new McpServer({
-  name: "lvgl-simulator",
-  version: "2.0.0",
-});
-
-// Register tools
-registerRenderTools(server, manager);
-registerInspectTools(server, manager);
-registerConfigTools(server, manager);
-
-// Register resources
-registerResources(server, manager);
-
-// Connect via stdio transport
 const transport = new StdioServerTransport();
 await server.connect(transport);
+log("Server connected and ready.");
 
-console.error("[lvgl-mcp] Server connected and ready.");
+// Toolchain check in the background: tools wait for it and report the
+// diagnosis as an actionable error when it fails.
+manager
+  .doctor()
+  .then((report) => {
+    for (const line of formatDoctorReport(report).split("\n")) log(line);
+  })
+  .catch((err: unknown) => log(`Toolchain check crashed: ${(err as Error).message}`));

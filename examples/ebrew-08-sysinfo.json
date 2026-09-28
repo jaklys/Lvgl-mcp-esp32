@@ -1,510 +1,570 @@
 {
-  "type": "obj",
-  "x": 0,
-  "y": 0,
-  "w": 800,
-  "h": 480,
-  "styles": {
-    "bg_color": "#ffffff",
-    "bg_opa": 255,
-    "text_color": "#212121",
-    "text_font_size": 16,
-    "border_width": 0,
-    "border_color": "#000000",
-    "radius": 0,
-    "pad_top": 0,
-    "pad_bottom": 0,
-    "pad_left": 0,
-    "pad_right": 0,
-    "pad_gap": 11,
-    "opa": 255
+  "format_version": 2,
+  "lvgl_version": "9.6.0",
+  "display": {
+    "width": 800,
+    "height": 480,
+    "rotation": 0,
+    "dpi": 130,
+    "color_format": "XRGB8888",
+    "theme": "light"
   },
-  "children": [
-    {
-      "type": "btn",
-      "x": 350,
-      "y": 10,
-      "w": 100,
-      "h": 40,
-      "styles": {
-        "bg_color": "#d4af37",
-        "bg_opa": 255,
-        "text_color": "#ffffff",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 20,
-        "pad_top": 11,
-        "pad_bottom": 11,
-        "pad_left": 20,
-        "pad_right": 20,
-        "pad_gap": 4,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "label",
-          "x": 6,
-          "y": 1,
-          "w": 49,
-          "h": 16,
-          "text": " ZPET",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#ffffff",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        }
-      ]
+  "screen": {
+    "type": "lv_obj",
+    "x": 0,
+    "y": 0,
+    "w": 800,
+    "h": 480,
+    "abs": {
+      "x1": 0,
+      "y1": 0,
+      "x2": 799,
+      "y2": 479
     },
-    {
-      "type": "label",
-      "x": 30,
-      "y": 20,
-      "w": 138,
-      "h": 22,
-      "text": "SYSTEM INFO",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#2c2c2c",
-        "text_font_size": 22,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
+    "flags": [
+      "clickable",
+      "scrollable"
+    ],
+    "styles": {
+      "bg_opa": 255,
+      "bg_color": "#ffffff",
+      "pad_row": 11,
+      "pad_column": 11,
+      "text_color": "#212121",
+      "font": "montserrat_14",
+      "line_height": 16
     },
-    {
-      "type": "label",
-      "x": 730,
-      "y": 20,
-      "w": 50,
-      "h": 22,
-      "text": "14:25",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#2c2c2c",
-        "text_font_size": 22,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
-    },
-    {
-      "type": "obj",
-      "x": 50,
-      "y": 110,
-      "w": 700,
-      "h": 300,
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 255,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 2,
-        "border_color": "#d4af37",
-        "radius": 10,
-        "pad_top": 15,
-        "pad_bottom": 15,
-        "pad_left": 15,
-        "pad_right": 15,
-        "pad_gap": 11,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "label",
-          "x": 20,
-          "y": 10,
-          "w": 84,
-          "h": 16,
-          "text": "Display FW:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
+    "children": [
+      {
+        "type": "lv_button",
+        "x": 350,
+        "y": 10,
+        "w": 100,
+        "h": 40,
+        "abs": {
+          "x1": 350,
+          "y1": 10,
+          "x2": 449,
+          "y2": 49
         },
-        {
-          "type": "label",
-          "x": 250,
-          "y": 10,
-          "w": 29,
-          "h": 16,
-          "text": "1.0.0",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
+        "flags": [
+          "clickable"
+        ],
+        "styles": {
+          "bg_opa": 255,
+          "bg_color": "#d4af37",
+          "radius": 20,
+          "pad_top": 11,
+          "pad_bottom": 11,
+          "pad_left": 20,
+          "pad_right": 20,
+          "pad_row": 4,
+          "pad_column": 4,
+          "text_color": "#ffffff",
+          "font": "montserrat_14",
+          "line_height": 16
         },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 45,
-          "w": 104,
-          "h": 16,
-          "text": "Controller FW:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 250,
-          "y": 45,
-          "w": 27,
-          "h": 16,
-          "text": "2.3.1",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 80,
-          "w": 81,
-          "h": 16,
-          "text": "WiFi Mode:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 250,
-          "y": 80,
-          "w": 52,
-          "h": 16,
-          "text": "Station",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#4caf50",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 115,
-          "w": 36,
-          "h": 16,
-          "text": "MAC:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 250,
-          "y": 115,
-          "w": 137,
-          "h": 16,
-          "text": "AA:BB:CC:DD:EE:FF",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 150,
-          "w": 37,
-          "h": 16,
-          "text": "SSID:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 250,
-          "y": 150,
-          "w": 53,
-          "h": 16,
-          "text": "Pivovar",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 185,
-          "w": 17,
-          "h": 16,
-          "text": "IP:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 250,
-          "y": 185,
-          "w": 76,
-          "h": 16,
-          "text": "192.168.1.42",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 220,
-          "w": 50,
-          "h": 16,
-          "text": "mDNS:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 250,
-          "y": 220,
-          "w": 81,
-          "h": 16,
-          "text": "ebrew.local",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "btn",
-          "x": 456,
-          "y": 103,
-          "w": 180,
-          "h": 60,
-          "styles": {
-            "bg_color": "#ff9800",
-            "bg_opa": 255,
-            "text_color": "#ffffff",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 10,
-            "pad_top": 11,
-            "pad_bottom": 11,
-            "pad_left": 20,
-            "pad_right": 20,
-            "pad_gap": 4,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 35,
-              "y": 3,
-              "w": 70,
-              "h": 32,
-              "text": "Prepnout\nna AP",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 16,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
+        "children": [
+          {
+            "type": "lv_label",
+            "x": 6,
+            "y": 1,
+            "w": 49,
+            "h": 16,
+            "abs": {
+              "x1": 376,
+              "y1": 22,
+              "x2": 424,
+              "y2": 37
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": " ZPET",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#ffffff",
+              "font": "montserrat_14",
+              "line_height": 16
             }
-          ]
+          }
+        ]
+      },
+      {
+        "type": "lv_label",
+        "x": 30,
+        "y": 20,
+        "w": 138,
+        "h": 22,
+        "abs": {
+          "x1": 30,
+          "y1": 20,
+          "x2": 167,
+          "y2": 41
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "SYSTEM INFO",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#2c2c2c",
+          "font": "montserrat_20",
+          "line_height": 22
         }
-      ]
-    }
-  ]
+      },
+      {
+        "type": "lv_label",
+        "x": 730,
+        "y": 20,
+        "w": 50,
+        "h": 22,
+        "abs": {
+          "x1": 730,
+          "y1": 20,
+          "x2": 779,
+          "y2": 41
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "14:25",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#2c2c2c",
+          "font": "montserrat_20",
+          "line_height": 22
+        }
+      },
+      {
+        "type": "lv_obj",
+        "x": 50,
+        "y": 110,
+        "w": 700,
+        "h": 300,
+        "abs": {
+          "x1": 50,
+          "y1": 110,
+          "x2": 749,
+          "y2": 409
+        },
+        "flags": [
+          "clickable"
+        ],
+        "styles": {
+          "bg_opa": 255,
+          "bg_color": "#ffffff",
+          "border_width": 2,
+          "border_color": "#d4af37",
+          "radius": 10,
+          "pad_top": 15,
+          "pad_bottom": 15,
+          "pad_left": 15,
+          "pad_right": 15,
+          "pad_row": 11,
+          "pad_column": 11,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 10,
+            "w": 84,
+            "h": 16,
+            "abs": {
+              "x1": 87,
+              "y1": 137,
+              "x2": 170,
+              "y2": 152
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Display FW:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 250,
+            "y": 10,
+            "w": 29,
+            "h": 16,
+            "abs": {
+              "x1": 317,
+              "y1": 137,
+              "x2": 345,
+              "y2": 152
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "1.0.0",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 45,
+            "w": 104,
+            "h": 16,
+            "abs": {
+              "x1": 87,
+              "y1": 172,
+              "x2": 190,
+              "y2": 187
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Controller FW:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 250,
+            "y": 45,
+            "w": 27,
+            "h": 16,
+            "abs": {
+              "x1": 317,
+              "y1": 172,
+              "x2": 343,
+              "y2": 187
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "2.3.1",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 80,
+            "w": 81,
+            "h": 16,
+            "abs": {
+              "x1": 87,
+              "y1": 207,
+              "x2": 167,
+              "y2": 222
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "WiFi Mode:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 250,
+            "y": 80,
+            "w": 52,
+            "h": 16,
+            "abs": {
+              "x1": 317,
+              "y1": 207,
+              "x2": 368,
+              "y2": 222
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Station",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#4caf50",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 115,
+            "w": 36,
+            "h": 16,
+            "abs": {
+              "x1": 87,
+              "y1": 242,
+              "x2": 122,
+              "y2": 257
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "MAC:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 250,
+            "y": 115,
+            "w": 137,
+            "h": 16,
+            "abs": {
+              "x1": 317,
+              "y1": 242,
+              "x2": 453,
+              "y2": 257
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "AA:BB:CC:DD:EE:FF",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 150,
+            "w": 37,
+            "h": 16,
+            "abs": {
+              "x1": 87,
+              "y1": 277,
+              "x2": 123,
+              "y2": 292
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "SSID:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 250,
+            "y": 150,
+            "w": 53,
+            "h": 16,
+            "abs": {
+              "x1": 317,
+              "y1": 277,
+              "x2": 369,
+              "y2": 292
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Pivovar",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 185,
+            "w": 17,
+            "h": 16,
+            "abs": {
+              "x1": 87,
+              "y1": 312,
+              "x2": 103,
+              "y2": 327
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "IP:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 250,
+            "y": 185,
+            "w": 76,
+            "h": 16,
+            "abs": {
+              "x1": 317,
+              "y1": 312,
+              "x2": 392,
+              "y2": 327
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "192.168.1.42",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 220,
+            "w": 50,
+            "h": 16,
+            "abs": {
+              "x1": 87,
+              "y1": 347,
+              "x2": 136,
+              "y2": 362
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "mDNS:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 250,
+            "y": 220,
+            "w": 81,
+            "h": 16,
+            "abs": {
+              "x1": 317,
+              "y1": 347,
+              "x2": 397,
+              "y2": 362
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "ebrew.local",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_button",
+            "x": 456,
+            "y": 103,
+            "w": 180,
+            "h": 60,
+            "abs": {
+              "x1": 523,
+              "y1": 230,
+              "x2": 702,
+              "y2": 289
+            },
+            "flags": [
+              "clickable"
+            ],
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#ff9800",
+              "radius": 10,
+              "pad_top": 11,
+              "pad_bottom": 11,
+              "pad_left": 20,
+              "pad_right": 20,
+              "pad_row": 4,
+              "pad_column": 4,
+              "text_color": "#ffffff",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 35,
+                "y": 3,
+                "w": 70,
+                "h": 32,
+                "abs": {
+                  "x1": 578,
+                  "y1": 244,
+                  "x2": 647,
+                  "y2": 275
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "Prepnout\nna AP",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_14",
+                  "line_height": 16
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -1,0 +1,8 @@
+[1/2] Building C object CMakeFiles\lvgl_sim.dir\user_code.c.obj
+FAILED: CMakeFiles/lvgl_sim.dir/user_code.c.obj
+C:\PROGRA~1\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1440~1.338\bin\Hostx64\x64\cl.exe  /nologo -IC:\Users\dev\lvgl-mcp\simulator -IC:\Users\dev\lvgl-mcp\simulator\hal /DWIN32 /D_WINDOWS /O2 /Ob2 /DNDEBUG -MD /W3 /we4013 /utf-8 /showIncludes /FoCMakeFiles\lvgl_sim.dir\user_code.c.obj /FdCMakeFiles\lvgl_sim.dir\ /FS -c C:\Users\dev\lvgl-mcp\simulator\build\user_code.c
+snippet.c(2): error C4013: 'undefined_fn' undefined; assuming extern returning int
+snippet.c(3): warning C4047: 'initializing': 'int' differs in levels of indirection from 'char [4]'
+C:\Users\dev\lvgl-mcp\simulator\build\user_code.c(12,5): error C2143: syntax error: missing ';' before '}'
+C:\Users\dev\lvgl-mcp\simulator\lib\lvgl\src\core\lv_obj.h(120): note: see declaration of 'lv_obj_create'
+ninja: build stopped: subcommand failed.

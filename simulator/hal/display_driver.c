@@ -1,85 +1,43 @@
 #include "display_driver.h"
 #include <stdlib.h>
-#include <string.h>
-
-static uint8_t *framebuffer = NULL;
-static uint8_t *draw_buf    = NULL;
-static int32_t disp_width   = 0;
-static int32_t disp_height  = 0;
-static lv_display_t *display = NULL;
 
 /**
- * Flush callback: copy rendered pixels from LVGL draw buffer into our
- * persistent framebuffer. With FULL render mode the area covers the
- * entire display, so px_map contains a complete frame.
+ * Flush callback. In DIRECT mode LVGL renders straight into the full-screen
+ * draw buffer, which therefore always holds the complete current frame in
+ * logical (rotated) orientation. There is no panel to send it to.
  */
 static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
 {
-    int32_t w = lv_area_get_width(area);
-    int32_t h = lv_area_get_height(area);
-    int32_t stride = disp_width * 4; /* 4 bytes per pixel (XRGB8888) */
-
-    for (int32_t y = 0; y < h; y++) {
-        int32_t fb_offset = ((area->y1 + y) * disp_width + area->x1) * 4;
-        int32_t px_offset = y * w * 4;
-        memcpy(&framebuffer[fb_offset], &px_map[px_offset], (size_t)(w * 4));
-    }
-
+    LV_UNUSED(area);
+    LV_UNUSED(px_map);
     lv_display_flush_ready(disp);
-    (void)stride;
 }
 
 lv_display_t *headless_display_init(int32_t width, int32_t height)
 {
-    disp_width  = width;
-    disp_height = height;
+    lv_display_t *display = lv_display_create(width, height);
+    if (!display) return NULL;
 
-    uint32_t buf_size = (uint32_t)(width * height * 4);
+    /*
+     * With auto stride, LVGL reshapes the draw buffer to the logical
+     * resolution on every refresh, so after a 90/270 degree rotation the
+     * rows are `height` pixels wide. Allocate enough for either orientation.
+     */
+    lv_color_format_t cf = lv_display_get_color_format(display);
+    uint32_t size_0  = lv_draw_buf_width_to_stride((uint32_t)width, cf) * (uint32_t)height;
+    uint32_t size_90 = lv_draw_buf_width_to_stride((uint32_t)height, cf) * (uint32_t)width;
+    uint32_t buf_size = size_0 > size_90 ? size_0 : size_90;
 
-    framebuffer = (uint8_t *)malloc(buf_size);
-    if (!framebuffer) return NULL;
-    memset(framebuffer, 0xFF, buf_size); /* white background */
-
-    draw_buf = (uint8_t *)malloc(buf_size);
-    if (!draw_buf) {
-        free(framebuffer);
-        framebuffer = NULL;
+    /* Over-allocate so the start can be aligned to LV_DRAW_BUF_ALIGN */
+    void *buf_mem = malloc((size_t)buf_size + LV_DRAW_BUF_ALIGN);
+    if (!buf_mem) {
+        lv_display_delete(display);
         return NULL;
     }
 
-    display = lv_display_create(width, height);
-    lv_display_set_buffers(display, draw_buf, NULL, buf_size,
-                           LV_DISPLAY_RENDER_MODE_FULL);
+    lv_display_set_buffers(display, lv_draw_buf_align(buf_mem, cf), NULL, buf_size,
+                           LV_DISPLAY_RENDER_MODE_DIRECT);
     lv_display_set_flush_cb(display, flush_cb);
 
     return display;
-}
-
-uint8_t *headless_display_get_framebuffer(void)
-{
-    return framebuffer;
-}
-
-int32_t headless_display_get_width(void)
-{
-    return disp_width;
-}
-
-int32_t headless_display_get_height(void)
-{
-    return disp_height;
-}
-
-void headless_display_deinit(void)
-{
-    if (display) {
-        lv_display_delete(display);
-        display = NULL;
-    }
-    free(draw_buf);
-    draw_buf = NULL;
-    free(framebuffer);
-    framebuffer = NULL;
-    disp_width  = 0;
-    disp_height = 0;
 }

@@ -1,342 +1,438 @@
 name: Release
 
+# Release flow: push tag vX.Y.Z (== mcp-server/package.json version)
+#   -> verify-version -> build (linux, macos, windows) -> create-release -> publish-npm
+# workflow_dispatch re-runs the flow for an EXISTING tag (it never creates one).
+# If only a late job failed (e.g. npm publish), use "Re-run failed jobs" instead:
+# verify-version refuses tags that already have a release or an npm version.
 on:
   push:
     tags: ["v*"]
-    branches: ["release/v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to create (e.g. v2.0.0); the release is cut from the selected branch"
+        description: "Existing tag to release, e.g. v2.1.0 (must equal v + mcp-server/package.json version)"
         required: true
         type: string
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22"
+  PACKAGE_NAME: lvgl-mcp-server
 
 jobs:
-  build-windows:
-    name: Build Windows Release
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: mcp-server/package-lock.json
-
-      - uses: ilammy/msvc-dev-cmd@v1
-
-      # Build simulator
-      - name: Build simulator
-        run: |
-          cmake -S simulator -B simulator/build -G Ninja -DCMAKE_C_COMPILER=cl -DCMAKE_BUILD_TYPE=Release
-          cmake --build simulator/build --config Release
-
-      # Smoke test simulator
-      - name: Smoke test simulator
-        run: |
-          simulator\build\lvgl_sim.exe --output-png simulator\build\test.png --output-json simulator\build\test.json
-          if (!(Test-Path simulator\build\test.png)) { throw "PNG not generated" }
-          Write-Host "Simulator OK"
-
-      # Build MCP server
-      - name: Build MCP server
-        working-directory: mcp-server
-        run: |
-          npm ci
-          npx tsc
-
-      # Integration test
-      - name: Integration test
-        working-directory: mcp-server
-        run: |
-          $init = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0.1"}}}'
-          $result = $init | node dist/index.js 2>$null
-          if ($result -match '"lvgl-simulator"') {
-            Write-Host "MCP server OK"
-          } else {
-            throw "MCP server did not respond correctly"
-          }
-
-      # Package release archive
-      - name: Package release
-        run: |
-          New-Item -ItemType Directory -Force -Path release\simulator
-          New-Item -ItemType Directory -Force -Path release\mcp-server
-
-          # Full simulator directory (source + build artifacts for incremental compilation)
-          Copy-Item simulator\CMakeLists.txt release\simulator\
-          Copy-Item simulator\lv_conf.h release\simulator\
-          Copy-Item simulator\main.c release\simulator\
-          Copy-Item simulator\hal\ release\simulator\hal\ -Recurse
-          Copy-Item simulator\export\ release\simulator\export\ -Recurse
-          Copy-Item simulator\templates\ release\simulator\templates\ -Recurse
-          Copy-Item simulator\lib\ release\simulator\lib\ -Recurse
-
-          # Build artifacts (prebuilt LVGL lib + exe)
-          Copy-Item simulator\build\ release\simulator\build\ -Recurse
-          # Remove test outputs from build dir
-          Remove-Item release\simulator\build\test.png -ErrorAction SilentlyContinue
-          Remove-Item release\simulator\build\test.json -ErrorAction SilentlyContinue
-          # Strip machine-specific CMake cache/generator files (breaks reconfigure on user machines)
-          Remove-Item release\simulator\build\CMakeCache.txt -ErrorAction SilentlyContinue
-          Remove-Item release\simulator\build\CMakeFiles\ -Recurse -Force -ErrorAction SilentlyContinue
-          Get-ChildItem release\simulator\build\ -Recurse -Filter '.ninja*' -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
-          Get-ChildItem release\simulator\build\ -Recurse -Include 'build.ninja','rules.ninja','.ninja_deps','.ninja_log' -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
-
-          # MCP server (dist + deps)
-          Copy-Item mcp-server\dist\ release\mcp-server\dist\ -Recurse
-          Copy-Item mcp-server\bin\ release\mcp-server\bin\ -Recurse
-          Copy-Item mcp-server\package.json release\mcp-server\
-          Copy-Item mcp-server\package-lock.json release\mcp-server\
-
-          # Install production deps only
-          Push-Location release\mcp-server
-          npm ci --omit=dev --ignore-scripts
-          Pop-Location
-
-          # Config example
-          @"
-          {
-            "mcpServers": {
-              "lvgl-simulator": {
-                "command": "npx",
-                "args": ["lvgl-mcp-server"]
-              }
-            }
-          }
-          "@ | Out-File -Encoding utf8 release\claude-config-example.json
-
-          # Zip it
-          Compress-Archive -Path release\* -DestinationPath lvgl-mcp-esp32-windows-x64.zip
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lvgl-mcp-esp32-windows-x64
-          path: lvgl-mcp-esp32-windows-x64.zip
-
-  build-linux:
-    name: Build Linux Release
+  verify-version:
+    name: Verify tag and version
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.check.outputs.tag }}
+      version: ${{ steps.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
-          submodules: recursive
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: mcp-server/package-lock.json
-
-      - name: Install build dependencies
+      - name: Check tag, package.json, CHANGELOG, GitHub release and npm
+        id: check
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build
+          fail() { echo "::error::$*"; exit 1; }
 
-      # Build simulator
-      - name: Build simulator
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "tag '$TAG' is not of the form vMAJOR.MINOR.PATCH"
+
+          version="$(node -p "require('./mcp-server/package.json').version")"
+          [ "$TAG" = "v$version" ] || fail "tag $TAG does not match mcp-server/package.json version $version"
+
+          grep -qE "^## \[${version//./\\.}\]" CHANGELOG.md || fail "CHANGELOG.md has no '## [$version]' section"
+
+          if out="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName 2>&1)"; then
+            fail "GitHub release $TAG already exists"
+          elif ! grep -qi "not found" <<<"$out"; then
+            fail "could not query GitHub releases: $out"
+          fi
+
+          npm view "$PACKAGE_NAME" name >/dev/null || fail "npm registry query for $PACKAGE_NAME failed"
+          published="$(npm view "${PACKAGE_NAME}@${version}" version 2>/dev/null || true)"
+          [ -z "$published" ] || fail "${PACKAGE_NAME}@${version} is already published on npm"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $TAG"
+
+  build:
+    name: Build ${{ matrix.asset }}
+    needs: verify-version
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: lvgl-mcp-esp32-linux-x64.tar.gz
+          # Apple Silicon. The archive is a source tree, so it also serves
+          # Intel Macs (CI covers them on macos-26-intel).
+          - os: macos-latest
+            asset: lvgl-mcp-esp32-macos.tar.gz
+          - os: windows-latest
+            asset: lvgl-mcp-esp32-windows-x64.zip
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ needs.verify-version.outputs.tag }}
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # No dependency cache in the release pipeline (cache poisoning).
+          package-manager-cache: false
+
+      - name: Install Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build
+
+      # The macOS images ship Xcode (Apple clang), CMake, Ninja and GNU tar;
+      # install only what is missing. GNU tar packs the archive: bsdtar would
+      # add AppleDouble (._*) entries and macOS extended attributes.
+      - name: Toolchain (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          command -v ninja >/dev/null || brew install ninja
+          command -v cmake >/dev/null || brew install cmake
+          command -v gtar >/dev/null || brew install gnu-tar
+          echo "Xcode: $(xcode-select -p)"
+          cc --version | head -n1
+          cmake --version | head -n1
+          echo "ninja $(ninja --version)"
+
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+
+      # Windows steps use pwsh, not Git Bash: its /usr/bin/link would shadow
+      # MSVC's link.exe.
+      - name: Build simulator (Linux, macOS)
+        if: runner.os != 'Windows'
         run: |
           cmake -S simulator -B simulator/build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build simulator/build
+          cmake --build simulator/build --parallel
 
-      # Smoke test simulator
-      - name: Smoke test simulator
+      - name: Build simulator (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          ./simulator/build/lvgl_sim --output-png simulator/build/test.png --output-json simulator/build/test.json
-          if [ ! -s simulator/build/test.png ]; then echo "PNG not generated"; exit 1; fi
-          echo "Simulator OK"
+          cmake -S simulator -B simulator/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
+          if ($LASTEXITCODE -ne 0) { throw "configure failed" }
+          cmake --build simulator/build --parallel
+          if ($LASTEXITCODE -ne 0) { throw "build failed" }
 
-      # Build MCP server
+      - name: Smoke test (Linux, macOS)
+        if: runner.os != 'Windows'
+        run: |
+          out="$RUNNER_TEMP/smoke"
+          mkdir -p "$out"
+          ./simulator/build/lvgl_sim --width 320 --height 240 --time-ms 330 \
+            --output-png "$out/smoke.png" --output-json "$out/smoke.json"
+          python3 - "$out/smoke.png" "$out/smoke.json" 320 240 <<'PY'
+          import json, struct, sys
+          png, js, w, h = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+          with open(png, "rb") as f:
+              head = f.read(24)
+          assert head[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG file"
+          assert head[12:16] == b"IHDR", "PNG has no IHDR chunk"
+          pw, ph = struct.unpack(">II", head[16:24])
+          assert (pw, ph) == (w, h), f"PNG is {pw}x{ph}, expected {w}x{h}"
+          with open(js, encoding="utf-8") as f:
+              doc = json.load(f)
+          assert doc.get("format_version") == 2, f"format_version is {doc.get('format_version')!r}"
+          print(f"Smoke test OK: {pw}x{ph}, LVGL {doc.get('lvgl_version')}")
+          PY
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "smoke"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $png = Join-Path $out "smoke.png"
+          $json = Join-Path $out "smoke.json"
+          & .\simulator\build\lvgl_sim.exe --width 320 --height 240 --time-ms 330 --output-png $png --output-json $json
+          if ($LASTEXITCODE -ne 0) { throw "lvgl_sim exited with $LASTEXITCODE" }
+          $bytes = [System.IO.File]::ReadAllBytes($png)
+          if ([System.Text.Encoding]::ASCII.GetString($bytes, 1, 3) -ne "PNG") { throw "not a PNG file" }
+          if ([System.Text.Encoding]::ASCII.GetString($bytes, 12, 4) -ne "IHDR") { throw "PNG has no IHDR chunk" }
+          $w = ([int]$bytes[16] -shl 24) -bor ([int]$bytes[17] -shl 16) -bor ([int]$bytes[18] -shl 8) -bor [int]$bytes[19]
+          $h = ([int]$bytes[20] -shl 24) -bor ([int]$bytes[21] -shl 16) -bor ([int]$bytes[22] -shl 8) -bor [int]$bytes[23]
+          if ($w -ne 320 -or $h -ne 240) { throw "PNG is ${w}x${h}, expected 320x240" }
+          $doc = Get-Content -Raw -Encoding utf8 $json | ConvertFrom-Json
+          if ($doc.format_version -ne 2) { throw "format_version is $($doc.format_version), expected 2" }
+          Write-Host "Smoke test OK: ${w}x${h}, LVGL $($doc.lvgl_version)"
+
       - name: Build MCP server
         working-directory: mcp-server
         run: |
-          npm ci
-          npx tsc
+          npm ci --ignore-scripts
+          npm run build
 
-      # Integration test
-      - name: Integration test
+      - name: Unit + end-to-end tests
         working-directory: mcp-server
+        env:
+          LVGL_E2E: "1"
+        run: npm test
+
+      # Slim, platform-neutral source bundle: the server compiles every render,
+      # so users need the simulator sources + LVGL sources, not our objects.
+      # A configured build dir is NOT shipped: CMakeCache.txt/build.ninja hold
+      # absolute runner paths, so on another machine CMake has to reconfigure
+      # and Ninja rebuilds everything anyway (no relink-only first render).
+      - name: Stage slim archive
+        shell: bash
+        env:
+          COPYFILE_DISABLE: "1" # macOS: no AppleDouble files, whatever tar runs
         run: |
-          init='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0.1"}}}'
-          result=$(echo "$init" | node dist/index.js 2>/dev/null)
-          if echo "$result" | grep -q '"lvgl-simulator"'; then
-            echo "MCP server OK"
-          else
-            echo "MCP server did not respond correctly: $result"
-            exit 1
+          set -euo pipefail
+          tar=tar
+          if [ "$RUNNER_OS" = "macOS" ]; then tar=gtar; fi
+          temp="$RUNNER_TEMP"
+          if command -v cygpath >/dev/null 2>&1; then temp="$(cygpath -u "$RUNNER_TEMP")"; fi
+          stage="$temp/stage"
+          rm -rf "$stage"
+          mkdir -p "$stage/simulator" "$stage/mcp-server/scripts"
+
+          "$tar" -C simulator \
+            --exclude=./build \
+            --exclude=./lib/lvgl/tests \
+            --exclude=./lib/lvgl/demos \
+            --exclude=./lib/lvgl/docs \
+            --exclude=./lib/lvgl/examples \
+            --exclude=./lib/lvgl/scripts \
+            --exclude='./lib/lvgl/.git*' \
+            --exclude='./.git*' \
+            -cf - . | "$tar" -C "$stage/simulator" -xf -
+
+          cp -R mcp-server/dist mcp-server/bin "$stage/mcp-server/"
+          cp mcp-server/package.json mcp-server/package-lock.json "$stage/mcp-server/"
+          cp mcp-server/scripts/postinstall.mjs "$stage/mcp-server/scripts/"
+          cp LICENSE README.md CHANGELOG.md "$stage/"
+
+          echo "Staged size:"; du -sh "$stage" "$stage/simulator/lib/lvgl"
+
+      # Prove the slim tree still configures and builds (e.g. nothing in the
+      # removed LVGL folders is needed), in a build dir outside the stage.
+      - name: Verify the slim tree builds (Linux, macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S "$RUNNER_TEMP/stage/simulator" -B "$RUNNER_TEMP/slim-build" -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/slim-build" --parallel
+          "$RUNNER_TEMP/slim-build/lvgl_sim" --width 64 --height 64 \
+            --output-png "$RUNNER_TEMP/slim.png" --output-json "$RUNNER_TEMP/slim.json"
+          test -s "$RUNNER_TEMP/slim.png"
+          if [ -e "$RUNNER_TEMP/stage/simulator/build" ]; then echo "::error::build dir leaked into the stage"; exit 1; fi
+
+      - name: Verify the slim tree builds (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $src = Join-Path $env:RUNNER_TEMP "stage\simulator"
+          $bld = Join-Path $env:RUNNER_TEMP "slim-build"
+          cmake -S $src -B $bld -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
+          if ($LASTEXITCODE -ne 0) { throw "configure of the slim tree failed" }
+          cmake --build $bld --parallel
+          if ($LASTEXITCODE -ne 0) { throw "build of the slim tree failed" }
+          $png = Join-Path $env:RUNNER_TEMP "slim.png"
+          & (Join-Path $bld "lvgl_sim.exe") --width 64 --height 64 --output-png $png --output-json (Join-Path $env:RUNNER_TEMP "slim.json")
+          if ($LASTEXITCODE -ne 0) { throw "slim lvgl_sim exited with $LASTEXITCODE" }
+          if ((Get-Item $png).Length -eq 0) { throw "empty PNG" }
+          if (Test-Path (Join-Path $src "build")) { throw "build dir leaked into the stage" }
+
+      - name: Create archive (Linux, macOS)
+        if: runner.os != 'Windows'
+        env:
+          COPYFILE_DISABLE: "1"
+        run: |
+          tar=tar
+          if [ "$RUNNER_OS" = "macOS" ]; then tar=gtar; fi
+          "$tar" -czf "${{ matrix.asset }}" -C "$RUNNER_TEMP/stage" .
+          "$tar" -tzf "${{ matrix.asset }}" > "$RUNNER_TEMP/archive-list.txt"
+          grep -xE '(\./)?simulator/CMakeLists\.txt' "$RUNNER_TEMP/archive-list.txt" >/dev/null \
+            || { echo "::error::simulator/CMakeLists.txt missing from the archive"; exit 1; }
+          if grep -E '(^|/)\._' "$RUNNER_TEMP/archive-list.txt"; then
+            echo "::error::AppleDouble (._*) entries in the archive"; exit 1
           fi
 
-      # Package release archive
-      - name: Package release
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          mkdir -p release/simulator release/mcp-server
+          $dest = Join-Path $env:GITHUB_WORKSPACE "${{ matrix.asset }}"
+          Push-Location (Join-Path $env:RUNNER_TEMP "stage")
+          try {
+            7z a -tzip -mx=9 $dest .\*
+            if ($LASTEXITCODE -ne 0) { throw "7z failed with $LASTEXITCODE" }
+          } finally { Pop-Location }
+          # postinstall extracts with the bsdtar that ships with Windows; make
+          # sure it can read the zip and sees forward-slash entry names.
+          $list = & "$env:SystemRoot\System32\tar.exe" -tf $dest
+          if ($LASTEXITCODE -ne 0) { throw "tar.exe cannot read $dest" }
+          if (-not ($list -match '^(\./)?simulator/CMakeLists\.txt$')) { throw "simulator/CMakeLists.txt missing from the zip" }
 
-          # Full simulator directory (source + build artifacts for incremental compilation)
-          cp simulator/CMakeLists.txt release/simulator/
-          cp simulator/lv_conf.h release/simulator/
-          cp simulator/main.c release/simulator/
-          cp -r simulator/hal release/simulator/hal
-          cp -r simulator/export release/simulator/export
-          cp -r simulator/templates release/simulator/templates
-          cp -r simulator/lib release/simulator/lib
+      - name: Archive size
+        shell: bash
+        run: ls -l "${{ matrix.asset }}"
 
-          # Build artifacts (prebuilt LVGL lib + binary)
-          cp -r simulator/build release/simulator/build
-          # Remove test outputs from build dir
-          rm -f release/simulator/build/test.png release/simulator/build/test.json
-          # Strip machine-specific CMake cache/generator files (breaks reconfigure on user machines)
-          rm -f release/simulator/build/CMakeCache.txt
-          rm -rf release/simulator/build/CMakeFiles
-          find release/simulator/build -name '.ninja*' -type f -delete
-          find release/simulator/build -name 'build.ninja' -type f -delete
-          find release/simulator/build -name 'rules.ninja' -type f -delete
-
-          # MCP server (dist + deps)
-          cp -r mcp-server/dist release/mcp-server/dist
-          cp -r mcp-server/bin release/mcp-server/bin
-          cp mcp-server/package.json release/mcp-server/
-          cp mcp-server/package-lock.json release/mcp-server/
-
-          # Install production deps only
-          ( cd release/mcp-server && npm ci --omit=dev --ignore-scripts )
-
-          # Config example
-          cat > release/claude-config-example.json <<'JSON'
-          {
-            "mcpServers": {
-              "lvgl-simulator": {
-                "command": "npx",
-                "args": ["lvgl-mcp-server"]
-              }
-            }
-          }
-          JSON
-
-          # Tarball with simulator/ at archive root
-          tar -czf lvgl-mcp-esp32-linux-x64.tar.gz -C release .
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
-          name: lvgl-mcp-esp32-linux-x64
-          path: lvgl-mcp-esp32-linux-x64.tar.gz
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+          if-no-files-found: error
+          retention-days: 7
 
   create-release:
-    name: Create GitHub Release
+    name: Create GitHub release
+    needs: [verify-version, build]
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux]
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the release
+      id-token: write # build provenance attestation
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
         with:
-          pattern: lvgl-mcp-esp32-*-x64
+          ref: refs/tags/${{ needs.verify-version.outputs.tag }}
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist-assets
+          pattern: lvgl-mcp-esp32-*
           merge-multiple: true
 
-      - name: Generate release notes
-        id: notes
-        env:
-          INPUT_TAG: ${{ inputs.tag }}
+      - name: Checksums
+        working-directory: dist-assets
         run: |
-          if [ -n "$INPUT_TAG" ]; then
-            TAG="$INPUT_TAG"
-          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            TAG=${GITHUB_REF#refs/tags/}
-          else
-            # release/v* branch push: derive the tag from the package version
-            TAG="v$(node -p "require('./mcp-server/package.json').version")"
+          assets=(lvgl-mcp-esp32-linux-x64.tar.gz lvgl-mcp-esp32-macos.tar.gz lvgl-mcp-esp32-windows-x64.zip)
+          for a in "${assets[@]}"; do test -f "$a" || { echo "::error::$a is missing"; exit 1; }; done
+          sha256sum "${assets[@]}" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            dist-assets/lvgl-mcp-esp32-linux-x64.tar.gz
+            dist-assets/lvgl-mcp-esp32-macos.tar.gz
+            dist-assets/lvgl-mcp-esp32-windows-x64.zip
+
+      - name: Release notes from CHANGELOG.md
+        env:
+          VERSION: ${{ needs.verify-version.outputs.version }}
+        run: |
+          awk -v v="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::CHANGELOG.md has no (or an empty) section for $VERSION"
+            exit 1
           fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          cat <<'NOTES' > release-notes.md
-          ## LVGL MCP Server for ESP32
+          cat >> release-notes.md <<'EOF'
 
-          Headless LVGL simulator with MCP integration for visual UI development feedback.
+          ---
+          **Install:** `npm install -g lvgl-mcp-server` (the matching simulator is downloaded and SHA-256 verified on install), or `claude mcp add lvgl-simulator -- npx -y lvgl-mcp-server@2`.
+          A C/C++ compiler, CMake >= 3.16 and Ninja (or Make) are required: every render compiles against LVGL (Windows: Visual Studio Build Tools; macOS: `xcode-select --install` and `brew install cmake ninja`; Linux: gcc or clang).
 
-          ### Install via npm (recommended)
-
-          ```
-          npm install -g lvgl-mcp-server
-          ```
-
-          Then add to `.claude/settings.json`:
-          ```json
-          {
-            "mcpServers": {
-              "lvgl-simulator": {
-                "command": "npx",
-                "args": ["lvgl-mcp-server"]
-              }
-            }
-          }
-          ```
-
-          The simulator binary is downloaded automatically on install.
-
-          ### Manual install (from archive)
-          1. Extract the archive (`.zip` on Windows, `.tar.gz` on Linux)
-          2. `cd mcp-server && npm ci --omit=dev`
-          3. Add to Claude Code config with full paths to `mcp-server/dist/index.js`
-
-          ### What's included
-          - `simulator/` — Full LVGL 9.5 headless renderer (source + prebuilt binary)
-            - Windows x64 (MSVC) in the `.zip`
-            - Linux x64 (GCC) in the `.tar.gz`
-          - `mcp-server/` — Node.js MCP server (stdio transport)
-
-          ### Requirements
-
-          **Windows**
-          - Windows 10/11 x64
-          - Node.js 18+
-          - Visual Studio Build Tools 2019+ (for incremental compilation)
-
-          **Linux**
-          - Linux x64
-          - Node.js 18+
-          - gcc or clang, cmake ≥ 3.16, and ninja or make (for incremental compilation)
-          NOTES
+          **Verify downloads:** `sha256sum --ignore-missing -c SHA256SUMS.txt` (macOS: `shasum -a 256 --ignore-missing -c SHA256SUMS.txt`) and `gh attestation verify <archive> --repo jaklys/Lvgl-mcp-esp32`.
+          EOF
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.notes.outputs.tag }}
-          name: ${{ steps.notes.outputs.tag }}
-          target_commitish: ${{ github.sha }}
-          body_path: release-notes.md
-          files: |
-            lvgl-mcp-esp32-windows-x64.zip
-            lvgl-mcp-esp32-linux-x64.tar.gz
-          draft: false
-          prerelease: false
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.verify-version.outputs.tag }}
+        run: |
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            dist-assets/lvgl-mcp-esp32-linux-x64.tar.gz \
+            dist-assets/lvgl-mcp-esp32-macos.tar.gz \
+            dist-assets/lvgl-mcp-esp32-windows-x64.zip \
+            dist-assets/SHA256SUMS.txt
 
   publish-npm:
     name: Publish to npm
+    needs: [verify-version, create-release]
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux]
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # npm provenance (and trusted publishing)
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
         with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
+          ref: refs/tags/${{ needs.verify-version.outputs.tag }}
+          persist-credentials: false
 
-      - name: Build MCP server
+      # Node 24 ships npm 11, which supports both --provenance with a token
+      # and npm trusted publishing (OIDC, npm >= 11.5.1).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Build and test
         working-directory: mcp-server
         run: |
-          npm ci
-          npx tsc
+          npm ci --ignore-scripts
+          npm run build
+          npm test
 
-      - name: Publish to npm
+      - name: Check package version
         working-directory: mcp-server
-        run: npm publish --access public
+        env:
+          VERSION: ${{ needs.verify-version.outputs.version }}
+        run: test "$(node -p "require('./package.json').version")" = "$VERSION"
+
+      # Auth: NPM_TOKEN (an npm "automation"/granular token with publish
+      # rights) is used when the secret is set. Alternative without a stored
+      # secret: configure npm trusted publishing for this repository and the
+      # workflow file "release.yml" on npmjs.com ->
+      # package settings -> Trusted publishers, then delete the NPM_TOKEN
+      # secret; npm then authenticates with the job's OIDC token (id-token:
+      # write above) and adds provenance automatically.
+      - name: Publish
+        working-directory: mcp-server
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
+
+      - name: Confirm the version is live
+        env:
+          VERSION: ${{ needs.verify-version.outputs.version }}
+        run: |
+          for _ in 1 2 3 4 5 6; do
+            if [ "$(npm view "${PACKAGE_NAME}@${VERSION}" version 2>/dev/null)" = "$VERSION" ]; then
+              echo "${PACKAGE_NAME}@${VERSION} is live"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning::${PACKAGE_NAME}@${VERSION} not visible on the registry yet"

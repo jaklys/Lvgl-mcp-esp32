@@ -1,0 +1,10 @@
+[1/2] Building C object CMakeFiles/lvgl_sim.dir/user_code.c.o
+snippet.c: In function 'create_ui':
+snippet.c:1:1: warning: implicit declaration of function 'undefined_fn' [-Wimplicit-function-declaration]
+[2/2] Linking C executable lvgl_sim
+FAILED: lvgl_sim 
+: && /usr/bin/cc -O3 -DNDEBUG  CMakeFiles/lvgl_sim.dir/main.c.o CMakeFiles/lvgl_sim.dir/hal/display_driver.c.o CMakeFiles/lvgl_sim.dir/export/screenshot.c.o CMakeFiles/lvgl_sim.dir/export/widget_tree.c.o CMakeFiles/lvgl_sim.dir/user_code.c.o -o lvgl_sim  lib/lvgl/lib/liblvgl.a  -lm  lib/lvgl/lib/liblvgl_thorvg.a  lib/lvgl/lib/liblvgl.a  lib/lvgl/lib/liblvgl_thorvg.a && :
+/usr/bin/ld: CMakeFiles/lvgl_sim.dir/user_code.c.o: in function `create_ui':
+user_code.c:(.text+0x7): undefined reference to `undefined_fn'
+collect2: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.

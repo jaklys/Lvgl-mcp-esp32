@@ -1,0 +1,8 @@
+[1/2] Building C object CMakeFiles\lvgl_sim.dir\user_code.c.obj
+[2/2] Linking C executable lvgl_sim.exe
+FAILED: lvgl_sim.exe
+cmd.exe /C "cd . && C:\PROGRA~1\CMake\bin\cmake.exe -E vs_link_exe --intdir=CMakeFiles\lvgl_sim.dir --rc=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\rc.exe --mt=C:\PROGRA~2\WI3CF2~1\10\bin\100226~1.0\x64\mt.exe --manifests  -- C:\PROGRA~1\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1440~1.338\bin\Hostx64\x64\link.exe /nologo CMakeFiles\lvgl_sim.dir\main.c.obj CMakeFiles\lvgl_sim.dir\user_code.c.obj  /out:lvgl_sim.exe /implib:lvgl_sim.lib /pdb:lvgl_sim.pdb /version:0.0 /machine:x64 /INCREMENTAL:NO /subsystem:console  lib\lvgl\lib\lvgl.lib  kernel32.lib user32.lib && cd ."
+LINK: command "C:\PROGRA~1\MICROS~2\2022\BUILDT~1\VC\Tools\MSVC\1440~1.338\bin\Hostx64\x64\link.exe /nologo CMakeFiles\lvgl_sim.dir\main.c.obj /out:lvgl_sim.exe" failed (exit code 1120) with the following output:
+user_code.c.obj : error LNK2019: unresolved external symbol create_ui referenced in function main
+lvgl_sim.exe : fatal error LNK1120: 1 unresolved externals
+ninja: build stopped: subcommand failed.

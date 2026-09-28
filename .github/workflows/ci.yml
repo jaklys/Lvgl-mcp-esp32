@@ -5,169 +5,265 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The LVGL release the simulator submodule must be pinned to. Bump it
+  # together with the submodule, README.md and CHANGELOG.md.
+  LVGL_TAG: v9.6.0
+  NODE_VERSION: "22"
 
 jobs:
-  build-mcp-server:
-    name: Build MCP Server
+  mcp-server:
+    name: MCP server (lint, typecheck, unit tests)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mcp-server
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
         with:
-          node-version: 22
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: mcp-server/package-lock.json
 
+      # --ignore-scripts: never let postinstall download a release simulator
+      # into mcp-server/simulator (it would shadow the one built from source).
       - name: Install dependencies
-        working-directory: mcp-server
-        run: npm ci
+        run: npm ci --ignore-scripts
 
-      - name: TypeScript compile
-        working-directory: mcp-server
-        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
 
-  build-simulator:
-    name: Build Simulator (Windows/MSVC)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+      - name: Typecheck
+        run: npm run typecheck
 
-      - uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Configure CMake
-        run: cmake -S simulator -B simulator/build -G Ninja -DCMAKE_C_COMPILER=cl
+      - name: Unit and contract tests
+        run: npm test
 
       - name: Build
-        run: cmake --build simulator/build
+        run: npm run build
 
-      - name: Smoke test
-        run: |
-          simulator\build\lvgl_sim.exe --output-png simulator\build\test.png --output-json simulator\build\test.json
-          if (!(Test-Path simulator\build\test.png)) { throw "PNG not generated" }
-          if (!(Test-Path simulator\build\test.json)) { throw "JSON not generated" }
-          Write-Host "Simulator smoke test passed"
-          Get-Content simulator\build\test.json
+      - name: Package contents
+        run: npm pack --dry-run --ignore-scripts
 
-      - name: Upload test screenshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-screenshot
-          path: simulator/build/test.png
-
-  build-simulator-linux:
-    name: Build Simulator (Linux/GCC)
-    runs-on: ubuntu-latest
+  simulator:
+    name: Simulator + e2e (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    # Intel macOS is informational: a failure there does not fail the run.
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # macos-latest is Apple Silicon.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        experimental: [false]
+        include:
+          - os: macos-26-intel
+            experimental: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build
-
-      - name: Configure CMake
-        run: cmake -S simulator -B simulator/build -G Ninja
-
-      - name: Build
-        run: cmake --build simulator/build
-
-      - name: Smoke test
-        run: |
-          ./simulator/build/lvgl_sim --output-png simulator/build/test.png --output-json simulator/build/test.json
-          if [ ! -s simulator/build/test.png ]; then echo "PNG not generated or empty"; exit 1; fi
-          if [ ! -s simulator/build/test.json ]; then echo "JSON not generated or empty"; exit 1; fi
-          echo "Simulator smoke test passed"
-          cat simulator/build/test.json
-
-      - name: Upload test screenshot
-        uses: actions/upload-artifact@v4
+      - uses: actions/setup-node@v7
         with:
-          name: test-screenshot-linux
-          path: simulator/build/test.png
-
-  integration-test:
-    name: Integration Test (Windows)
-    runs-on: windows-latest
-    needs: [build-mcp-server, build-simulator]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: mcp-server/package-lock.json
 
-      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build
+
+      # The macOS images ship Xcode (Apple clang), CMake and Ninja; install
+      # only what is missing.
+      - name: Toolchain (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          command -v ninja >/dev/null || brew install ninja
+          command -v cmake >/dev/null || brew install cmake
+          echo "Xcode: $(xcode-select -p)"
+          cc --version | head -n1
+          cmake --version | head -n1
+          echo "ninja $(ninja --version)"
+
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+
+      - name: Configure simulator (Linux, macOS)
+        if: runner.os != 'Windows'
+        run: cmake -S simulator -B simulator/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Configure simulator (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -S simulator -B simulator/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
 
       - name: Build simulator
+        run: cmake --build simulator/build --parallel
+
+      - name: Smoke test (Linux, macOS)
+        if: runner.os != 'Windows'
         run: |
-          cmake -S simulator -B simulator/build -G Ninja -DCMAKE_C_COMPILER=cl
-          cmake --build simulator/build
+          out="$RUNNER_TEMP/smoke"
+          mkdir -p "$out"
+          ./simulator/build/lvgl_sim --width 320 --height 240 --time-ms 330 \
+            --output-png "$out/smoke.png" --output-json "$out/smoke.json"
+          python3 - "$out/smoke.png" "$out/smoke.json" 320 240 <<'PY'
+          import json, struct, sys
+          png, js, w, h = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+          with open(png, "rb") as f:
+              head = f.read(24)
+          assert head[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG file"
+          assert head[12:16] == b"IHDR", "PNG has no IHDR chunk"
+          pw, ph = struct.unpack(">II", head[16:24])
+          assert (pw, ph) == (w, h), f"PNG is {pw}x{ph}, expected {w}x{h}"
+          with open(js, encoding="utf-8") as f:
+              doc = json.load(f)
+          assert doc.get("format_version") == 2, f"format_version is {doc.get('format_version')!r}"
+          assert doc["display"]["width"] == w and doc["display"]["height"] == h, doc["display"]
+          print(f"Smoke test OK: {pw}x{ph}, LVGL {doc.get('lvgl_version')}")
+          PY
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "smoke"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $png = Join-Path $out "smoke.png"
+          $json = Join-Path $out "smoke.json"
+          & .\simulator\build\lvgl_sim.exe --width 320 --height 240 --time-ms 330 --output-png $png --output-json $json
+          if ($LASTEXITCODE -ne 0) { throw "lvgl_sim exited with $LASTEXITCODE" }
+          $bytes = [System.IO.File]::ReadAllBytes($png)
+          $sig = [byte[]](0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
+          for ($i = 0; $i -lt 8; $i++) { if ($bytes[$i] -ne $sig[$i]) { throw "not a PNG file" } }
+          if ([System.Text.Encoding]::ASCII.GetString($bytes, 12, 4) -ne "IHDR") { throw "PNG has no IHDR chunk" }
+          $w = ([int]$bytes[16] -shl 24) -bor ([int]$bytes[17] -shl 16) -bor ([int]$bytes[18] -shl 8) -bor [int]$bytes[19]
+          $h = ([int]$bytes[20] -shl 24) -bor ([int]$bytes[21] -shl 16) -bor ([int]$bytes[22] -shl 8) -bor [int]$bytes[23]
+          if ($w -ne 320 -or $h -ne 240) { throw "PNG is ${w}x${h}, expected 320x240" }
+          $doc = Get-Content -Raw -Encoding utf8 $json | ConvertFrom-Json
+          if ($doc.format_version -ne 2) { throw "format_version is $($doc.format_version), expected 2" }
+          if ($doc.display.width -ne 320 -or $doc.display.height -ne 240) { throw "display size mismatch in JSON" }
+          Write-Host "Smoke test OK: ${w}x${h}, LVGL $($doc.lvgl_version)"
+
+      - name: Upload smoke screenshot
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-${{ matrix.os }}
+          path: ${{ runner.temp }}/smoke/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Build MCP server
         working-directory: mcp-server
         run: |
-          npm ci
-          npx tsc
+          npm ci --ignore-scripts
+          npm run build
 
-      - name: MCP server responds to initialize
-        working-directory: mcp-server
+      # A postinstall-downloaded mcp-server/simulator would silently replace
+      # the simulator built above. Make sure that cannot happen.
+      - name: Assert the server uses the source-built simulator
+        shell: bash
         run: |
-          $init = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0.1"}}}'
-          $result = $init | node dist/index.js 2>$null
-          if ($result -match '"lvgl-simulator"') {
-            Write-Host "MCP server initialize OK"
-          } else {
-            throw "MCP server did not respond correctly: $result"
-          }
-
-  integration-test-linux:
-    name: Integration Test (Linux)
-    runs-on: ubuntu-latest
-    needs: [build-mcp-server, build-simulator-linux]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: mcp-server/package-lock.json
-
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build
-
-      - name: Build simulator
-        run: |
-          cmake -S simulator -B simulator/build -G Ninja
-          cmake --build simulator/build
-
-      - name: Build MCP server
-        working-directory: mcp-server
-        run: |
-          npm ci
-          npx tsc
-
-      - name: MCP server responds to initialize
-        working-directory: mcp-server
-        run: |
-          init='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0.1"}}}'
-          result=$(echo "$init" | node dist/index.js 2>/dev/null)
-          if echo "$result" | grep -q '"lvgl-simulator"'; then
-            echo "MCP server initialize OK"
-          else
-            echo "MCP server did not respond correctly: $result"
+          if [ -e mcp-server/simulator ]; then
+            echo "::error::mcp-server/simulator exists; the e2e tests would not test this checkout"
             exit 1
           fi
+
+      - name: Unit + end-to-end tests
+        working-directory: mcp-server
+        env:
+          LVGL_E2E: "1"
+        run: npm test
+
+  submodule-pin:
+    name: LVGL submodule pin
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check simulator/lib/lvgl is exactly ${{ env.LVGL_TAG }}
+        run: |
+          git submodule update --init --depth 1 simulator/lib/lvgl
+          git -C simulator/lib/lvgl fetch --depth 1 --no-tags origin "+refs/tags/${LVGL_TAG}:refs/tags/${LVGL_TAG}"
+          actual="$(git -C simulator/lib/lvgl describe --tags --exact-match HEAD 2>/dev/null || true)"
+          if [ "$actual" != "$LVGL_TAG" ]; then
+            echo "::error::simulator/lib/lvgl is at $(git -C simulator/lib/lvgl rev-parse HEAD) (${actual:-no tag}), expected ${LVGL_TAG}"
+            exit 1
+          fi
+          echo "Submodule is at $actual"
+
+      - name: Check .gitmodules branch
+        run: |
+          minor="${LVGL_TAG#v}"
+          minor="${minor%.*}"
+          branch="$(git config -f .gitmodules submodule.simulator/lib/lvgl.branch || true)"
+          if [ "$branch" != "release/v${minor}" ]; then
+            echo "::error file=.gitmodules::submodule branch is '${branch}', expected 'release/v${minor}'"
+            exit 1
+          fi
+
+      - name: Check README.md and CHANGELOG.md mention ${{ env.LVGL_TAG }}
+        run: |
+          status=0
+          for f in README.md CHANGELOG.md; do
+            if ! grep -qF "$LVGL_TAG" "$f"; then
+              echo "::error file=$f::$f does not mention $LVGL_TAG"
+              status=1
+            fi
+          done
+          exit "$status"
+
+  lint-workflows-and-scripts:
+    name: actionlint + shellcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ACTIONLINT_VERSION: "1.7.12"
+      ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: shellcheck scripts/*.sh
+        run: |
+          shellcheck --version
+          shellcheck scripts/*.sh
+
+      - name: bash -n scripts/*.sh
+        run: for f in scripts/*.sh; do bash -n "$f"; done
+
+      - name: node --check on .mjs scripts
+        run: for f in scripts/*.mjs mcp-server/scripts/*.mjs mcp-server/bin/*.mjs; do node --check "$f"; done
+
+      - name: actionlint
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color
