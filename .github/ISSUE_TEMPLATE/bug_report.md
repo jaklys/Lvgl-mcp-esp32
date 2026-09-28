@@ -8,11 +8,11 @@ labels: bug
 <!-- What did you expect, and what did you get instead? -->
 
 **Environment**
-- OS and version: <!-- e.g. Windows 11 24H2, Ubuntu 24.04 -->
+- OS and version: <!-- e.g. Windows 11 24H2, Ubuntu 24.04, macOS 15.5 (Apple Silicon / Intel) -->
 - Node.js version (`node --version`):
 - lvgl-mcp-server version (`npm ls -g lvgl-mcp-server`, or the git commit):
 - Installed via: <!-- npm / npx / git checkout; pnpm, bun or --ignore-scripts? -->
-- Toolchain: <!-- e.g. VS 2026 Build Tools / gcc 13.2 / clang 18, plus `cmake --version` and `ninja --version` -->
+- Toolchain: <!-- e.g. VS 2026 Build Tools / gcc 13.2 / clang 18 / Apple clang 17 (`cc --version`), plus `cmake --version` and `ninja --version` -->
 - LVGL version (the `lvgl_version` field of the widget tree, e.g. 9.6.0):
 - MCP client: <!-- Claude Code, Cursor, VS Code, ... -->
 

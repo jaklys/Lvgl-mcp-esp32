@@ -9,8 +9,8 @@ npm version of `lvgl-mcp-server`; release tags are `v<version>`.
 
 ## [2.1.0] - 2026-09-27
 
-LVGL 9.6.0, a much richer widget tree, compile-only checks and a hardened
-install and release pipeline.
+LVGL 9.6.0, official macOS support, a much richer widget tree, compile-only
+checks and a hardened install and release pipeline.
 
 ### Breaking changes
 
@@ -31,6 +31,21 @@ install and release pipeline.
 ### Added
 
 - **LVGL 9.6.0** (submodule pinned to tag `v9.6.0`, branch `release/v9.6`).
+- **Official macOS support** (Apple Silicon and Intel, macOS 12+): Xcode
+  Command Line Tools (Apple clang) plus `brew install cmake ninja`. CI builds
+  the simulator and runs the end-to-end tests on `macos-latest` (Apple
+  Silicon) and, as an informational job, on `macos-26-intel`. Releases ship
+  `lvgl-mcp-esp32-macos.tar.gz` (built and tested on Apple Silicon, used by
+  postinstall on both `darwin-arm64` and `darwin-x64`). The server finds
+  Homebrew/MacPorts/CMake.app tools even when the MCP client was started from
+  the Dock with launchd's minimal `PATH`, the toolchain check recognizes the
+  `xcrun: error: invalid active developer path` stub and suggests
+  `xcode-select --install`, crashes reported as `SIGBUS` (and `SIGTRAP`) are
+  explained like `SIGSEGV`, and Apple linker "Undefined symbols" errors are
+  parsed into diagnostics with hints. `scripts/setup.sh` and
+  `scripts/build.sh` check for the Command Line Tools.
+- Linux arm64 installs now get the (architecture-neutral) Linux source
+  archive instead of no simulator; untested.
 - **New simulator CLI options:** `--time-ms N` (simulated time before capture,
   default 330 ms), `--settle` (keep advancing until animations finish, max
   3 s), `--rotation 0|90|180|270`, `--theme light|dark`, `--dpi N`,
@@ -114,14 +129,16 @@ install and release pipeline.
   ship with `SHA256SUMS.txt` and build provenance attestations; release notes
   come from this changelog; npm publishing runs only after the GitHub release
   exists and publishes with provenance.
-- CI runs lint, typecheck and unit tests, builds the simulator on Linux and
-  Windows, runs the end-to-end tests against it, checks the LVGL submodule pin
+- CI runs lint, typecheck and unit tests, builds the simulator on Linux,
+  macOS and Windows, runs the end-to-end tests against it, checks the LVGL submodule pin
   and lints workflows and shell scripts.
 - `scripts/setup.*` and `scripts/build.*`: Visual Studio detection via
   `vswhere` (any edition, including VS 2026), CMake/Ninja from PATH before
   ESP-IDF, exit codes checked after every native command, C and C++ compiler
   and CMake >= 3.16 checks, stale CMake caches from moved checkouts are
-  discarded, Release builds, the last rendered code in `build/user_code.c` is
+  discarded, Release builds, parallel Make builds (the server also passes
+  `--parallel` to CMake for its Unix Makefiles fallback), the last rendered
+  code in `build/user_code.c` is
   reset to the default placeholder (a broken snippet no longer breaks the
   build), and the smoke test fails the setup on error.
 

@@ -1,6 +1,6 @@
 # LVGL MCP Server for ESP32 Development
 
-MCP (Model Context Protocol) server that gives Claude visual feedback when writing LVGL UI code for ESP32. It compiles C code snippets in a headless LVGL 9.6 simulator on Windows and Linux, captures a PNG screenshot and a JSON widget tree, and returns them through the MCP protocol. No hardware, no flashing, no SDL window needed.
+MCP (Model Context Protocol) server that gives Claude visual feedback when writing LVGL UI code for ESP32. It compiles C code snippets in a headless LVGL 9.6 simulator on Windows, macOS (Apple Silicon and Intel) and Linux, captures a PNG screenshot and a JSON widget tree, and returns them through the MCP protocol. No hardware, no flashing, no SDL window needed.
 
 ```
 ┌─────────────┐     stdio (JSON-RPC)    ┌──────────────────┐
@@ -75,7 +75,7 @@ If you have ESP-IDF installed, CMake and Ninja are already available.
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Linux | x64 | Any modern distribution |
+| Linux | x64 (arm64 should work but is untested) | Any modern distribution |
 | gcc/g++ or clang/clang++ | recent | C **and** C++ compiler (LVGL 9.6 needs both); `cc` by default, override with `CC` |
 | CMake | 3.16+ | Build configuration |
 | Ninja or Make | any | Ninja preferred; falls back to Unix Makefiles |
@@ -87,11 +87,26 @@ On Debian/Ubuntu:
 sudo apt install build-essential cmake ninja-build git
 ```
 
-**macOS (experimental)**: there is no prebuilt package yet, but the source setup works with the Xcode command line tools (`xcode-select --install`) and `brew install cmake ninja node`. Build from source as below and point `LVGL_SIM_PATH` at the checkout's `simulator/` directory.
+**macOS**
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| macOS | 12 or later, Apple Silicon or Intel | Apple Silicon is tested in CI on every change; Intel on an informational CI job |
+| Xcode Command Line Tools | recent | `xcode-select --install`: Apple clang (C **and** C++) and `make`. A full Xcode works too |
+| CMake | 3.16+ | `brew install cmake` (or the cmake.org app) |
+| Ninja or Make | any | `brew install ninja` recommended; falls back to Unix Makefiles |
+| Node.js | 20+ | `brew install node` or [nodejs.org](https://nodejs.org/) |
+
+```bash
+xcode-select --install
+brew install cmake ninja node
+```
+
+MCP clients started from the Dock (Claude Desktop, VS Code, Cursor) do not see your shell's `PATH`. The server therefore also looks for `cmake` and `ninja` in `/opt/homebrew/bin`, `/usr/local/bin`, `/opt/local/bin` and `/Applications/CMake.app`; set `CMAKE_PATH` / `NINJA_PATH` if yours are elsewhere.
 
 ### First render
 
-The first render after installing (or after a toolchain change) configures CMake and compiles all of LVGL: about **10 s on Linux** and **30 s or more with MSVC**. After that only your code is recompiled and relinked, typically 1–3 s per render. The compile timeout is 180 s (`LVGL_COMPILE_TIMEOUT_MS`).
+The first render after installing (or after a toolchain change) configures CMake and compiles all of LVGL: about **10–30 s on Linux and macOS** and **30 s or more with MSVC**. After that only your code is recompiled and relinked, typically 1–3 s per render. The compile timeout is 180 s (`LVGL_COMPILE_TIMEOUT_MS`).
 
 ## Setup from source (alternative)
 
@@ -379,10 +394,10 @@ Set these in the `env` block of your MCP client configuration.
 | `LVGL_ASSETS_DIR` | server working dir | Default directory for `S:` file paths (`assets_dir` parameter) |
 | `LVGL_COMPILE_TIMEOUT_MS` | `180000` | Time limit for configure + build |
 | `LVGL_RUN_TIMEOUT_MS` | `15000` | Time limit for one simulator run |
-| `CC` | `cl` (Windows), CMake default, usually `cc` (POSIX) | C compiler |
+| `CC` | `cl` (Windows), CMake default, usually `cc` (POSIX: gcc or clang on Linux, Apple clang on macOS) | C compiler |
 | `CXX` | `cl` (Windows), CMake default (POSIX) | C++ compiler |
-| `CMAKE_PATH` | PATH / ESP-IDF | Path to `cmake` |
-| `NINJA_PATH` | PATH / ESP-IDF | Path to `ninja` |
+| `CMAKE_PATH` | PATH / ESP-IDF (Windows) / Homebrew, MacPorts, CMake.app (macOS) | Path to `cmake` |
+| `NINJA_PATH` | PATH / ESP-IDF (Windows) / Homebrew, MacPorts (macOS) | Path to `ninja` |
 | `LVGL_CMAKE_GENERATOR` | Ninja if found, else Unix Makefiles | CMake generator (POSIX) |
 | `VCVARSALL_PATH` | found via `vswhere` | Path to `vcvarsall.bat` (Windows) |
 
@@ -427,10 +442,10 @@ All 8 screens from the [E-BREW](https://github.com/jaklys/New-EbrewDisplay) brew
 2. The MCP server wraps a snippet in a template (includes, `create_ui()` boilerplate and a `#line` directive so diagnostics point at your lines); full files are used verbatim
 3. The code is written to `user_code.c` in the build directory
 4. CMake/Ninja recompile only that file and relink against the already built LVGL library (the first build compiles LVGL itself)
-5. The simulator binary (`lvgl_sim.exe` on Windows, `lvgl_sim` on Linux) runs headless with a minimal environment: it initializes LVGL with a framebuffer display, applies the theme, DPI and rotation, calls `create_ui()`, advances simulated time in 33 ms steps (`--time-ms`, optionally `--settle`), updates the layout, refreshes, and exports a PNG and the JSON widget tree into a fresh temporary directory
+5. The simulator binary (`lvgl_sim.exe` on Windows, `lvgl_sim` on Linux and macOS) runs headless with a minimal environment: it initializes LVGL with a framebuffer display, applies the theme, DPI and rotation, calls `create_ui()`, advances simulated time in 33 ms steps (`--time-ms`, optionally `--settle`), updates the layout, refreshes, and exports a PNG and the JSON widget tree into a fresh temporary directory
 6. The MCP server reads both files, deletes the temporary directory, and returns the image with the summary, diagnostics, LVGL logs and tree
 
-Renders are serialized, so parallel tool calls never share a build or output files. Compilation uses MSVC (`cl.exe`) on Windows — the Visual Studio environment is set up automatically — and gcc/clang on Linux.
+Renders are serialized, so parallel tool calls never share a build or output files. Compilation uses MSVC (`cl.exe`) on Windows — the Visual Studio environment is set up automatically — gcc/clang on Linux and Apple clang on macOS.
 
 The simulator can also be run by hand:
 
@@ -475,10 +490,10 @@ Lvgl-mcp-esp32/
 ├── examples/                     Example renders (PNG + JSON)
 ├── scripts/
 │   ├── setup.ps1 / build.bat     Windows: full setup / simulator build
-│   ├── setup.sh / build.sh       Linux, macOS (experimental): full setup / simulator build
+│   ├── setup.sh / build.sh       Linux, macOS: full setup / simulator build
 │   └── smoke-test.mjs            Simulator smoke test used by the setup scripts
 ├── .github/workflows/
-│   ├── ci.yml                    Lint, unit + e2e tests (Linux, Windows), submodule pin, actionlint
+│   ├── ci.yml                    Lint, unit + e2e tests (Linux, macOS, Windows), submodule pin, actionlint
 │   └── release.yml               Tag → verify → build → GitHub release → npm
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
@@ -511,7 +526,7 @@ Maintainers, see also [CONTRIBUTING.md](CONTRIBUTING.md):
 2. Merge to `main`, then tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
 3. The Release workflow then runs:
    - **verify-version** — the tag is `vX.Y.Z`, equals the `package.json` version, has a CHANGELOG section, and is neither released on GitHub nor published on npm yet
-   - **build** (Linux, Windows) — Release build, smoke test, unit + e2e tests, slim source archive, and a check that the slim tree still builds
+   - **build** (Linux, macOS, Windows) — Release build, smoke test, unit + e2e tests, slim source archive, and a check that the slim tree still builds
    - **create-release** — `SHA256SUMS.txt`, build provenance attestations, GitHub release with notes from the CHANGELOG
    - **publish-npm** — `npm publish --provenance`, only after the release exists (postinstall of the new version needs its assets)
 4. If a late job fails (for example npm authentication), fix the cause and use **Re-run failed jobs**. `workflow_dispatch` with an existing tag re-runs the whole flow for a tag that has no release yet.
@@ -524,11 +539,19 @@ Maintainers, see also [CONTRIBUTING.md](CONTRIBUTING.md):
 
 **"cc: command not found" / "no C++ compiler found" (Linux)** — Install `build-essential` (Debian/Ubuntu) or `gcc gcc-c++` (Fedora). LVGL 9.6 needs a C++ compiler too. Override the compiler with `CC`.
 
+**`xcrun: error: invalid active developer path` (macOS)** — The Xcode Command Line Tools are missing, which is common after a macOS upgrade (`/usr/bin/cc` and `make` exist but do nothing without them). Run `xcode-select --install` and restart the MCP client. With a full Xcode that is not selected, run `sudo xcode-select --switch /Applications/Xcode.app` and `sudo xcodebuild -license accept`.
+
+**"CMake not found" on macOS although Homebrew installed it** — See the `PATH` note under [Prerequisites](#prerequisites); set `CMAKE_PATH` (e.g. `/opt/homebrew/bin/cmake`) and `NINJA_PATH` in the `env` block of the MCP configuration.
+
+**Gatekeeper (macOS)** — Not involved: nothing prebuilt is executed. The npm package downloads sources, and the simulator is compiled on your Mac, so there is no "unidentified developer" prompt. A crash in your code (reported as `crashed with SIGSEGV` or `SIGBUS (invalid memory access ...)`) may leave a report in `~/Library/Logs/DiagnosticReports`; that is harmless.
+
+**"pkg-config not found" CMake warning** — Harmless: the simulator uses no system libraries.
+
 **"ninja: command not found" (Linux)** — Ninja is optional; the build falls back to Unix Makefiles. Install it with `sudo apt install ninja-build` for faster builds.
 
 **"The current CMakeCache.txt directory ... is different"** — The checkout was moved or copied. The server and the build scripts detect this and wipe the stale cache; if you run CMake manually, delete `simulator/build/`.
 
-**The first render is slow or times out** — The first build compiles all of LVGL (about 10 s on Linux, 30 s or more with MSVC, longer on slow disks or with antivirus scanning). Raise `LVGL_COMPILE_TIMEOUT_MS` if needed. Later renders only recompile your code.
+**The first render is slow or times out** — The first build compiles all of LVGL (about 10–30 s on Linux and macOS, 30 s or more with MSVC, longer on slow disks or with antivirus scanning). Raise `LVGL_COMPILE_TIMEOUT_MS` if needed. Later renders only recompile your code.
 
 **No simulator after installing with pnpm, bun, or `--ignore-scripts`** — These skip the postinstall step (pnpm 10 and bun block dependency install scripts by default). Allow it (`pnpm approve-builds`, bun `trustedDependencies`) or run it once by hand: `node node_modules/lvgl-mcp-server/scripts/postinstall.mjs` (global install: `npm rebuild -g lvgl-mcp-server`).
 
@@ -536,7 +559,7 @@ Maintainers, see also [CONTRIBUTING.md](CONTRIBUTING.md):
 
 **"checksum mismatch" or "no SHA256SUMS.txt"** — The download was corrupted or the release is incomplete; nothing was installed. Retry, or download and verify the archive manually as described in the message.
 
-**Wrong colors in PNG** — LVGL uses XRGB8888, which is BGRA in memory on x86. The screenshot exporter handles the byte swizzle. If colors look wrong, check `simulator/export/screenshot.c`.
+**Wrong colors in PNG** — LVGL uses XRGB8888, which is BGRA in memory on little-endian CPUs (x86, ARM). The screenshot exporter handles the byte swizzle. If colors look wrong, check `simulator/export/screenshot.c`.
 
 **The server cannot find the simulator** — Check the `[lvgl-mcp] Simulator directory:` line in the server's stderr and set `LVGL_SIM_PATH` to a directory containing the simulator's `CMakeLists.txt`.
 
