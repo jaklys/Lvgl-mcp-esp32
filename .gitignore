@@ -1,5 +1,8 @@
 # Build outputs
 simulator/build/
+# scripts/build-prebuilt.sh|.ps1 (release archives ship simulator/prebuilt/)
+simulator/build-prebuilt/
+simulator/prebuilt/
 mcp-server/node_modules/
 mcp-server/dist/
 

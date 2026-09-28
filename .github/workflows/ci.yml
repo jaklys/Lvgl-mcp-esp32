@@ -124,23 +124,12 @@ jobs:
         run: |
           out="$RUNNER_TEMP/smoke"
           mkdir -p "$out"
-          ./simulator/build/lvgl_sim --width 320 --height 240 --time-ms 330 \
+          node scripts/smoke-test.mjs simulator/build/lvgl_sim 320 240
+          node scripts/smoke-test.mjs simulator/build/lvgl_sim 480 320 \
+            --ui examples/06-ui.json --expect-names title,target,settings_btn
+          # Keep a screenshot for the artifact below.
+          ./simulator/build/lvgl_sim --width 480 --height 320 --ui examples/06-ui.json \
             --output-png "$out/smoke.png" --output-json "$out/smoke.json"
-          python3 - "$out/smoke.png" "$out/smoke.json" 320 240 <<'PY'
-          import json, struct, sys
-          png, js, w, h = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
-          with open(png, "rb") as f:
-              head = f.read(24)
-          assert head[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG file"
-          assert head[12:16] == b"IHDR", "PNG has no IHDR chunk"
-          pw, ph = struct.unpack(">II", head[16:24])
-          assert (pw, ph) == (w, h), f"PNG is {pw}x{ph}, expected {w}x{h}"
-          with open(js, encoding="utf-8") as f:
-              doc = json.load(f)
-          assert doc.get("format_version") == 2, f"format_version is {doc.get('format_version')!r}"
-          assert doc["display"]["width"] == w and doc["display"]["height"] == h, doc["display"]
-          print(f"Smoke test OK: {pw}x{ph}, LVGL {doc.get('lvgl_version')}")
-          PY
 
       - name: Smoke test (Windows)
         if: runner.os == 'Windows'
@@ -148,21 +137,12 @@ jobs:
         run: |
           $out = Join-Path $env:RUNNER_TEMP "smoke"
           New-Item -ItemType Directory -Force -Path $out | Out-Null
-          $png = Join-Path $out "smoke.png"
-          $json = Join-Path $out "smoke.json"
-          & .\simulator\build\lvgl_sim.exe --width 320 --height 240 --time-ms 330 --output-png $png --output-json $json
+          node scripts/smoke-test.mjs simulator/build/lvgl_sim.exe 320 240
+          if ($LASTEXITCODE -ne 0) { throw "smoke test failed" }
+          node scripts/smoke-test.mjs simulator/build/lvgl_sim.exe 480 320 --ui examples/06-ui.json --expect-names title,target,settings_btn
+          if ($LASTEXITCODE -ne 0) { throw "UI JSON smoke test failed" }
+          & .\simulator\build\lvgl_sim.exe --width 480 --height 320 --ui examples/06-ui.json --output-png (Join-Path $out "smoke.png") --output-json (Join-Path $out "smoke.json")
           if ($LASTEXITCODE -ne 0) { throw "lvgl_sim exited with $LASTEXITCODE" }
-          $bytes = [System.IO.File]::ReadAllBytes($png)
-          $sig = [byte[]](0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
-          for ($i = 0; $i -lt 8; $i++) { if ($bytes[$i] -ne $sig[$i]) { throw "not a PNG file" } }
-          if ([System.Text.Encoding]::ASCII.GetString($bytes, 12, 4) -ne "IHDR") { throw "PNG has no IHDR chunk" }
-          $w = ([int]$bytes[16] -shl 24) -bor ([int]$bytes[17] -shl 16) -bor ([int]$bytes[18] -shl 8) -bor [int]$bytes[19]
-          $h = ([int]$bytes[20] -shl 24) -bor ([int]$bytes[21] -shl 16) -bor ([int]$bytes[22] -shl 8) -bor [int]$bytes[23]
-          if ($w -ne 320 -or $h -ne 240) { throw "PNG is ${w}x${h}, expected 320x240" }
-          $doc = Get-Content -Raw -Encoding utf8 $json | ConvertFrom-Json
-          if ($doc.format_version -ne 2) { throw "format_version is $($doc.format_version), expected 2" }
-          if ($doc.display.width -ne 320 -or $doc.display.height -ne 240) { throw "display size mismatch in JSON" }
-          Write-Host "Smoke test OK: ${w}x${h}, LVGL $($doc.lvgl_version)"
 
       - name: Upload smoke screenshot
         if: always()
@@ -194,6 +174,50 @@ jobs:
         env:
           LVGL_E2E: "1"
         run: npm test
+
+  # Linux only (keeps CI fast); the Release workflow builds and verifies the
+  # prebuilt artifacts on every platform.
+  prebuilt:
+    name: Prebuilt LVGL (Linux, gcc + clang)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Ninja
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build
+
+      # Builds simulator/prebuilt/linux-x64 with gcc, links the simulator
+      # against it, requires identical PNGs and checks the lv_conf.h fallback.
+      - name: Build + verify the prebuilt LVGL (gcc)
+        run: ./scripts/build-prebuilt.sh --build-dir "$RUNNER_TEMP/prebuilt-build" --verify
+
+      - name: Link the gcc-built LVGL from a clang build
+        run: |
+          set -euo pipefail
+          clang --version | head -n1
+          CC=clang CXX=clang++ cmake -S simulator -B "$RUNNER_TEMP/clang-prebuilt" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DLVGL_PREBUILT_DIR="$PWD/simulator/prebuilt/linux-x64" \
+            2>&1 | tee "$RUNNER_TEMP/clang-prebuilt.log"
+          grep -q "LVGL_PREBUILT: using" "$RUNNER_TEMP/clang-prebuilt.log"
+          cmake --build "$RUNNER_TEMP/clang-prebuilt" --parallel
+          "$RUNNER_TEMP/clang-prebuilt/lvgl_sim" --width 320 --height 240 \
+            --output-png "$RUNNER_TEMP/clang.png" --output-json "$RUNNER_TEMP/clang.json"
+          simulator/prebuilt/linux-x64/lvgl_sim --width 320 --height 240 \
+            --output-png "$RUNNER_TEMP/gcc.png" --output-json "$RUNNER_TEMP/gcc.json"
+          cmp "$RUNNER_TEMP/gcc.png" "$RUNNER_TEMP/clang.png"
+
+      - name: Prebuilt lvgl_sim renders a UI document without a toolchain
+        run: |
+          node scripts/smoke-test.mjs simulator/prebuilt/linux-x64/lvgl_sim 480 320 \
+            --ui examples/06-ui.json --expect-names title,target,settings_btn --no-toolchain
 
   submodule-pin:
     name: LVGL submodule pin
@@ -255,6 +279,17 @@ jobs:
 
       - name: bash -n scripts/*.sh
         run: for f in scripts/*.sh; do bash -n "$f"; done
+
+      - name: PowerShell syntax (scripts/*.ps1)
+        shell: pwsh
+        run: |
+          $failed = $false
+          foreach ($f in Get-ChildItem scripts -Filter *.ps1) {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            foreach ($e in $errors) { Write-Host "::error file=scripts/$($f.Name),line=$($e.Extent.StartLineNumber)::$($e.Message)"; $failed = $true }
+          }
+          if ($failed) { exit 1 }
 
       - name: node --check on .mjs scripts
         run: for f in scripts/*.mjs mcp-server/scripts/*.mjs mcp-server/bin/*.mjs; do node --check "$f"; done

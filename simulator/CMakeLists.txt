@@ -22,10 +22,12 @@ set(CONFIG_LV_BUILD_DEMOS OFF CACHE BOOL "" FORCE)
 set(CONFIG_LV_USE_THORVG OFF CACHE BOOL "" FORCE)
 set(LV_FETCH_DEPENDENCIES OFF CACHE BOOL "" FORCE)
 
-# --- LVGL library (prebuilt or from source) --- (owned by release tooling)
-# Add LVGL as a subdirectory (exports its own include directories)
-add_subdirectory(lib/lvgl)
-# --- end LVGL library ---
+# ---------- LVGL library (prebuilt or from source) ----------
+# -DLVGL_PREBUILT_DIR=<dir> links a prebuilt static LVGL (release archives ship
+# one in prebuilt/<platform>/, scripts/build-prebuilt.sh|.ps1 make one);
+# without it, or when <dir> does not match lv_conf.h / lib/lvgl, LVGL is
+# compiled from lib/lvgl. Sets LVGL_USING_PREBUILT. See lib/lvgl_prebuilt.cmake.
+include("${CMAKE_CURRENT_SOURCE_DIR}/lib/lvgl_prebuilt.cmake")
 
 # ---------- User code ----------
 # The MCP server writes user_code.c into the build directory before each build.
@@ -108,7 +110,9 @@ endif()
 if(MSVC)
     # Sources and user snippets are UTF-8 (e.g. "°C" in label text)
     target_compile_options(lvgl_sim PRIVATE /utf-8)
-    target_compile_options(lvgl PRIVATE /utf-8)
+    if(NOT LVGL_USING_PREBUILT) # an IMPORTED lvgl takes INTERFACE options only
+        target_compile_options(lvgl PRIVATE /utf-8)
+    endif()
     set_source_files_properties(${USER_SOURCES} PROPERTIES
         COMPILE_OPTIONS "/W3;/we4013;/we4047;/we4020")
 else()
