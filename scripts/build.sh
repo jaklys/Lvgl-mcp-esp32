@@ -86,7 +86,14 @@ CACHE="$BUILD_DIR/CMakeCache.txt"
 if [ -f "$CACHE" ]; then
   cached_home="$(sed -n 's/^CMAKE_HOME_DIRECTORY:INTERNAL=//p' "$CACHE")"
   cached_gen="$(sed -n 's/^CMAKE_GENERATOR:INTERNAL=//p' "$CACHE")"
-  real_home="$(cd "$cached_home" 2>/dev/null && pwd -P || true)"
+  # Resolve the cached source dir; an empty/missing/unreadable one resolves to
+  # "" and therefore never matches, so the cache is wiped.
+  real_home=""
+  if [ -n "$cached_home" ] && [ -d "$cached_home" ]; then
+    if ! real_home="$(cd "$cached_home" 2>/dev/null && pwd -P)"; then
+      real_home=""
+    fi
+  fi
   if [ "$real_home" != "$(cd "$SIM_DIR" && pwd -P)" ] || [ "$cached_gen" != "$GENERATOR" ]; then
     echo "Stale CMake cache (source '$cached_home', generator '$cached_gen'); wiping $BUILD_DIR"
     rm -rf "$BUILD_DIR"
