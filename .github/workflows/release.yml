@@ -1,7 +1,7 @@
 name: Release
 
 # Release flow: push tag vX.Y.Z (== mcp-server/package.json version)
-#   -> verify-version -> build (linux, windows) -> create-release -> publish-npm
+#   -> verify-version -> build (linux, macos, windows) -> create-release -> publish-npm
 # workflow_dispatch re-runs the flow for an EXISTING tag (it never creates one).
 # If only a late job failed (e.g. npm publish), use "Re-run failed jobs" instead:
 # verify-version refuses tags that already have a release or an npm version.
@@ -83,6 +83,10 @@ jobs:
         include:
           - os: ubuntu-latest
             asset: lvgl-mcp-esp32-linux-x64.tar.gz
+          # Apple Silicon. The archive is a source tree, so it also serves
+          # Intel Macs (CI covers them on macos-26-intel).
+          - os: macos-latest
+            asset: lvgl-mcp-esp32-macos.tar.gz
           - os: windows-latest
             asset: lvgl-mcp-esp32-windows-x64.zip
     steps:
@@ -102,6 +106,20 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build
 
+      # The macOS images ship Xcode (Apple clang), CMake, Ninja and GNU tar;
+      # install only what is missing. GNU tar packs the archive: bsdtar would
+      # add AppleDouble (._*) entries and macOS extended attributes.
+      - name: Toolchain (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          command -v ninja >/dev/null || brew install ninja
+          command -v cmake >/dev/null || brew install cmake
+          command -v gtar >/dev/null || brew install gnu-tar
+          echo "Xcode: $(xcode-select -p)"
+          cc --version | head -n1
+          cmake --version | head -n1
+          echo "ninja $(ninja --version)"
+
       - name: Set up MSVC (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
@@ -110,8 +128,8 @@ jobs:
 
       # Windows steps use pwsh, not Git Bash: its /usr/bin/link would shadow
       # MSVC's link.exe.
-      - name: Build simulator (Linux)
-        if: runner.os == 'Linux'
+      - name: Build simulator (Linux, macOS)
+        if: runner.os != 'Windows'
         run: |
           cmake -S simulator -B simulator/build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build simulator/build --parallel
@@ -125,8 +143,8 @@ jobs:
           cmake --build simulator/build --parallel
           if ($LASTEXITCODE -ne 0) { throw "build failed" }
 
-      - name: Smoke test (Linux)
-        if: runner.os == 'Linux'
+      - name: Smoke test (Linux, macOS)
+        if: runner.os != 'Windows'
         run: |
           out="$RUNNER_TEMP/smoke"
           mkdir -p "$out"
@@ -186,15 +204,19 @@ jobs:
       # and Ninja rebuilds everything anyway (no relink-only first render).
       - name: Stage slim archive
         shell: bash
+        env:
+          COPYFILE_DISABLE: "1" # macOS: no AppleDouble files, whatever tar runs
         run: |
           set -euo pipefail
+          tar=tar
+          if [ "$RUNNER_OS" = "macOS" ]; then tar=gtar; fi
           temp="$RUNNER_TEMP"
           if command -v cygpath >/dev/null 2>&1; then temp="$(cygpath -u "$RUNNER_TEMP")"; fi
           stage="$temp/stage"
           rm -rf "$stage"
           mkdir -p "$stage/simulator" "$stage/mcp-server/scripts"
 
-          tar -C simulator \
+          "$tar" -C simulator \
             --exclude=./build \
             --exclude=./lib/lvgl/tests \
             --exclude=./lib/lvgl/demos \
@@ -203,7 +225,7 @@ jobs:
             --exclude=./lib/lvgl/scripts \
             --exclude='./lib/lvgl/.git*' \
             --exclude='./.git*' \
-            -cf - . | tar -C "$stage/simulator" -xf -
+            -cf - . | "$tar" -C "$stage/simulator" -xf -
 
           cp -R mcp-server/dist mcp-server/bin "$stage/mcp-server/"
           cp mcp-server/package.json mcp-server/package-lock.json "$stage/mcp-server/"
@@ -214,8 +236,8 @@ jobs:
 
       # Prove the slim tree still configures and builds (e.g. nothing in the
       # removed LVGL folders is needed), in a build dir outside the stage.
-      - name: Verify the slim tree builds (Linux)
-        if: runner.os == 'Linux'
+      - name: Verify the slim tree builds (Linux, macOS)
+        if: runner.os != 'Windows'
         run: |
           cmake -S "$RUNNER_TEMP/stage/simulator" -B "$RUNNER_TEMP/slim-build" -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build "$RUNNER_TEMP/slim-build" --parallel
@@ -240,12 +262,20 @@ jobs:
           if ((Get-Item $png).Length -eq 0) { throw "empty PNG" }
           if (Test-Path (Join-Path $src "build")) { throw "build dir leaked into the stage" }
 
-      - name: Create archive (Linux)
-        if: runner.os == 'Linux'
+      - name: Create archive (Linux, macOS)
+        if: runner.os != 'Windows'
+        env:
+          COPYFILE_DISABLE: "1"
         run: |
-          tar -czf "${{ matrix.asset }}" -C "$RUNNER_TEMP/stage" .
-          tar -tzf "${{ matrix.asset }}" | grep -xE '(\./)?simulator/CMakeLists\.txt' >/dev/null \
+          tar=tar
+          if [ "$RUNNER_OS" = "macOS" ]; then tar=gtar; fi
+          "$tar" -czf "${{ matrix.asset }}" -C "$RUNNER_TEMP/stage" .
+          "$tar" -tzf "${{ matrix.asset }}" > "$RUNNER_TEMP/archive-list.txt"
+          grep -xE '(\./)?simulator/CMakeLists\.txt' "$RUNNER_TEMP/archive-list.txt" >/dev/null \
             || { echo "::error::simulator/CMakeLists.txt missing from the archive"; exit 1; }
+          if grep -E '(^|/)\._' "$RUNNER_TEMP/archive-list.txt"; then
+            echo "::error::AppleDouble (._*) entries in the archive"; exit 1
+          fi
 
       - name: Create archive (Windows)
         if: runner.os == 'Windows'
@@ -298,9 +328,9 @@ jobs:
       - name: Checksums
         working-directory: dist-assets
         run: |
-          test -f lvgl-mcp-esp32-linux-x64.tar.gz
-          test -f lvgl-mcp-esp32-windows-x64.zip
-          sha256sum lvgl-mcp-esp32-linux-x64.tar.gz lvgl-mcp-esp32-windows-x64.zip > SHA256SUMS.txt
+          assets=(lvgl-mcp-esp32-linux-x64.tar.gz lvgl-mcp-esp32-macos.tar.gz lvgl-mcp-esp32-windows-x64.zip)
+          for a in "${assets[@]}"; do test -f "$a" || { echo "::error::$a is missing"; exit 1; }; done
+          sha256sum "${assets[@]}" > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Attest build provenance
@@ -308,6 +338,7 @@ jobs:
         with:
           subject-path: |
             dist-assets/lvgl-mcp-esp32-linux-x64.tar.gz
+            dist-assets/lvgl-mcp-esp32-macos.tar.gz
             dist-assets/lvgl-mcp-esp32-windows-x64.zip
 
       - name: Release notes from CHANGELOG.md
@@ -326,9 +357,9 @@ jobs:
 
           ---
           **Install:** `npm install -g lvgl-mcp-server` (the matching simulator is downloaded and SHA-256 verified on install), or `claude mcp add lvgl-simulator -- npx -y lvgl-mcp-server@2`.
-          A C/C++ compiler, CMake >= 3.16 and Ninja (or Make) are required: every render compiles against LVGL.
+          A C/C++ compiler, CMake >= 3.16 and Ninja (or Make) are required: every render compiles against LVGL (Windows: Visual Studio Build Tools; macOS: `xcode-select --install` and `brew install cmake ninja`; Linux: gcc or clang).
 
-          **Verify downloads:** `sha256sum --ignore-missing -c SHA256SUMS.txt` and `gh attestation verify <archive> --repo jaklys/Lvgl-mcp-esp32`.
+          **Verify downloads:** `sha256sum --ignore-missing -c SHA256SUMS.txt` (macOS: `shasum -a 256 --ignore-missing -c SHA256SUMS.txt`) and `gh attestation verify <archive> --repo jaklys/Lvgl-mcp-esp32`.
           EOF
 
       - name: Create release
@@ -342,6 +373,7 @@ jobs:
             --title "$TAG" \
             --notes-file release-notes.md \
             dist-assets/lvgl-mcp-esp32-linux-x64.tar.gz \
+            dist-assets/lvgl-mcp-esp32-macos.tar.gz \
             dist-assets/lvgl-mcp-esp32-windows-x64.zip \
             dist-assets/SHA256SUMS.txt
 

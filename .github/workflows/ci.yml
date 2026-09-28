@@ -63,10 +63,17 @@ jobs:
     name: Simulator + e2e (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
+    # Intel macOS is informational: a failure there does not fail the run.
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # macos-latest is Apple Silicon.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        experimental: [false]
+        include:
+          - os: macos-26-intel
+            experimental: true
     steps:
       - uses: actions/checkout@v7
         with:
@@ -83,14 +90,26 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build
 
+      # The macOS images ship Xcode (Apple clang), CMake and Ninja; install
+      # only what is missing.
+      - name: Toolchain (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          command -v ninja >/dev/null || brew install ninja
+          command -v cmake >/dev/null || brew install cmake
+          echo "Xcode: $(xcode-select -p)"
+          cc --version | head -n1
+          cmake --version | head -n1
+          echo "ninja $(ninja --version)"
+
       - name: Set up MSVC (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         with:
           arch: x64
 
-      - name: Configure simulator (Linux)
-        if: runner.os == 'Linux'
+      - name: Configure simulator (Linux, macOS)
+        if: runner.os != 'Windows'
         run: cmake -S simulator -B simulator/build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Configure simulator (Windows)
@@ -100,8 +119,8 @@ jobs:
       - name: Build simulator
         run: cmake --build simulator/build --parallel
 
-      - name: Smoke test (Linux)
-        if: runner.os == 'Linux'
+      - name: Smoke test (Linux, macOS)
+        if: runner.os != 'Windows'
         run: |
           out="$RUNNER_TEMP/smoke"
           mkdir -p "$out"
@@ -149,7 +168,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: smoke-${{ runner.os }}
+          name: smoke-${{ matrix.os }}
           path: ${{ runner.temp }}/smoke/
           if-no-files-found: ignore
           retention-days: 7

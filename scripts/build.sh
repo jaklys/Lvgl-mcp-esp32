@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
-# LVGL simulator build script for Linux (macOS: experimental).
+# LVGL simulator build script for Linux and macOS.
 # Bash counterpart of scripts/build.bat. Uses the system C and C++ compilers
-# ($CC/$CXX, else cc/c++), CMake >= 3.16 and Ninja if available (otherwise
-# Unix Makefiles). Builds simulator/build in Release mode.
+# ($CC/$CXX, else cc/c++: gcc or clang on Linux, Apple clang on macOS),
+# CMake >= 3.16 and Ninja if available (otherwise Unix Makefiles). Builds
+# simulator/build in Release mode.
 #
 #   scripts/build.sh           check tools, configure and build
 #   scripts/build.sh --check   only check the toolchain (used by setup.sh)
@@ -15,7 +16,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SIM_DIR="$REPO_ROOT/simulator"
 BUILD_DIR="$SIM_DIR/build"
 
+IS_MACOS=0
 if [ "$(uname -s)" = "Darwin" ]; then
+  IS_MACOS=1
   INSTALL_HINT="Install build prerequisites, e.g.:
   xcode-select --install && brew install cmake ninja"
 else
@@ -31,6 +34,12 @@ die() {
 }
 
 # ── Check tools ──────────────────────────────────────────────────────
+# macOS: /usr/bin/cc, c++ and make exist even without the Xcode Command Line
+# Tools; they only print "xcrun: error: invalid active developer path".
+if [ "$IS_MACOS" -eq 1 ] && ! xcode-select -p >/dev/null 2>&1; then
+  die "Xcode Command Line Tools not found (run: xcode-select --install)."
+fi
+
 command -v cmake >/dev/null 2>&1 || die "cmake not found on PATH."
 CMAKE_VER="$(cmake --version | head -n1 | sed -E 's/[^0-9]*([0-9]+\.[0-9]+(\.[0-9]+)?).*/\1/')"
 CMAKE_MAJOR="${CMAKE_VER%%.*}"
@@ -53,6 +62,10 @@ pick_compiler() { # $1 = env override, rest = candidates
 }
 CC_BIN="$(pick_compiler "${CC:-}" cc gcc clang)" || die "no C compiler found (looked for \$CC, cc, gcc, clang)."
 CXX_BIN="$(pick_compiler "${CXX:-}" c++ g++ clang++)" || die "no C++ compiler found (looked for \$CXX, c++, g++, clang++). LVGL 9.6 needs one."
+"$CC_BIN" --version >/dev/null 2>&1 || die "C compiler '$CC_BIN' does not run ('$CC_BIN --version' failed)."
+
+# Parallel jobs for Make (Ninja parallelizes by itself). nproc is GNU-only.
+JOBS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 
 if command -v ninja >/dev/null 2>&1; then
   GENERATOR="Ninja"
@@ -130,7 +143,7 @@ fi
 
 # ── Build ────────────────────────────────────────────────────────────
 echo "Building..."
-cmake --build "$BUILD_DIR" --parallel
+cmake --build "$BUILD_DIR" --parallel "$JOBS"
 
 echo ""
 echo "Build complete: $BUILD_DIR/lvgl_sim"

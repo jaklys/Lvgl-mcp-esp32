@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# LVGL MCP Server - setup script for Linux (macOS: experimental).
+# LVGL MCP Server - setup script for Linux and macOS.
 # Bash counterpart of scripts/setup.ps1. Validates the toolchain, initializes
 # the LVGL submodule, builds the simulator (scripts/build.sh) and the MCP
 # server, smoke-tests the binary and prints the MCP client configuration.
