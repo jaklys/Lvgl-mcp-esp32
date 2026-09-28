@@ -221,7 +221,8 @@ void create_ui(void) {
       files: [{ path: "ui/screens/home.c", content: "void ui_init(void) {\n  nope();\n}\n" }],
     });
     assert.equal(bad.isError, true);
-    assert.match(text(bad), /ui\/screens\/home\.c:2/, "diagnostics keep the project-relative file name");
+    // gcc/clang: ui/screens/home.c:2:3: error ...; MSVC: ui/screens/home.c(2): error C4013 ...
+    assert.match(text(bad), /ui\/screens\/home\.c[:(]2\b/, "diagnostics keep the project-relative file name");
   });
 
   test("board preset sets 320x240 RGB565", async () => {

@@ -49,8 +49,9 @@ function dirPattern(dir: string): RegExp {
 export function shortenPaths(text: string, p: PathShortening): string {
   let out = text;
   // Longest first: a project staged below the build dir must lose its full prefix.
+  // Project-relative names use "/" on every platform (MSVC prints ui\screens\home.c).
   for (const d of [...(p.stripDirs ?? [])].sort((a, b) => b.length - a.length)) {
-    if (d) out = out.replace(dirPattern(d), "");
+    if (d) out = out.replace(new RegExp(`${dirPattern(d).source}([^\\s:()'"]*)`, "gi"), (_m, rest: string) => rest.replace(/\\/g, "/"));
   }
   if (p.buildDir) out = out.replace(dirPattern(p.buildDir), "");
   if (p.simulatorDir) {

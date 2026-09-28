@@ -50,7 +50,9 @@ for (const f of files) {
     console.error(`${f}: markers ${BEGIN} ... ${END} not found`);
     process.exit(1);
   }
-  const next = text.slice(0, a + BEGIN.length) + "\n" + table + "\n" + text.slice(b);
+  // Keep the file's line endings (a Windows checkout has CRLF).
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const next = text.slice(0, a + BEGIN.length) + eol + table.split("\n").join(eol) + eol + text.slice(b);
   if (next === text) continue;
   if (mode === "--check") {
     console.error(`${f}: board table is out of date (run node mcp-server/scripts/gen-boards-md.mjs --write ${f})`);

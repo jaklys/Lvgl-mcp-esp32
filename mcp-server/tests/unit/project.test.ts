@@ -148,7 +148,8 @@ test("stageInlineFiles: writes files, keeps unchanged mtimes, removes stale file
 });
 
 test("entry wrapper: simulator/templates/project_wrapper.c with %ENTRY% replaced", async () => {
-  const template = await fs.readFile(path.join(simulatorDir, "templates", "project_wrapper.c"), "utf-8");
+  // A Windows checkout (text=auto) has CRLF line endings; the layout is what matters here.
+  const template = (await fs.readFile(path.join(simulatorDir, "templates", "project_wrapper.c"), "utf-8")).replace(/\r\n/g, "\n");
   const w = entryWrapperSource(template, "ui_init");
   assert.match(w, /void ui_init\(void\);/);
   assert.match(w, /void create_ui\(void\)\n\{\n {4}ui_init\(\);\n\}/);

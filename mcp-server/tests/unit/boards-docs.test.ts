@@ -51,7 +51,8 @@ test("board presets: the contract's boards exist with sane values", () => {
 test("boards markdown: one row per board; docs/boards.md is up to date", () => {
   const table = boardsMarkdownTable();
   assert.equal(table.split("\n").length, BOARDS.length + 2);
-  const md = readFileSync(path.join(packageDir, "..", "docs", "boards.md"), "utf-8");
+  // A Windows checkout (core.autocrlf / text=auto) has CRLF line endings.
+  const md = readFileSync(path.join(packageDir, "..", "docs", "boards.md"), "utf-8").replace(/\r\n/g, "\n");
   assert.ok(md.includes(table), "docs/boards.md contains the generated table - run: node scripts/gen-boards-md.mjs --write");
   const out = execFileSync(process.execPath, ["--import", "tsx", path.join(packageDir, "scripts", "gen-boards-md.mjs")], {
     cwd: packageDir,
