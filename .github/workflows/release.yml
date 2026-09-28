@@ -245,7 +245,7 @@ jobs:
           [ "$found" = "$PLATFORM " ] \
             || { echo "::error::simulator/prebuilt must hold only $PLATFORM, found: $found"; exit 1; }
           if [ "$RUNNER_OS" = "Windows" ]; then lib=lvgl.lib; sim=lvgl_sim.exe; else lib=liblvgl.a; sim=lvgl_sim; fi
-          for f in "$lib" "$sim" include/lvgl.h include/lvgl/lvgl.h include/include/lvgl/lv_version.h lv_conf.sha256 BUILD-INFO.txt; do
+          for f in "$lib" "$sim" include/lvgl.h include/include/lvgl/lvgl.h include/include/lvgl/lv_version.h lv_conf.sha256 BUILD-INFO.txt; do
             [ -f "$pre/$f" ] || { echo "::error::$pre/$f is missing"; exit 1; }
           done
           cat "$pre/BUILD-INFO.txt"
