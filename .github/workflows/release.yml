@@ -133,6 +133,10 @@ jobs:
           cmake --version | head -n1
           echo "ninja $(ninja --version)"
 
+      # This exports vcvars' environment, including Platform=x64. Windows env
+      # names are case-insensitive, so a step env named PLATFORM would merge
+      # into that "Platform" key and Git Bash would not see $PLATFORM; hence
+      # PREBUILT_PLATFORM below.
       - name: Set up MSVC (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
@@ -177,16 +181,16 @@ jobs:
       - name: Build prebuilt LVGL (Linux, macOS)
         if: runner.os != 'Windows'
         env:
-          PLATFORM: ${{ matrix.platform }}
-        run: ./scripts/build-prebuilt.sh --platform "$PLATFORM" --build-dir "$RUNNER_TEMP/prebuilt-build" --verify
+          PREBUILT_PLATFORM: ${{ matrix.platform }}
+        run: ./scripts/build-prebuilt.sh --platform "$PREBUILT_PLATFORM" --build-dir "$RUNNER_TEMP/prebuilt-build" --verify
 
       - name: Build prebuilt LVGL (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         env:
-          PLATFORM: ${{ matrix.platform }}
+          PREBUILT_PLATFORM: ${{ matrix.platform }}
         run: |
-          if ($env:PLATFORM -ne "windows-x64") { throw "build-prebuilt.ps1 builds windows-x64, matrix wants $env:PLATFORM" }
+          if ($env:PREBUILT_PLATFORM -ne "windows-x64") { throw "build-prebuilt.ps1 builds windows-x64, matrix wants $env:PREBUILT_PLATFORM" }
           & .\scripts\build-prebuilt.ps1 -BuildDir (Join-Path $env:RUNNER_TEMP "prebuilt-build") -Verify
           if ($LASTEXITCODE -ne 0) { throw "build-prebuilt.ps1 failed with $LASTEXITCODE" }
 
@@ -212,7 +216,7 @@ jobs:
         shell: bash
         env:
           COPYFILE_DISABLE: "1" # macOS: no AppleDouble files, whatever tar runs
-          PLATFORM: ${{ matrix.platform }}
+          PREBUILT_PLATFORM: ${{ matrix.platform }}
         run: |
           set -euo pipefail
           tar=tar
@@ -240,10 +244,10 @@ jobs:
           cp LICENSE README.md CHANGELOG.md "$stage/"
 
           # Exactly this platform's prebuilt dir, complete.
-          pre="$stage/simulator/prebuilt/$PLATFORM"
+          pre="$stage/simulator/prebuilt/$PREBUILT_PLATFORM"
           found="$(find "$stage/simulator/prebuilt" -mindepth 1 -maxdepth 1 -exec basename {} \; | tr '\n' ' ')"
-          [ "$found" = "$PLATFORM " ] \
-            || { echo "::error::simulator/prebuilt must hold only $PLATFORM, found: $found"; exit 1; }
+          [ "$found" = "$PREBUILT_PLATFORM " ] \
+            || { echo "::error::simulator/prebuilt must hold only $PREBUILT_PLATFORM, found: $found"; exit 1; }
           if [ "$RUNNER_OS" = "Windows" ]; then lib=lvgl.lib; sim=lvgl_sim.exe; else lib=liblvgl.a; sim=lvgl_sim; fi
           for f in "$lib" "$sim" include/lvgl.h include/include/lvgl/lvgl.h include/include/lvgl/lv_version.h lv_conf.sha256 BUILD-INFO.txt; do
             [ -f "$pre/$f" ] || { echo "::error::$pre/$f is missing"; exit 1; }
@@ -258,7 +262,7 @@ jobs:
       - name: Verify the slim tree builds (Linux, macOS)
         if: runner.os != 'Windows'
         env:
-          PLATFORM: ${{ matrix.platform }}
+          PREBUILT_PLATFORM: ${{ matrix.platform }}
         run: |
           set -euo pipefail
           src="$RUNNER_TEMP/stage/simulator"
@@ -269,7 +273,7 @@ jobs:
           test -s "$RUNNER_TEMP/slim.png"
 
           cmake -S "$src" -B "$RUNNER_TEMP/slim-prebuilt" -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DLVGL_PREBUILT_DIR="$src/prebuilt/$PLATFORM" 2>&1 | tee "$RUNNER_TEMP/slim-prebuilt.log"
+            -DLVGL_PREBUILT_DIR="$src/prebuilt/$PREBUILT_PLATFORM" 2>&1 | tee "$RUNNER_TEMP/slim-prebuilt.log"
           grep -q "LVGL_PREBUILT: using" "$RUNNER_TEMP/slim-prebuilt.log" \
             || { echo "::error::the slim tree did not use its prebuilt LVGL"; exit 1; }
           cmake --build "$RUNNER_TEMP/slim-prebuilt" --parallel
@@ -286,7 +290,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         env:
-          PLATFORM: ${{ matrix.platform }}
+          PREBUILT_PLATFORM: ${{ matrix.platform }}
         run: |
           $src = Join-Path $env:RUNNER_TEMP "stage\simulator"
           $bld = Join-Path $env:RUNNER_TEMP "slim-build"
@@ -300,7 +304,7 @@ jobs:
           if ((Get-Item $png).Length -eq 0) { throw "empty PNG" }
 
           $pbld = Join-Path $env:RUNNER_TEMP "slim-prebuilt"
-          $pdir = Join-Path $src "prebuilt\$env:PLATFORM"
+          $pdir = Join-Path $src "prebuilt\$env:PREBUILT_PLATFORM"
           $cfg = cmake -S $src -B $pbld -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl "-DLVGL_PREBUILT_DIR=$pdir" 2>&1 | Out-String
           Write-Host $cfg
           if ($LASTEXITCODE -ne 0) { throw "configure of the slim tree with the prebuilt LVGL failed" }
@@ -356,7 +360,7 @@ jobs:
         if: runner.os != 'Windows'
         env:
           ASSET: ${{ matrix.asset }}
-          PLATFORM: ${{ matrix.platform }}
+          PREBUILT_PLATFORM: ${{ matrix.platform }}
         run: |
           set -euo pipefail
           x="$RUNNER_TEMP/unpacked"
@@ -366,11 +370,11 @@ jobs:
           X="$x/simulator" node --input-type=module -e '
             const m = await import(process.cwd() + "/mcp-server/scripts/postinstall.mjs");
             const r = m.preparePrebuilt(process.env.X);
-            if (r.id !== process.env.PLATFORM || !r.ok) {
-              console.error(`postinstall sees ${JSON.stringify(r)} for ${process.platform}-${process.arch}, expected ${process.env.PLATFORM}`);
+            if (r.id !== process.env.PREBUILT_PLATFORM || !r.ok) {
+              console.error(`postinstall sees ${JSON.stringify(r)} for ${process.platform}-${process.arch}, expected ${process.env.PREBUILT_PLATFORM}`);
               process.exit(1);
             }'
-          node scripts/smoke-test.mjs "$x/simulator/prebuilt/$PLATFORM/lvgl_sim" 480 320 \
+          node scripts/smoke-test.mjs "$x/simulator/prebuilt/$PREBUILT_PLATFORM/lvgl_sim" 480 320 \
             --ui examples/06-ui.json --expect-names title,target,settings_btn --no-toolchain
           if [ -e "$x/simulator/build" ]; then echo "::error::a build dir appeared in the unpacked tree"; exit 1; fi
 
@@ -379,7 +383,7 @@ jobs:
         shell: pwsh
         env:
           ASSET: ${{ matrix.asset }}
-          PLATFORM: ${{ matrix.platform }}
+          PREBUILT_PLATFORM: ${{ matrix.platform }}
         run: |
           $x = Join-Path $env:RUNNER_TEMP "unpacked"
           if (Test-Path $x) { Remove-Item -Recurse -Force $x }
@@ -388,9 +392,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "tar.exe failed to unpack $env:ASSET" }
           $env:X = Join-Path $x "simulator"
           $url = ([System.Uri](Join-Path $env:GITHUB_WORKSPACE "mcp-server\scripts\postinstall.mjs")).AbsoluteUri
-          node --input-type=module -e "const m = await import('$url'); const r = m.preparePrebuilt(process.env.X); if (r.id !== process.env.PLATFORM || !r.ok) { console.error('postinstall sees ' + JSON.stringify(r) + ', expected ' + process.env.PLATFORM); process.exit(1); }"
+          node --input-type=module -e "const m = await import('$url'); const r = m.preparePrebuilt(process.env.X); if (r.id !== process.env.PREBUILT_PLATFORM || !r.ok) { console.error('postinstall sees ' + JSON.stringify(r) + ', expected ' + process.env.PREBUILT_PLATFORM); process.exit(1); }"
           if ($LASTEXITCODE -ne 0) { throw "postinstall does not find the prebuilt dir" }
-          node scripts/smoke-test.mjs (Join-Path $x "simulator\prebuilt\$env:PLATFORM\lvgl_sim.exe") 480 320 --ui examples/06-ui.json --expect-names title,target,settings_btn --no-toolchain
+          node scripts/smoke-test.mjs (Join-Path $x "simulator\prebuilt\$env:PREBUILT_PLATFORM\lvgl_sim.exe") 480 320 --ui examples/06-ui.json --expect-names title,target,settings_btn --no-toolchain
           if ($LASTEXITCODE -ne 0) { throw "smoke test of the packaged lvgl_sim.exe failed" }
           if (Test-Path (Join-Path $x "simulator\build")) { throw "a build dir appeared in the unpacked tree" }
 
