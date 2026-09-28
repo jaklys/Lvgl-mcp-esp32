@@ -156,6 +156,23 @@ test("exit 6: action errors carry the message and the known names", () => {
   assert.match(e.message, /lv_obj_set_name/);
 });
 
+test("exit 6: the simulator's own '[sim] actions[i]' lines are shown", () => {
+  const e = mapRunFailure(
+    run({
+      code: 6,
+      stderr:
+        "[sim] phase=actions\n[sim] action 0: click at 330 ms\n" +
+        '[sim] actions[0] (click): no object named "wifi_switch" on the active screen or its layers. Known names/paths (1 named objects): "wifi_sw", "lv_obj#0"\n',
+    }),
+    15000
+  );
+  assert.equal(e.kind, "action");
+  assert.match(e.message, /actions\[0\] \(click\): no object named "wifi_switch".*"wifi_sw"/);
+  assert.doesNotMatch(e.message, /no details on stderr|click at 330 ms/);
+  const parse = mapRunFailure(run({ code: 6, stderr: "[sim] actions[2]: unknown action \"tap\" (known: wait, click)\n" }), 15000);
+  assert.match(parse.message, /actions\[2\]: unknown action "tap"/);
+});
+
 test("exit 1 with an unknown 2.2.0 flag explains the version mismatch", () => {
   const e = mapRunFailure(run({ code: 1, stderr: "Unknown argument: --annotate\nUsage: ..." }), 15000);
   assert.equal(e.kind, "args");

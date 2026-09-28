@@ -272,7 +272,7 @@ export const projectShape = {
     .min(1)
     .max(4096)
     .optional()
-    .describe("Absolute path of a project directory on this machine (must be inside one of the MCP client's roots, LVGL_PROJECT_ROOT or the server's working directory). All .c/.cpp files below it are compiled (build/, .git/, managed_components/ ... are skipped). Use this OR files."),
+    .describe("Absolute path of a project directory on this machine (must be inside one of the MCP client's roots, LVGL_ALLOWED_ROOTS or the server's working directory). All .c/.cpp files below it are compiled (build/, .git/, managed_components/ ... are skipped). Use this OR files."),
   include_dirs: z
     .array(z.string().min(1).max(1024))
     .max(64)
@@ -298,7 +298,7 @@ export const projectShape = {
 export interface RenderToolDeps {
   backend: SimulatorBackend;
   history: RenderHistory;
-  /** Allowed roots for `root` (MCP client roots, LVGL_PROJECT_ROOT, cwd). */
+  /** Allowed roots for `root` (MCP client roots, LVGL_ALLOWED_ROOTS, cwd). */
   allowedRoots: () => Promise<string[]>;
 }
 
@@ -391,7 +391,7 @@ export function registerRenderTools(server: McpServer, backend: SimulatorBackend
       title: "Render a multi-file LVGL C project",
       description: [
         "Compile a multi-file LVGL C/C++ project (e.g. a SquareLine Studio or EEZ Studio export, or the ui/ folder of an ESP-IDF app) and render it: all .c/.cpp files are compiled and the simulator calls your entry function (default `ui_init`) instead of create_ui().",
-        "Pass the files inline (`files`: [{path, content}], written to a private build directory) or point `root` at a directory on this machine inside the client's roots / LVGL_PROJECT_ROOT / the server's working directory. The root and every directory with headers are on the include path; add include_dirs/defines as needed and `exclude` hardware code (app_main, LCD/touch drivers).",
+        "Pass the files inline (`files`: [{path, content}], written to a private build directory) or point `root` at a directory on this machine inside the client's roots / LVGL_ALLOWED_ROOTS / the server's working directory. The root and every directory with headers are on the include path; add include_dirs/defines as needed and `exclude` hardware code (app_main, LCD/touch drivers).",
         "ESP-IDF shims are ON by default here (esp_log.h, freertos/*.h, esp_timer.h, esp_lvgl_port.h lock/unlock ... compile unchanged). Diagnostics keep the project-relative file names.",
         SIMULATOR_FACTS,
       ].join("\n\n"),

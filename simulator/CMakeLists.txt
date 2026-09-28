@@ -79,7 +79,21 @@ set(SIM_SOURCES
     templates/sim.c
 )
 
-add_executable(lvgl_sim ${SIM_SOURCES} ${USER_SOURCES})
+# User code is its own object library so that its include path holds only
+# the project's directories, the helper headers (sim.h, esp_shim.h) and LVGL:
+# a project header named e.g. events.h or json.h must not be shadowed by the
+# simulator's internal headers (and vice versa).
+add_library(lvgl_sim_user OBJECT ${USER_SOURCES})
+target_include_directories(lvgl_sim_user PRIVATE
+    ${USER_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/templates
+    # Last, so a project's own headers win: ESP-IDF stand-ins such as
+    # freertos/FreeRTOS.h and esp_log.h (they only pull in esp_shim.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/templates/esp_shim
+)
+target_link_libraries(lvgl_sim_user PRIVATE lvgl)
+
+add_executable(lvgl_sim ${SIM_SOURCES} $<TARGET_OBJECTS:lvgl_sim_user>)
 
 target_include_directories(lvgl_sim PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -90,10 +104,6 @@ target_include_directories(lvgl_sim PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/util
     ${CMAKE_CURRENT_SOURCE_DIR}/templates
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/stb
-    ${USER_INCLUDE_DIRS}
-    # Last, so a project's own headers win: ESP-IDF stand-ins such as
-    # freertos/FreeRTOS.h and esp_log.h (they only pull in esp_shim.h)
-    ${CMAKE_CURRENT_SOURCE_DIR}/templates/esp_shim
 )
 
 target_link_libraries(lvgl_sim PRIVATE lvgl)
@@ -110,6 +120,7 @@ endif()
 if(MSVC)
     # Sources and user snippets are UTF-8 (e.g. "°C" in label text)
     target_compile_options(lvgl_sim PRIVATE /utf-8)
+    target_compile_options(lvgl_sim_user PRIVATE /utf-8)
     if(NOT LVGL_USING_PREBUILT) # an IMPORTED lvgl takes INTERFACE options only
         target_compile_options(lvgl PRIVATE /utf-8)
     endif()

@@ -84,8 +84,13 @@ export function isPrebuiltFailure(output: string, prebuiltDir: string | null): b
     const norm = (s: string) => s.replace(/\\/g, "/").toLowerCase();
     const dir = norm(prebuiltDir).replace(/\/+$/, "");
     const out = norm(output);
-    // The prebuilt dir shows up in link command lines too; require it on an error-ish line.
-    for (const line of out.split("\n")) {
+    // The prebuilt dir shows up in compile and link command lines too (-isystem
+    // <dir>/include, <dir>/liblvgl.a); require it on an error-ish line that is
+    // not a compiler command line and not merely "-Werror=...": a compile
+    // error in the user's code must not trigger the source-build fallback.
+    for (const raw of out.split("\n")) {
+      const line = raw.replace(/-w(?:no-)?error\S*/g, "");
+      if (/^failed: /.test(line) || /\s[-/]c\s/.test(` ${line} `) || /\s-isystem\s/.test(line)) continue;
       if (line.includes(dir) && /error|cannot|could not|not found|invalid|incompatible|ignoring|lnk\d/.test(line)) return true;
     }
   }

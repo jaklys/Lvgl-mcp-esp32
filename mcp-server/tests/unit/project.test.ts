@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   collectSources,
   defaultAllowedRoots,
@@ -13,10 +14,10 @@ import {
   resolveProjectRoot,
   stageInlineFiles,
   validateRelativePath,
-  writeEspShimStubs,
-  withEspShims,
 } from "../../src/simulator/project.js";
 import { buildProjectRequest } from "../../src/tools/render.js";
+
+const simulatorDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "simulator");
 
 test("validateRelativePath: normalises good paths, rejects absolute paths and traversal", () => {
   assert.equal(validateRelativePath("ui/ui.c"), "ui/ui.c");
@@ -35,8 +36,13 @@ test("isInside", () => {
   assert.equal(isInside("/a/b", "/a/b/../c"), false);
 });
 
-test("defaultAllowedRoots: client roots, LVGL_PROJECT_ROOT, cwd unless / or home", () => {
-  assert.deepEqual(defaultAllowedRoots(["/c1"], { LVGL_PROJECT_ROOT: "/proj" }, "/work/app", "/home/u"), ["/c1", path.resolve("/proj"), path.resolve("/work/app")]);
+test("defaultAllowedRoots: client roots, LVGL_ALLOWED_ROOTS (path list), cwd unless / or home", () => {
+  assert.deepEqual(
+    defaultAllowedRoots(["/c1"], { LVGL_ALLOWED_ROOTS: ["/proj", "", "/other"].join(path.delimiter) }, "/work/app", "/home/u"),
+    ["/c1", path.resolve("/proj"), path.resolve("/other"), path.resolve("/work/app")]
+  );
+  // LVGL_PROJECT_ROOT keeps its 2.1.0 meaning (repository root with simulator/) and is not an allowed root
+  assert.deepEqual(defaultAllowedRoots([], { LVGL_PROJECT_ROOT: "/repo" }, "/", "/home/u"), []);
   assert.deepEqual(defaultAllowedRoots([], {}, "/", "/home/u"), []);
   assert.deepEqual(defaultAllowedRoots([], {}, "/home/u", "/home/u"), []);
 });
@@ -141,31 +147,28 @@ test("stageInlineFiles: writes files, keeps unchanged mtimes, removes stale file
   }
 });
 
-test("entry wrapper and ESP-IDF shims", async () => {
-  const w = entryWrapperSource("ui_init", false);
+test("entry wrapper: simulator/templates/project_wrapper.c with %ENTRY% replaced", async () => {
+  const template = await fs.readFile(path.join(simulatorDir, "templates", "project_wrapper.c"), "utf-8");
+  const w = entryWrapperSource(template, "ui_init");
   assert.match(w, /void ui_init\(void\);/);
   assert.match(w, /void create_ui\(void\)\n\{\n {4}ui_init\(\);\n\}/);
-  assert.doesNotMatch(w, /esp_shim/);
-  const s = entryWrapperSource("ui_init", true);
-  assert.match(s, /#include "esp_shim\.h"/);
-  const self = entryWrapperSource("create_ui", false);
-  assert.doesNotMatch(self, /void create_ui\(void\)\n\{/);
-  assert.throws(() => entryWrapperSource("ui init", false));
-  assert.throws(() => entryWrapperSource("1abc", false));
-  const full = withEspShims("int x;\n", "user_code.c");
-  assert.match(full, /#include "esp_shim\.h"\n#line 1 "user_code\.c"\nint x;/);
+  assert.match(w, /extern "C"/);
+  assert.doesNotMatch(w, /%ENTRY%/);
+  const self = entryWrapperSource(template, "create_ui");
+  assert.doesNotMatch(self, /void create_ui\(void\)/);
+  assert.throws(() => entryWrapperSource(template, "ui init"));
+  assert.throws(() => entryWrapperSource(template, "1abc"));
+  assert.throws(() => entryWrapperSource("void create_ui(void) {}", "ui_init"), /%ENTRY%/);
+});
 
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "lvgl-shim-"));
-  try {
-    await writeEspShimStubs(dir);
-    for (const h of ["esp_log.h", "freertos/FreeRTOS.h", "freertos/task.h", "freertos/semphr.h", "esp_lvgl_port.h", "esp_timer.h", "esp_err.h"]) {
-      const text = await fs.readFile(path.join(dir, ...h.split("/")), "utf-8");
-      assert.match(text, /#include "esp_shim\.h"/, h);
-    }
-    assert.match(await fs.readFile(path.join(dir, "esp_lvgl_port.h"), "utf-8"), /lvgl_port_lock\(uint32_t timeout_ms\)/);
-  } finally {
-    await fs.rm(dir, { recursive: true, force: true });
+test("ESP-IDF stand-in headers ship with the simulator (no generated stubs)", async () => {
+  const dir = path.join(simulatorDir, "templates", "esp_shim");
+  for (const h of ["esp_log.h", "esp_err.h", "esp_timer.h", "esp_system.h", "esp_check.h", "sdkconfig.h", "esp_lvgl_port.h", "freertos/FreeRTOS.h", "freertos/task.h", "freertos/semphr.h", "freertos/queue.h"]) {
+    const text = await fs.readFile(path.join(dir, ...h.split("/")), "utf-8");
+    assert.match(text, /#include "esp_shim\.h"/, h);
   }
+  const shim = await fs.readFile(path.join(dir, "..", "esp_shim.h"), "utf-8");
+  for (const sym of ["xQueueCreate", "xQueueReceive", "lvgl_port_lock", "xSemaphoreCreateMutex", "ESP_RETURN_ON_ERROR"]) assert.match(shim, new RegExp(sym), sym);
 });
 
 test("isValidDefine", () => {

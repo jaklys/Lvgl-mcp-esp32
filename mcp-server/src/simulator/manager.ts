@@ -268,8 +268,15 @@ export function mapRunFailure(res: RunResult, runTimeoutMs: number): SimulatorEr
       );
     }
     case 6: {
-      // stderr carries the problem and the list of known object names.
-      const detail = other.length ? other : stderrLines;
+      // stderr carries the problem and the list of known object names. The
+      // simulator prefixes them with "[sim] " like its progress lines:
+      // "[sim] actions[0] (click): no object named ...", "[sim] invalid action script ...".
+      const simErrors = res.stderr
+        .replace(/\r\n?/g, "\n")
+        .split("\n")
+        .filter((l) => /^\[sim\] (actions\[\d+\]|invalid action script|action script|out of memory)/.test(l))
+        .map((l) => l.replace(/^\[sim\] /, "").trimEnd());
+      const detail = [...simErrors, ...(other.length ? other : simErrors.length ? [] : stderrLines)];
       return new SimulatorError(
         "action",
         `Action script error${phase ? " " + phaseText(phase) : ""}:\n${detail.slice(-30).join("\n") || "(no details on stderr)"}\n` +
@@ -634,11 +641,6 @@ export class SimulatorManager implements SimulatorBackend {
       }
       const defines = [...(p.defines ?? [])];
       for (const d of defines) if (!isValidDefine(d)) throw new ProjectPathError(`invalid define "${d}" (expected NAME or NAME=value)`);
-      if (espShims) {
-        const shim = await this.compiler.espShimSettings();
-        includeDirs.push(...shim.includeDirs);
-        defines.push(...shim.defines);
-      }
       const userFiles = [
         ...USER_FILES,
         ...col.relSources,
@@ -650,12 +652,13 @@ export class SimulatorManager implements SimulatorBackend {
       if (col.hasCxx) hints.push(`In C++ files declare the entry function with C linkage: extern "C" void ${p.entry}(void);`);
       return {
         unit: {
-          source: entryWrapperSource(p.entry, espShims),
+          source: entryWrapperSource(await this.compiler.projectWrapperTemplate(), p.entry),
           snippet: null,
           fullFile: true,
           sources: col.sources,
           includeDirs,
           defines,
+          espShims,
           userFiles,
           stripDirs: [root, p.root ?? root],
           cacheable: false,

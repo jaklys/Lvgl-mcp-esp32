@@ -15,6 +15,7 @@ import { installHint, runDoctor } from "../../src/doctor.js";
 import { mapRunFailure } from "../../src/simulator/manager.js";
 import { cleanBuildOutput, diagnosticHints, parseDiagnostics } from "../../src/simulator/diagnostics.js";
 import type { RunResult } from "../../src/simulator/process.js";
+import { platformId } from "../../src/simulator/prebuilt.js";
 
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const noPath: NodeJS.ProcessEnv = { PATH: "" };
@@ -136,14 +137,27 @@ test("postinstall: every supported platform maps to an asset the release workflo
   const mod = (await import(pathToFileURL(path.join(packageDir, "scripts", "postinstall.mjs")).href)) as {
     ASSETS: Record<string, string>;
     UNTESTED_PLATFORMS: Set<string>;
+    PREBUILT_IDS: Record<string, string>;
   };
-  assert.equal(mod.ASSETS["darwin-arm64"], "lvgl-mcp-esp32-macos.tar.gz");
-  assert.equal(mod.ASSETS["darwin-x64"], "lvgl-mcp-esp32-macos.tar.gz");
+  assert.equal(mod.ASSETS["darwin-arm64"], "lvgl-mcp-esp32-macos-arm64.tar.gz");
+  assert.equal(mod.ASSETS["darwin-x64"], "lvgl-mcp-esp32-macos-x64.tar.gz");
   assert.equal(mod.ASSETS["linux-x64"], "lvgl-mcp-esp32-linux-x64.tar.gz");
   assert.equal(mod.ASSETS["linux-arm64"], "lvgl-mcp-esp32-linux-x64.tar.gz");
   assert.equal(mod.ASSETS["win32-x64"], "lvgl-mcp-esp32-windows-x64.zip");
   assert.ok(mod.UNTESTED_PLATFORMS.has("linux-arm64"));
   assert.ok(!mod.UNTESTED_PLATFORMS.has("darwin-arm64"));
+  // postinstall and the server agree on simulator/prebuilt/<id> directories
+  assert.deepEqual(mod.PREBUILT_IDS, {
+    "win32-x64": "windows-x64",
+    "linux-x64": "linux-x64",
+    "darwin-arm64": "macos-arm64",
+    "darwin-x64": "macos-x64",
+  });
+  for (const [key, id] of Object.entries(mod.PREBUILT_IDS)) {
+    const [platform, arch] = key.split("-") as [NodeJS.Platform, string];
+    assert.equal(platformId(platform, arch), id, key);
+  }
+  assert.equal(platformId("linux", "arm64"), null);
 
   const release = readFileSync(path.join(packageDir, "..", ".github", "workflows", "release.yml"), "utf-8");
   const sums = /^\s*assets=\((?<list>[^)]*)\)/m.exec(release)?.groups?.["list"]?.split(/\s+/) ?? [];

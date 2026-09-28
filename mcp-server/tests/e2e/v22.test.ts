@@ -65,6 +65,7 @@ describe("e2e 2.2.0: captures, actions, UI documents, projects, diagnostics", { 
   };
 
   const SWITCH_UI = `#include "lvgl.h"
+#include <stdio.h>
 static void on_change(lv_event_t *e) {
     lv_obj_t *sw = lv_event_get_target_obj(e);
     printf("switch %s\\n", lv_obj_has_state(sw, LV_STATE_CHECKED) ? "on" : "off");

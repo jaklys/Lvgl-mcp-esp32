@@ -308,6 +308,10 @@ export function formatRenderText(
 
   const diag = formatUiDiagnostics(out.diagnostics);
   if (diag) parts.push(diag);
+  const dropped = Number((out as unknown as Record<string, unknown>)["diagnostics_dropped"] ?? 0);
+  if (dropped > 0) {
+    parts.push(`Note: ${dropped} more diagnostic(s) were not recorded (the simulator keeps at most 200; errors are kept first). Fix the listed ones and render again.`);
+  }
   const mem = formatMem(out);
   if (mem) parts.push(mem);
   if (out.fonts_used?.length) {

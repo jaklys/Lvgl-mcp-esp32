@@ -312,8 +312,8 @@ void create_ui(void) {
     uiFile: "06-ui.json",
     saveTree: false,
     args: {
-    width: 320,
-    height: 240,
+    width: 480,
+    height: 320,
     },
   },
   {

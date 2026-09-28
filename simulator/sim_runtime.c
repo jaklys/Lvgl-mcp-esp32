@@ -382,8 +382,8 @@ int sim_finish(void)
                  "the end state",
                  (unsigned)finite, finite == 1 ? " was" : "s were", (int)sim.elapsed_ms);
     }
-    diag_check_ui(sim.disp, sim.opt.fonts_given ? sim.opt.fonts : NULL, sim.opt.font_count);
-
+    /* Global findings first: the per-object checks can fill the diagnostics
+     * list (DIAG_MAX), and later entries are dropped */
     sim_mem_t mem;
     mem_snapshot(&mem);
     if (sim.opt.mem_budget_kb > 0 && mem.peak_bytes > (uint32_t)sim.opt.mem_budget_kb * 1024u) {
@@ -393,6 +393,8 @@ int sim_finish(void)
                  (unsigned)mem.peak_bytes, mem.peak_bytes / 1024.0, (unsigned)budget, (int)sim.opt.mem_budget_kb,
                  (unsigned)(mem.peak_bytes - budget));
     }
+
+    diag_check_ui(sim.disp, sim.opt.fonts_given ? sim.opt.fonts : NULL, sim.opt.font_count);
 
     if (write_json(anims_running, &mem) != 0) {
         fprintf(stderr, "[sim] failed to write JSON: %s\n", sim.opt.json_path);

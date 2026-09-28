@@ -7,7 +7,7 @@
 #     include/         LVGL headers in the lib/lvgl layout (lvgl.h,
 #                      lv_version.h, lvgl_private.h, include/**, src/**.h)
 #     lv_conf.sha256   SHA-256 of simulator/lv_conf.h (CR bytes removed)
-#     lvgl_sim         the simulator built from the same tree (XML mode and a
+#     lvgl_sim         the simulator built from the same tree (JSON UI mode and a
 #                      first render work without a toolchain)
 #     BUILD-INFO.txt   platform, LVGL version, compiler, commit
 #

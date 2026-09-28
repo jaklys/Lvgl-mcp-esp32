@@ -6,7 +6,7 @@ export const SIMULATOR_FACTS = [
   "Environment: LVGL 9.6 API, not v8 - use v9 names (lv_button_create, lv_screen_active, lv_image_*, lv_obj_remove_flag, LV_LABEL_LONG_MODE_*); v8 lv_msgbox_create/lv_tabview_create/lv_spinner_create signatures and lv_meter/lv_colorwheel do not exist. Code must also work on 9.5 devices? Avoid 9.6-only calls (lv_obj_set_hidden, lv_obj_set_checked, lv_label_set_max_lines); see lvgl_docs / resource lvgl://api-reference. C11, 32 bpp XRGB8888 framebuffer by default (color_format=\"rgb565\" or a board preset renders like a 16 bpp panel).",
   "Fonts: lv_font_montserrat_8 .. lv_font_montserrat_48 (even sizes) and unscii_8/16 exist here, but on the ESP32 only the sizes enabled in the device's lv_conf.h exist - pass `fonts` with the device's list to get FONT_NOT_ON_DEVICE errors.",
   "Images: C arrays (lv_image_dsc_t) or \"S:<file>\" paths (PNG/BMP/JPG) resolved relative to assets_dir.",
-  "Time: ~330 ms of simulated time is advanced before capture (time_ms; settle=true waits for animations; frames=[0,150,300] returns one image per point in time). Input: nothing is clicked unless you pass `actions` (click/drag/key/type via real LVGL input devices) - then you get one image per capture and the events that fired.",
+  "Time: ~330 ms of simulated time is advanced before capture (time_ms; settle=true waits for animations; frames=[0,150,300] returns one image per point in time plus the final state). Input: nothing is clicked unless you pass `actions` (click/drag/key/type via real LVGL input devices) - then you get one image per capture and the events that fired.",
   "Every render returns a render_id (for lvgl_diff / lvgl_inspect), UI diagnostics (clipped labels, missing glyphs, low contrast, overlaps, off-screen objects, small touch targets, fonts not on the device, LVGL heap over budget) and the LVGL heap peak. Name objects with lv_obj_set_name so diagnostics, annotated images and actions can refer to them.",
   "Crashes (NULL/deleted objects), LVGL assertions and infinite loops are caught and reported with the LVGL log.",
 ].join("\n");
@@ -139,7 +139,7 @@ export const framesSchema = z
   .max(MAX_CAPTURES)
   .refine((f) => f.every((v, i) => i === 0 || v > f[i - 1]!), { message: "frames must be strictly ascending" })
   .describe(
-    "Capture at these simulated times in ms (ascending), e.g. [0, 150, 300, 600]: one image per time so you can see animations and transitions. Shortcut for wait+capture actions; use either frames or actions."
+    "Capture at these simulated times in ms after the UI is built (ascending), e.g. [0, 150, 300, 600]: one image per time so you can see animations and transitions, plus the final state captured last (frames [0, 100, 300] -> 4 images: t0, t100, t300, final). time_ms/settle do not apply. Shortcut for wait+capture actions; use either frames or actions."
   );
 
 export const fontNameSchema = z
@@ -229,7 +229,7 @@ export const renderOptionsShape = {
 export const espShimsSchema = z
   .boolean()
   .describe(
-    "ESP-IDF shims: code copied from an ESP-IDF project compiles unchanged - esp_log.h/ESP_LOGx, freertos/task.h/vTaskDelay (advances simulated time), esp_timer.h, esp_err.h, semaphores and esp_lvgl_port.h lock/unlock are provided as simulator stand-ins. Details: lvgl_docs \"esp32\"."
+    "ESP-IDF shims: code copied from an ESP-IDF project compiles unchanged - esp_log.h/ESP_LOGx, freertos/task.h/vTaskDelay (advances simulated time), esp_timer.h, esp_err.h, esp_check.h, semaphores, queues and esp_lvgl_port.h lock/unlock are provided as simulator stand-ins (the headers resolve even without this flag; it makes snippets include them). Details: lvgl_docs \"esp32\"."
   );
 
 export const diagnosticSchema = z.object({
@@ -247,9 +247,10 @@ export const uiDiagnosticSchema = z
   .object({
     code: z.string(),
     severity: z.string(),
-    name: z.string().optional(),
-    path: z.string().optional(),
-    abs: rectSchema.optional(),
+    // null for an unnamed object / a diagnostic about no object (MEM_OVER_BUDGET, APP_LOOP_DETECTED)
+    name: z.string().nullable().optional(),
+    path: z.string().nullable().optional(),
+    abs: rectSchema.nullable().optional(),
     message: z.string(),
   })
   .passthrough();

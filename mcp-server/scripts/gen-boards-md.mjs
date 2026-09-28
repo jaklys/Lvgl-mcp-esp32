@@ -7,7 +7,7 @@
  *
  * Usage:
  *   node scripts/gen-boards-md.mjs                     print the table
- *   node scripts/gen-boards-md.mjs --write [file ...]  update the files (default: ../docs/boards.md)
+ *   node scripts/gen-boards-md.mjs --write [file ...]  update the files (default: ../docs/boards.md ../README.md)
  *   node scripts/gen-boards-md.mjs --check [file ...]  exit 1 when a file is out of date
  *
  * Loads src/boards.ts through tsx (dev dependency) and falls back to the
@@ -40,7 +40,7 @@ if (mode !== "--write" && mode !== "--check") {
   process.exit(0);
 }
 const files = process.argv.slice(3);
-if (files.length === 0) files.push(path.join(packageDir, "..", "docs", "boards.md"));
+if (files.length === 0) files.push(path.join(packageDir, "..", "docs", "boards.md"), path.join(packageDir, "..", "README.md"));
 let stale = 0;
 for (const f of files) {
   const text = readFileSync(f, "utf-8");

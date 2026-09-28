@@ -829,6 +829,11 @@ static const json_value_t *get(const json_value_t *node, const char *key)
     return json_get(node, key);
 }
 
+static bool is_object(const json_value_t *v)
+{
+    return v && v->type == JSON_OBJECT;
+}
+
 /** Optional int member */
 static bool opt_int(ui_ctx_t *c, const json_value_t *node, const char *path, const char *key, int32_t min,
                     int32_t max, int32_t *out)
@@ -988,7 +993,10 @@ static void apply_dropdown(ui_ctx_t *c, lv_obj_t *obj, const json_value_t *node,
         lv_dropdown_set_options(obj, opts);
         free(opts);
     }
-    if (opt_int(c, node, path, "selected", 0, 10000, &sel)) lv_dropdown_set_selected(obj, (uint32_t)sel);
+    /* An object "selected" is the LV_PART_SELECTED style block (apply_node_common), a number the index */
+    if (!is_object(get(node, "selected")) && opt_int(c, node, path, "selected", 0, 10000, &sel)) {
+        lv_dropdown_set_selected(obj, (uint32_t)sel);
+    }
 }
 
 static void apply_roller(ui_ctx_t *c, lv_obj_t *obj, const json_value_t *node, const char *path)
@@ -1001,7 +1009,9 @@ static void apply_roller(ui_ctx_t *c, lv_obj_t *obj, const json_value_t *node, c
         lv_roller_set_options(obj, opts, inf ? LV_ROLLER_MODE_INFINITE : LV_ROLLER_MODE_NORMAL);
         free(opts);
     }
-    if (opt_int(c, node, path, "selected", 0, 10000, &v)) lv_roller_set_selected(obj, (uint32_t)v, LV_ANIM_OFF);
+    if (!is_object(get(node, "selected")) && opt_int(c, node, path, "selected", 0, 10000, &v)) {
+        lv_roller_set_selected(obj, (uint32_t)v, LV_ANIM_OFF);
+    }
     if (opt_int(c, node, path, "visible_rows", 1, 100, &v)) lv_roller_set_visible_row_count(obj, (uint32_t)v);
 }
 
@@ -1309,7 +1319,8 @@ static void apply_list(ui_ctx_t *c, lv_obj_t *obj, const json_value_t *node, con
 {
     char p[UI_PATH_MAX], q[UI_PATH_MAX], r[UI_PATH_MAX];
     const json_value_t *items = get(node, "items");
-    if (!items) return;
+    /* An object "items" is the LV_PART_ITEMS style block (apply_node_common) */
+    if (!items || is_object(items)) return;
     path_key(p, path, "items");
     if (items->type != JSON_ARRAY) {
         err_at(c, p, "expected an array of texts or {\"text\": \"..\", \"icon\": \"symbol:NAME\", \"name\": \"..\", "

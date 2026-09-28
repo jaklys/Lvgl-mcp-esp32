@@ -32,9 +32,10 @@ export interface WidgetNode {
 export interface UiDiagnostic {
   code: string;
   severity: "error" | "warn" | "info";
-  name?: string;
-  path?: string;
-  abs?: { x1: number; y1: number; x2: number; y2: number };
+  /** null (or absent) for unnamed objects and for diagnostics about no object */
+  name?: string | null;
+  path?: string | null;
+  abs?: { x1: number; y1: number; x2: number; y2: number } | null;
   message: string;
   [key: string]: unknown;
 }

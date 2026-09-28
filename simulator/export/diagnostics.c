@@ -118,15 +118,27 @@ void diag_add(const char *code, diag_severity_t severity, lv_obj_t *obj, const c
     char msg[512];
     va_list ap;
 
+    diag_t *d;
     if (diag_count >= DIAG_MAX) {
+        /* Full: a more severe finding replaces the last least severe one
+         * (info, then warn), so errors are never lost to a flood of warnings */
+        int victim = -1;
+        for (int i = (int)diag_count - 1; i >= 0; i--) {
+            if (diags[i].severity < severity && (victim < 0 || diags[i].severity < diags[victim].severity)) victim = i;
+        }
         diag_dropped++;
-        return;
+        if (victim < 0) return;
+        d = &diags[victim];
+        free(d->name);
+        free(d->path);
+        free(d->message);
+    } else {
+        d = &diags[diag_count++];
     }
     va_start(ap, fmt);
     vsnprintf(msg, sizeof(msg), fmt, ap);
     va_end(ap);
 
-    diag_t *d = &diags[diag_count++];
     memset(d, 0, sizeof(*d));
     d->code = code;
     d->severity = severity;
@@ -650,6 +662,7 @@ static void finish_contrast(check_ctx_t *ctx)
         contrast_pair_t *pr = &ctx->contrast_pairs[i];
         if (pr->repeats == 0 || pr->diag_index >= diag_count) continue;
         diag_t *d = &diags[pr->diag_index];
+        if (strcmp(d->code, "LOW_CONTRAST") != 0) continue; /* replaced by a more severe finding */
         char msg[640];
         snprintf(msg, sizeof(msg), "%s; %u more label%s use%s the same colours", d->message ? d->message : "",
                  (unsigned)pr->repeats, pr->repeats == 1 ? "" : "s", pr->repeats == 1 ? "s" : "");

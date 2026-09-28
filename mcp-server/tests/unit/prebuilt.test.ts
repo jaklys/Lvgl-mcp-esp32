@@ -73,6 +73,10 @@ test("isPrebuiltFailure: toolchain mismatches yes, user mistakes no", () => {
     "user_code.c.obj : error LNK2019: unresolved external symbol my_helper referenced in function create_ui",
     "",
     "all good, [3/3] Linking C executable lvgl_sim (-L/sim/prebuilt/linux-x64)",
+    // A compile error in user code: the command line names the prebuilt include dir and -Werror=...
+    "[1/16] Building C object CMakeFiles/lvgl_sim_user.dir/user_code.c.o\nFAILED: CMakeFiles/lvgl_sim_user.dir/user_code.c.o \n" +
+      "/usr/bin/cc -DLVGL_SIMULATOR=1 -isystem /sim/prebuilt/linux-x64/include -isystem /sim/prebuilt/linux-x64/include/include -O3 -Werror=implicit-function-declaration -o CMakeFiles/lvgl_sim_user.dir/user_code.c.o -c /b/user_code.c\n" +
+      "/b/user_code.c:2:23: error: implicit declaration of function 'this_function_does_not_exist' [-Werror=implicit-function-declaration]\nninja: build stopped: subcommand failed.",
   ];
   for (const n of no) assert.equal(isPrebuiltFailure(n, dir), false, n);
 });
@@ -84,17 +88,20 @@ test("buildConfigureArgs: prebuilt dir set or removed, user sources/include dirs
     userSources: ["/p/ui.c", "C:\\p\\screens\\home.c"],
     includeDirs: ["/p", "/p/inc"],
     defines: ["A", "B=2"],
+    espShims: true,
   });
   assert.ok(withPb.includes("-DLVGL_PREBUILT_DIR=C:/sim/prebuilt/windows-x64"));
-  assert.ok(withPb.includes("-DUSER_SOURCES=/p/ui.c;C:/p/screens/home.c"));
+  assert.ok(withPb.includes("-DUSER_EXTRA_SOURCES=/p/ui.c;C:/p/screens/home.c"));
   assert.ok(withPb.includes("-DUSER_INCLUDE_DIRS=/p;/p/inc"));
-  assert.ok(withPb.includes("-DUSER_DEFINES=A;B=2"));
+  assert.ok(withPb.includes("-DUSER_COMPILE_DEFINITIONS=A;B=2"));
+  assert.ok(withPb.includes("-DLVGL_SIM_ESP_SHIMS=ON"));
   const without = buildConfigureArgs(cfg, {});
   assert.ok(without.includes("-ULVGL_PREBUILT_DIR"));
-  assert.ok(without.includes("-DUSER_SOURCES="), "empty lists clear an earlier project");
+  assert.ok(without.includes("-DUSER_EXTRA_SOURCES="), "empty lists clear an earlier project");
   assert.ok(without.includes("-DUSER_INCLUDE_DIRS="));
-  assert.ok(without.includes("-DUSER_DEFINES="));
-  assert.ok(!buildConfigureArgs(cfg).some((a) => a.includes("USER_SOURCES")), "no options: 2.1.0 arguments");
+  assert.ok(without.includes("-DUSER_COMPILE_DEFINITIONS="));
+  assert.ok(without.includes("-DLVGL_SIM_ESP_SHIMS=OFF"));
+  assert.ok(!buildConfigureArgs(cfg).some((a) => a.includes("USER_EXTRA_SOURCES")), "no options: 2.1.0 arguments");
 });
 
 test("doctor notes say whether JSON UI rendering works without a toolchain", () => {

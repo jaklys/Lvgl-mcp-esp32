@@ -15,6 +15,13 @@
  *    and returns pdPASS; vTaskDelete is a no-op
  *  - mutexes/semaphores always succeed; esp_timer_* and the esp_lvgl_port
  *    lock are no-ops (the simulator drives lv_tick itself)
+ *  - queues are real FIFOs within the one simulated task: xQueueSend copies
+ *    the item in, xQueueReceive copies it out; waiting on an empty queue (or
+ *    a full one) advances simulated time by the timeout (at most 1000 ms per
+ *    call) and fails, so a receive loop cannot hang the simulator
+ *  - ESP_RETURN_ON_ERROR & co. (esp_check.h) behave as in ESP-IDF, logging
+ *    through sim_log; sdkconfig.h only provides CONFIG_FREERTOS_HZ and
+ *    CONFIG_LOG_DEFAULT_LEVEL
  *  - an endless `while (1) { lv_timer_handler(); vTaskDelay(..); }` loop is
  *    left after 5 s of simulated time (diagnostic APP_LOOP_DETECTED)
  */
@@ -27,6 +34,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,11 +154,171 @@ static inline SemaphoreHandle_t xSemaphoreCreateMutex(void)
 }
 #define xSemaphoreCreateRecursiveMutex() xSemaphoreCreateMutex()
 #define xSemaphoreCreateBinary() xSemaphoreCreateMutex()
-#define xSemaphoreTake(sem, ticks) ((void)(sem), (void)(ticks), pdTRUE)
-#define xSemaphoreGive(sem) ((void)(sem), pdTRUE)
+/* Functions, not macros, so `xSemaphoreTake(m, portMAX_DELAY);` as a statement does not warn */
+static inline BaseType_t xSemaphoreTake(SemaphoreHandle_t sem, TickType_t ticks)
+{
+    (void)sem;
+    (void)ticks;
+    return pdTRUE;
+}
+static inline BaseType_t xSemaphoreGive(SemaphoreHandle_t sem)
+{
+    (void)sem;
+    return pdTRUE;
+}
 #define xSemaphoreTakeRecursive(sem, ticks) xSemaphoreTake(sem, ticks)
 #define xSemaphoreGiveRecursive(sem) xSemaphoreGive(sem)
-#define vSemaphoreDelete(sem) ((void)(sem))
+static inline void vSemaphoreDelete(SemaphoreHandle_t sem)
+{
+    (void)sem;
+}
+
+/* ---- freertos/queue.h ---- */
+typedef struct lvgl_sim_queue {
+    uint32_t length;
+    uint32_t item_size;
+    uint32_t head;
+    uint32_t count;
+    uint8_t *items;
+} lvgl_sim_queue_t;
+
+#define errQUEUE_EMPTY          ((BaseType_t)0)
+#define errQUEUE_FULL           ((BaseType_t)0)
+#define queueSEND_TO_BACK       0
+#define queueSEND_TO_FRONT      1
+#define queueOVERWRITE          2
+
+/* Nothing else runs while this task waits: let the timeout pass (capped) */
+static inline void lvgl_sim_queue_wait_(TickType_t ticks)
+{
+    if (ticks == 0) return;
+    vTaskDelay(ticks > pdMS_TO_TICKS(1000) ? pdMS_TO_TICKS(1000) : ticks);
+}
+
+static inline QueueHandle_t xQueueCreate(UBaseType_t length, UBaseType_t item_size)
+{
+    if (length == 0) return NULL;
+    lvgl_sim_queue_t *q = (lvgl_sim_queue_t *)calloc(1, sizeof(lvgl_sim_queue_t));
+    if (!q) return NULL;
+    q->items = (uint8_t *)calloc(length, item_size ? item_size : 1);
+    if (!q->items) {
+        free(q);
+        return NULL;
+    }
+    q->length = (uint32_t)length;
+    q->item_size = (uint32_t)item_size;
+    return (QueueHandle_t)q;
+}
+
+static inline BaseType_t xQueueGenericSend(QueueHandle_t handle, const void *item, TickType_t ticks, BaseType_t pos)
+{
+    lvgl_sim_queue_t *q = (lvgl_sim_queue_t *)handle;
+    if (!q) return errQUEUE_FULL;
+    if (pos == queueOVERWRITE && q->count == q->length) {
+        q->head = (q->head + 1) % q->length;
+        q->count--;
+    }
+    if (q->count == q->length) {
+        lvgl_sim_queue_wait_(ticks);
+        return errQUEUE_FULL;
+    }
+    uint32_t slot;
+    if (pos == queueSEND_TO_FRONT) {
+        q->head = (q->head + q->length - 1) % q->length;
+        slot = q->head;
+    } else {
+        slot = (q->head + q->count) % q->length;
+    }
+    if (q->item_size && item) memcpy(q->items + (size_t)slot * q->item_size, item, q->item_size);
+    q->count++;
+    return pdTRUE;
+}
+
+static inline BaseType_t lvgl_sim_queue_take_(QueueHandle_t handle, void *out, TickType_t ticks, bool remove)
+{
+    lvgl_sim_queue_t *q = (lvgl_sim_queue_t *)handle;
+    if (!q || q->count == 0) {
+        lvgl_sim_queue_wait_(ticks);
+        return errQUEUE_EMPTY;
+    }
+    if (q->item_size && out) memcpy(out, q->items + (size_t)q->head * q->item_size, q->item_size);
+    if (remove) {
+        q->head = (q->head + 1) % q->length;
+        q->count--;
+    }
+    return pdTRUE;
+}
+
+#define xQueueSend(q, item, ticks)              xQueueGenericSend((q), (item), (ticks), queueSEND_TO_BACK)
+#define xQueueSendToBack(q, item, ticks)        xQueueGenericSend((q), (item), (ticks), queueSEND_TO_BACK)
+#define xQueueSendToFront(q, item, ticks)       xQueueGenericSend((q), (item), (ticks), queueSEND_TO_FRONT)
+#define xQueueOverwrite(q, item)                xQueueGenericSend((q), (item), 0, queueOVERWRITE)
+#define xQueueSendFromISR(q, item, woken)       xQueueGenericSend((q), (item), 0, ((void)(woken), queueSEND_TO_BACK))
+#define xQueueSendToBackFromISR(q, item, woken) xQueueSendFromISR((q), (item), (woken))
+#define xQueueReceive(q, out, ticks)            lvgl_sim_queue_take_((q), (out), (ticks), true)
+#define xQueuePeek(q, out, ticks)               lvgl_sim_queue_take_((q), (out), (ticks), false)
+#define xQueueReceiveFromISR(q, out, woken)     lvgl_sim_queue_take_((q), (out), 0, ((void)(woken), true))
+
+static inline UBaseType_t uxQueueMessagesWaiting(QueueHandle_t handle)
+{
+    return handle ? (UBaseType_t)((lvgl_sim_queue_t *)handle)->count : 0;
+}
+
+static inline UBaseType_t uxQueueSpacesAvailable(QueueHandle_t handle)
+{
+    lvgl_sim_queue_t *q = (lvgl_sim_queue_t *)handle;
+    return q ? (UBaseType_t)(q->length - q->count) : 0;
+}
+
+static inline BaseType_t xQueueReset(QueueHandle_t handle)
+{
+    lvgl_sim_queue_t *q = (lvgl_sim_queue_t *)handle;
+    if (q) q->head = q->count = 0;
+    return pdPASS;
+}
+
+static inline void vQueueDelete(QueueHandle_t handle)
+{
+    lvgl_sim_queue_t *q = (lvgl_sim_queue_t *)handle;
+    if (!q) return;
+    free(q->items);
+    free(q);
+}
+
+/* ---- esp_check.h ---- */
+#define ESP_RETURN_ON_ERROR(x, tag, fmt, ...) do {                                  \
+        esp_err_t err_rc_ = (x);                                                    \
+        if (err_rc_ != ESP_OK) {                                                    \
+            ESP_LOGE(tag, "%s(%d): " fmt, __func__, __LINE__, ##__VA_ARGS__);       \
+            return err_rc_;                                                         \
+        }                                                                           \
+    } while (0)
+#define ESP_GOTO_ON_ERROR(x, goto_tag, log_tag, fmt, ...) do {                      \
+        esp_err_t err_rc_ = (x);                                                    \
+        if (err_rc_ != ESP_OK) {                                                    \
+            ESP_LOGE(log_tag, "%s(%d): " fmt, __func__, __LINE__, ##__VA_ARGS__);   \
+            ret = err_rc_;                                                          \
+            goto goto_tag;                                                          \
+        }                                                                           \
+    } while (0)
+#define ESP_RETURN_ON_FALSE(a, err_code, tag, fmt, ...) do {                        \
+        if (!(a)) {                                                                 \
+            ESP_LOGE(tag, "%s(%d): " fmt, __func__, __LINE__, ##__VA_ARGS__);       \
+            return (err_code);                                                      \
+        }                                                                           \
+    } while (0)
+#define ESP_GOTO_ON_FALSE(a, err_code, goto_tag, log_tag, fmt, ...) do {            \
+        if (!(a)) {                                                                 \
+            ESP_LOGE(log_tag, "%s(%d): " fmt, __func__, __LINE__, ##__VA_ARGS__);   \
+            ret = (err_code);                                                       \
+            goto goto_tag;                                                          \
+        }                                                                           \
+    } while (0)
+
+/* ---- sdkconfig.h ---- */
+#ifndef CONFIG_LOG_DEFAULT_LEVEL
+#define CONFIG_LOG_DEFAULT_LEVEL 3
+#endif
 
 /* ---- esp_timer.h ---- */
 typedef void *esp_timer_handle_t;
@@ -173,14 +342,38 @@ static inline esp_err_t esp_timer_create(const esp_timer_create_args_t *args, es
     if (out) *out = (esp_timer_handle_t)1;
     return ESP_OK;
 }
-#define esp_timer_start_periodic(t, us) ((void)(t), (void)(us), ESP_OK)
-#define esp_timer_start_once(t, us) ((void)(t), (void)(us), ESP_OK)
-#define esp_timer_stop(t) ((void)(t), ESP_OK)
-#define esp_timer_delete(t) ((void)(t), ESP_OK)
+static inline esp_err_t esp_timer_start_periodic(esp_timer_handle_t t, uint64_t period_us)
+{
+    (void)t;
+    (void)period_us;
+    return ESP_OK;
+}
+static inline esp_err_t esp_timer_start_once(esp_timer_handle_t t, uint64_t timeout_us)
+{
+    (void)t;
+    (void)timeout_us;
+    return ESP_OK;
+}
+static inline esp_err_t esp_timer_stop(esp_timer_handle_t t)
+{
+    (void)t;
+    return ESP_OK;
+}
+static inline esp_err_t esp_timer_delete(esp_timer_handle_t t)
+{
+    (void)t;
+    return ESP_OK;
+}
 
 /* ---- esp_lvgl_port.h ---- */
-#define lvgl_port_lock(timeout_ms) ((void)(timeout_ms), true)
-#define lvgl_port_unlock() ((void)0)
+static inline bool lvgl_port_lock(uint32_t timeout_ms)
+{
+    (void)timeout_ms;
+    return true;
+}
+static inline void lvgl_port_unlock(void)
+{
+}
 
 #ifdef __cplusplus
 } /*extern "C"*/

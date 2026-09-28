@@ -47,6 +47,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Board tables match src/boards.ts
+        run: node scripts/gen-boards-md.mjs --check
+
       - name: Typecheck
         run: npm run typecheck
 

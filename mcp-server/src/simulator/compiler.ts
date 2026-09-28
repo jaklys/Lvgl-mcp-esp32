@@ -14,7 +14,6 @@ import { SimulatorError } from "./errors.js";
 import { captureVcvarsEnv, findVcvarsall } from "./msvc.js";
 import { detectPrebuilt, isPrebuiltFailure, usePrebuiltLibrary, type PrebuiltInfo } from "./prebuilt.js";
 import { isWindows, resolveExecutable, runProcess, type RunResult } from "./process.js";
-import { ESP_SHIM_PRELUDE, withEspShims, writeEspShimStubs } from "./project.js";
 
 /** `lvgl_sim.exe` on Windows, `lvgl_sim` on POSIX. */
 export function simBinaryName(): string {
@@ -137,9 +136,10 @@ export function detectCompilerConfig(
 }
 
 /**
- * CMake cache variables that select what is built (see mcp-server/CMAKE-REQUIREMENTS.md):
- * the prebuilt LVGL library and the user sources/include dirs/defines of
- * project mode (and of the ESP-IDF shims).
+ * CMake cache variables that select what is built (defined in
+ * simulator/CMakeLists.txt and simulator/lib/lvgl_prebuilt.cmake): the
+ * prebuilt LVGL library, the extra sources/include dirs/definitions of
+ * project mode and the ESP-IDF shims.
  */
 export interface ConfigureOptions {
   /** <simulator>/prebuilt/<platform> - link the prebuilt liblvgl instead of building LVGL. */
@@ -150,6 +150,8 @@ export interface ConfigureOptions {
   includeDirs?: string[];
   /** Compile definitions for the user sources ("NAME" / "NAME=value"). */
   defines?: string[];
+  /** Compile the user sources with the ESP-IDF shims (-DLVGL_SIM_ESP_SHIMS=ON, simulator/templates/esp_shim.h). */
+  espShims?: boolean;
 }
 
 /** CMake list value: forward slashes, ';'-separated. */
@@ -181,9 +183,10 @@ export function buildConfigureArgs(cfg: CompilerConfig, opts?: ConfigureOptions)
   if (opts) {
     if (opts.prebuiltDir) args.push(`-DLVGL_PREBUILT_DIR=${opts.prebuiltDir.replace(/\\/g, "/")}`);
     else args.push("-ULVGL_PREBUILT_DIR");
-    args.push(`-DUSER_SOURCES=${cmakeList(opts.userSources)}`);
+    args.push(`-DUSER_EXTRA_SOURCES=${cmakeList(opts.userSources)}`);
     args.push(`-DUSER_INCLUDE_DIRS=${cmakeList(opts.includeDirs)}`);
-    args.push(`-DUSER_DEFINES=${(opts.defines ?? []).join(";")}`);
+    args.push(`-DUSER_COMPILE_DEFINITIONS=${(opts.defines ?? []).join(";")}`);
+    args.push(`-DLVGL_SIM_ESP_SHIMS=${opts.espShims ? "ON" : "OFF"}`);
   }
   return args;
 }
@@ -254,6 +257,8 @@ export interface CompileUnit {
   sources?: string[];
   includeDirs?: string[];
   defines?: string[];
+  /** ESP-IDF shims for the user sources (simulator/templates/esp_shim.h + esp_shim/ stand-in headers). */
+  espShims?: boolean;
   /** File names (relative paths and base names) whose warnings are kept. Default: snippet.c, user_code.c. */
   userFiles?: string[];
   /** Directories stripped from paths in diagnostics (project roots). */
@@ -273,6 +278,10 @@ export class SimulatorCompiler {
   private readonly log: (msg: string) => void;
   /** Set after a failed link with the prebuilt library: build LVGL from source from now on. */
   prebuiltDisabled = false;
+  /** The "LVGL_PREBUILT: not using ..." configure warning was logged already. */
+  private prebuiltRefusedNoted = false;
+  /** Notes from the last configure step, handed to the next compile result. */
+  private pendingNotes: string[] = [];
   /** Configure options (serialised) the build dir was last configured with in this process. */
   private configuredKey: string | null = null;
   /** True once any build succeeded in this process (the binary in the build dir is current). */
@@ -386,15 +395,24 @@ export class SimulatorCompiler {
       );
     }
     this.configuredKey = key;
+    // lib/lvgl_prebuilt.cmake refused the prebuilt library (lv_conf.h or LVGL changed): say so once.
+    const refused = /LVGL_PREBUILT: not using[\s\S]*?(?=\n\S|\n\s*\n|$)/.exec(`${res.stdout}\n${res.stderr}`);
+    if (refused && opts.prebuiltDir) {
+      const why = refused[0].replace(/\s+/g, " ").trim();
+      if (!this.prebuiltRefusedNoted) this.log(`Warning: ${why}`);
+      this.prebuiltRefusedNoted = true;
+      this.pendingNotes.push(`${why.split(". ")[0]}; LVGL was compiled from source instead.`);
+    }
   }
 
   /** Configure options for a unit (prebuilt library when usable). */
-  configureOptions(unit: Pick<CompileUnit, "sources" | "includeDirs" | "defines">): ConfigureOptions {
+  configureOptions(unit: Pick<CompileUnit, "sources" | "includeDirs" | "defines" | "espShims">): ConfigureOptions {
     return {
       prebuiltDir: this.usingPrebuiltLibrary ? this.prebuilt.dir : null,
       userSources: unit.sources ?? [],
       includeDirs: unit.includeDirs ?? [],
       defines: unit.defines ?? [],
+      espShims: unit.espShims ?? false,
     };
   }
 
@@ -406,11 +424,16 @@ export class SimulatorCompiler {
     return this.templateContent;
   }
 
-  /** Produce the exact contents of user_code.c for a request. */
-  async sourceFor(code: string, isFullFile: boolean, espShims = false): Promise<string> {
-    if (isFullFile) return espShims ? withEspShims(code, "user_code.c") : code;
-    const wrapped = wrapSnippet(await this.template(), code);
-    return espShims ? [...ESP_SHIM_PRELUDE, wrapped].join("\n") : wrapped;
+  /**
+   * Produce the exact contents of user_code.c for a request. The ESP-IDF
+   * shims need no source changes: with LVGL_SIM_ESP_SHIMS the snippet
+   * wrapper includes esp_shim.h, and full files get it through their own
+   * ESP-IDF includes (esp_log.h, freertos/*.h ... are stand-ins on the
+   * include path).
+   */
+  async sourceFor(code: string, isFullFile: boolean): Promise<string> {
+    if (isFullFile) return code;
+    return wrapSnippet(await this.template(), code);
   }
 
   private async writeSource(source: string, snippet: string | null): Promise<void> {
@@ -459,22 +482,13 @@ export class SimulatorCompiler {
    * SimulatorError for configure failures, timeouts and cancellation.
    */
   async compile(code: string, isFullFile: boolean, signal?: AbortSignal, espShims = false): Promise<CompileResult> {
-    const source = await this.sourceFor(code, isFullFile, espShims);
-    const shim = espShims ? await this.espShimSettings() : { includeDirs: [], defines: [] };
-    return this.compileUnit(
-      { source, snippet: isFullFile ? null : code, fullFile: isFullFile, includeDirs: shim.includeDirs, defines: shim.defines },
-      signal
-    );
+    const source = await this.sourceFor(code, isFullFile);
+    return this.compileUnit({ source, snippet: isFullFile ? null : code, fullFile: isFullFile, espShims }, signal);
   }
 
-  /** Include dirs/defines for the ESP-IDF shims (stub headers are generated in the build dir). */
-  async espShimSettings(): Promise<{ includeDirs: string[]; defines: string[] }> {
-    const stubDir = path.join(this.config.buildDir, "esp_idf_shims");
-    await writeEspShimStubs(stubDir);
-    return {
-      includeDirs: [stubDir, path.join(this.config.simulatorDir, "templates")],
-      defines: ["LVGL_SIM_ESP_SHIMS=1"],
-    };
+  /** simulator/templates/project_wrapper.c (entry wrapper for project mode). */
+  async projectWrapperTemplate(): Promise<string> {
+    return fs.readFile(path.join(this.config.simulatorDir, "templates", "project_wrapper.c"), "utf-8");
   }
 
   async compileUnit(unit: CompileUnit, signal?: AbortSignal): Promise<CompileResult> {
@@ -534,6 +548,7 @@ export class SimulatorCompiler {
       res = await build();
     }
 
+    notes.push(...this.pendingNotes.splice(0));
     const userFiles = unit.userFiles ?? USER_FILES;
     const output = focusOnUserFiles(
       cleanBuildOutput(`${res.stdout}\n${res.stderr}`, this.pathShortening(unit.stripDirs)),

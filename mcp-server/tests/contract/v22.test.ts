@@ -214,10 +214,10 @@ test("lvgl_render_project: root outside the allowed roots is rejected", async ()
   }
 });
 
-test("lvgl_render_project: root inside LVGL_PROJECT_ROOT is accepted", async () => {
+test("lvgl_render_project: root inside LVGL_ALLOWED_ROOTS is accepted", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lvgl-proj-"));
-  const prev = process.env["LVGL_PROJECT_ROOT"];
-  process.env["LVGL_PROJECT_ROOT"] = root;
+  const prev = process.env["LVGL_ALLOWED_ROOTS"];
+  process.env["LVGL_ALLOWED_ROOTS"] = root;
   try {
     await fs.mkdir(path.join(root, "app", "ui"), { recursive: true });
     await fs.writeFile(path.join(root, "app", "ui", "ui.c"), "void ui_init(void) {}");
@@ -229,8 +229,8 @@ test("lvgl_render_project: root inside LVGL_PROJECT_ROOT is accepted", async () 
     const traversal = await call("lvgl_render_project", { root: path.join(root, "app"), include_dirs: ["../../etc"] });
     assert.equal(traversal.isError, true);
   } finally {
-    if (prev === undefined) delete process.env["LVGL_PROJECT_ROOT"];
-    else process.env["LVGL_PROJECT_ROOT"] = prev;
+    if (prev === undefined) delete process.env["LVGL_ALLOWED_ROOTS"];
+    else process.env["LVGL_ALLOWED_ROOTS"] = prev;
     await fs.rm(root, { recursive: true, force: true });
   }
 });

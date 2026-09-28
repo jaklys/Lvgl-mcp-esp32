@@ -23,12 +23,23 @@ typedef struct {
     char *err;
     size_t errsz;
     bool failed;
+    /* Position cache: parsing only moves forward, so pos_of() continues from
+     * the last position instead of rescanning from the start (O(n) overall) */
+    const char *pos_at;
+    int pos_line;
+    int pos_col;
 } parser_t;
 
-static void pos_of(const parser_t *ps, const char *at, int *line, int *col)
+static void pos_of(parser_t *ps, const char *at, int *line, int *col)
 {
     int l = 1, c = 1;
-    for (const char *q = ps->text; q < at && *q; q++) {
+    const char *q = ps->text;
+    if (ps->pos_at && ps->pos_at <= at) {
+        q = ps->pos_at;
+        l = ps->pos_line;
+        c = ps->pos_col;
+    }
+    for (; q < at && *q; q++) {
         if (*q == '\n') {
             l++;
             c = 1;
@@ -36,6 +47,9 @@ static void pos_of(const parser_t *ps, const char *at, int *line, int *col)
             c++;
         }
     }
+    ps->pos_at = q;
+    ps->pos_line = l;
+    ps->pos_col = c;
     *line = l;
     *col = c;
 }
@@ -386,7 +400,7 @@ static json_value_t *parse_value(parser_t *ps, int depth)
 
 json_value_t *json_parse(const char *text, char *err, size_t errsz)
 {
-    parser_t ps = {text, text, err, errsz, false};
+    parser_t ps = {text, text, err, errsz, false, NULL, 1, 1};
 
     if (err && errsz) err[0] = '\0';
     /* Skip a UTF-8 BOM (common in files written on Windows) */
