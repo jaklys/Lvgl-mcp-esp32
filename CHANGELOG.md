@@ -7,6 +7,14 @@ npm version of `lvgl-mcp-server`; release tags are `v<version>`.
 
 ## [Unreleased]
 
+### Added
+
+- **Tag release workflow** (`.github/workflows/tag.yml`): Actions -> "Tag
+  release" -> Run workflow with the version creates the annotated tag
+  `vX.Y.Z` on `main` after checking `package.json`, the CHANGELOG, existing
+  tags, GitHub releases and npm, then starts the Release workflow for it. No
+  local `git push` of the tag is needed.
+
 ## [2.1.0] - 2026-09-27
 
 LVGL 9.6.0, official macOS support, a much richer widget tree, compile-only
