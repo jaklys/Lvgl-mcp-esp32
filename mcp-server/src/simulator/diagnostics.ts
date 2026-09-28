@@ -114,6 +114,13 @@ const MSVC_RE =
 const GNU_LD_RE = /^(?<file>[^:\n]+?):\(\.[\w.$]+\+0x[0-9a-f]+\):\s*(?<msg>undefined reference to .*)$/;
 // /usr/bin/ld: user_code.c: in function `create_ui': ... / ld: undefined reference
 const LD_UNDEF_RE = /^(?:\S*ld(?:\.\w+)?|collect2|clang|cc|gcc):\s*(?:error:\s*)?(?<msg>(?:undefined (?:reference|symbol)|Undefined symbols).*)$/;
+// Apple ld64 / ld-prime (macOS):
+//   Undefined symbols for architecture arm64:
+//     "_lv_font_montserrat_13", referenced from:
+//         _create_ui in user_code.c.o
+const APPLE_LD_HEADER_RE = /^Undefined symbols for architecture \S+:$/;
+const APPLE_LD_SYMBOL_RE = /^\s+"_?(?<sym>[^"]+)", referenced from:$/;
+const APPLE_LD_REF_RE = /^\s+_?(?<fn>\S+) in (?<obj>\S+?)(?:\.o(?:bj)?)?(?:\s|$)/;
 // user_code.c.obj : error LNK2019: unresolved external symbol foo referenced in function create_ui
 const MSVC_LINK_RE = /^\s*(?<file>[^\n:]+?)\s*:\s*(?<sev>fatal error|error|warning)\s+(?<code>LNK\d+)\s*:\s*(?<msg>.*)$/;
 
@@ -142,8 +149,33 @@ export function parseDiagnostics(text: string): Diagnostic[] {
     seen.add(key);
     out.push(d);
   };
+  // Apple ld: the symbol line is followed by "_fn in file.o" lines.
+  let appleLd = false;
+  let appleSym: Diagnostic | null = null;
   for (const rawLine of text.replace(/\r\n?/g, "\n").split("\n")) {
     const line = rawLine.trimEnd();
+    if (APPLE_LD_HEADER_RE.test(line)) {
+      appleLd = true;
+      continue;
+    }
+    if (appleLd) {
+      const sym = APPLE_LD_SYMBOL_RE.exec(line);
+      if (sym?.groups) {
+        appleSym = { file: "", line: 0, severity: "error", message: `undefined symbol '${sym.groups.sym}'` };
+        push(appleSym);
+        continue;
+      }
+      const ref = APPLE_LD_REF_RE.exec(line);
+      if (ref?.groups && appleSym) {
+        if (!appleSym.file) {
+          appleSym.file = baseName(ref.groups.obj);
+          appleSym.message += ` referenced from ${ref.groups.fn}`;
+        }
+        continue;
+      }
+      if (!/^\s/.test(line)) appleLd = false;
+      appleSym = null;
+    }
     let m = MSVC_RE.exec(line);
     if (m?.groups) {
       const g = m.groups;
@@ -244,7 +276,7 @@ export function diagnosticHints(diags: Diagnostic[], fullFile: boolean): string[
           : "Snippet mode already defines create_ui(); do not define it yourself (use lvgl_render_full for complete files)."
       );
     }
-    if (/implicit declaration of function|C4013|undeclared|undefined reference|unresolved external/i.test(m)) {
+    if (/implicit declaration of function|C4013|undeclared|undefined (?:reference|symbol)|unresolved external/i.test(m)) {
       const fn = /['‘`"]?(lv_\w+)/.exec(m)?.[1];
       if (fn) {
         hints.add(

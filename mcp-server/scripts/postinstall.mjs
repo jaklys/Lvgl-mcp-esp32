@@ -46,20 +46,21 @@ const IDLE_TIMEOUT_MS = 60_000; // no bytes received for this long -> abort
 const MAX_REDIRECTS = 5;
 const MAX_ATTEMPTS = 3;
 
-// Platform -> release asset. Only platforms with a tested release build are
-// listed; the "planned" ones print build-from-source instructions instead.
+// Platform -> release asset. The archives are platform-neutral source trees
+// (simulator + LVGL sources, no binaries): the simulator is compiled on the
+// user's machine on the first render. There is one archive per tested OS; the
+// macOS archive is built and tested on Apple Silicon and also serves Intel
+// Macs (same sources; the local clang picks the architecture).
 export const ASSETS = {
   "win32-x64": "lvgl-mcp-esp32-windows-x64.zip",
   "linux-x64": "lvgl-mcp-esp32-linux-x64.tar.gz",
+  "darwin-arm64": "lvgl-mcp-esp32-macos.tar.gz",
+  "darwin-x64": "lvgl-mcp-esp32-macos.tar.gz",
+  // Same source tree as linux-x64: nothing in it is x64-specific.
+  "linux-arm64": "lvgl-mcp-esp32-linux-x64.tar.gz",
 };
-export const PLANNED_ASSETS = {
-  // planned: "darwin-arm64": "lvgl-mcp-esp32-macos-arm64.tar.gz",
-  // planned: "darwin-x64": "lvgl-mcp-esp32-macos-x64.tar.gz",
-  // planned: "linux-arm64": "lvgl-mcp-esp32-linux-arm64.tar.gz",
-  "darwin-arm64": null,
-  "darwin-x64": null,
-  "linux-arm64": null,
-};
+// Platforms whose archive should work but that no CI job exercises.
+export const UNTESTED_PLATFORMS = new Set(["linux-arm64"]);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageDir = resolve(__dirname, "..");
@@ -103,6 +104,7 @@ function printManualFix(reason, version, asset) {
     `       ${base}/`,
     "  2. Verify the checksum:",
     "       sha256sum --ignore-missing -c SHA256SUMS.txt          (Linux)",
+    `       grep ' ${asset}$' SHA256SUMS.txt | shasum -a 256 -c   (macOS)`,
     `       (Get-FileHash ${asset}).Hash   (PowerShell, compare by hand)`,
     "  3. Extract it and set LVGL_SIM_PATH to the extracted simulator/ folder",
     "     in your MCP server config.",
@@ -495,13 +497,18 @@ async function main() {
       return;
     }
     if (!asset) {
-      const planned = key in PLANNED_ASSETS ? " (planned)" : "";
       log(
-        `No prebuilt simulator package for ${key}${planned} yet.\n` +
+        `No simulator package for ${key}.\n` +
           `  Available for: ${Object.keys(ASSETS).join(", ")}.\n` +
           buildFromSourceSteps(version)
       );
       return;
+    }
+    if (UNTESTED_PLATFORMS.has(key)) {
+      log(
+        `Note: ${key} is not tested in CI. The simulator is compiled from source on the first render; ` +
+          `please report problems at https://github.com/${REPO}/issues`
+      );
     }
     await install({ version, asset });
   } catch (err) {

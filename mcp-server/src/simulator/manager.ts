@@ -65,7 +65,8 @@ export function buildSimArgs(p: ResolvedRenderParams, pngPath: string, jsonPath:
  * environment leak into the simulator process.
  */
 export function simulatorEnv(src: NodeJS.ProcessEnv = process.env, windows = isWindows): NodeJS.ProcessEnv {
-  const keys = ["PATH", "SystemRoot", "TEMP", "TMP", "HOME"];
+  // TMPDIR: per-user temp dir on macOS (/var/folders/...), also used on Linux.
+  const keys = ["PATH", "SystemRoot", "TEMP", "TMP", "TMPDIR", "HOME"];
   if (windows) keys.push("windir", "ComSpec", "USERPROFILE", "LOCALAPPDATA");
   const env: NodeJS.ProcessEnv = {};
   for (const k of keys) {
@@ -123,7 +124,9 @@ const WINDOWS_CRASH: Record<number, string> = {
 
 const SIGNAL_HINT: Record<string, string> = {
   SIGSEGV: "(NULL or deleted object?)",
-  SIGBUS: "(NULL or deleted object / misaligned access?)",
+  // macOS reports some invalid accesses (e.g. to protected pages) as SIGBUS.
+  SIGBUS: "(invalid memory access: NULL or deleted object?)",
+  SIGTRAP: "(trap instruction: __builtin_trap() or undefined behavior?)",
   SIGABRT: "(abort(), failed assert() or heap corruption?)",
   SIGFPE: "(division by zero?)",
   SIGILL: "(illegal instruction)",

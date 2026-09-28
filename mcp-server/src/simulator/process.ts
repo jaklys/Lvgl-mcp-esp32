@@ -37,8 +37,8 @@ const running = new Set<ChildProcess>();
 
 /**
  * Kill a child and all of its descendants.
- * POSIX: the child is spawned detached (own process group) so we signal -pid.
- * Windows: taskkill /T /F.
+ * POSIX (Linux, macOS): the child is spawned detached (setsid: own process
+ * group) so we signal -pid. Windows: taskkill /T /F.
  */
 export function killTree(child: ChildProcess): void {
   const pid = child.pid;

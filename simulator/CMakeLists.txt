@@ -77,8 +77,19 @@ if(MSVC)
     set_source_files_properties("${USER_CODE_PATH}" PROPERTIES
         COMPILE_OPTIONS "/W3;/we4013;/we4047;/we4020")
 else()
+    # gcc, clang and Apple clang
+    set(SIM_WARNINGS -Wall -Wextra)
+    set(USER_WARNINGS -Wall -Wextra -Wno-unused-parameter
+        -Werror=implicit-function-declaration -Werror=int-conversion -Werror=incompatible-pointer-types)
+    if(APPLE)
+        # The macOS SDK marks sprintf/vsprintf as deprecated. They are fine on
+        # the ESP32 (and in stb_image_write), so keep the diagnostics the same
+        # as on Linux. LVGL itself does not use deprecation attributes.
+        list(APPEND SIM_WARNINGS -Wno-deprecated-declarations)
+        list(APPEND USER_WARNINGS -Wno-deprecated-declarations)
+    endif()
     set_source_files_properties(${SIM_SOURCES} PROPERTIES
-        COMPILE_OPTIONS "-Wall;-Wextra")
+        COMPILE_OPTIONS "${SIM_WARNINGS}")
     set_source_files_properties("${USER_CODE_PATH}" PROPERTIES
-        COMPILE_OPTIONS "-Wall;-Wextra;-Wno-unused-parameter;-Werror=implicit-function-declaration;-Werror=int-conversion;-Werror=incompatible-pointer-types")
+        COMPILE_OPTIONS "${USER_WARNINGS}")
 endif()

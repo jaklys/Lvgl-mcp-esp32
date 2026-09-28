@@ -143,7 +143,8 @@ describe("e2e: real simulator", { skip: E2E ? false : "set LVGL_E2E=1 to run end
   test("segfault in user code is reported as a crash", async () => {
     const r = await call("lvgl_render", { code: "volatile int *p = NULL;\n*p = 42;" });
     assert.equal(r.isError, true);
-    assert.match(text(r), /crashed with (SIGSEGV|ACCESS_VIOLATION)/);
+    // Linux: SIGSEGV; macOS: SIGSEGV or SIGBUS; Windows: ACCESS_VIOLATION.
+    assert.match(text(r), /crashed with (SIGSEGV|SIGBUS|ACCESS_VIOLATION)/);
   });
 
   test("width/height are per call, not sticky", async () => {

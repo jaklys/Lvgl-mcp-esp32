@@ -148,7 +148,10 @@ static void install_crash_handlers(void)
     signal(SIGFPE, crash_handler);
     signal(SIGILL, crash_handler);
 #ifdef SIGBUS
-    signal(SIGBUS, crash_handler);
+    signal(SIGBUS, crash_handler);   /* macOS reports some bad accesses as SIGBUS */
+#endif
+#ifdef SIGTRAP
+    signal(SIGTRAP, crash_handler);  /* __builtin_trap() is brk on arm64 */
 #endif
 }
 #endif /* _WIN32 */

@@ -1,0 +1,13 @@
+[1/2] Building C object CMakeFiles/lvgl_sim.dir/user_code.c.o
+[2/2] Linking CXX executable lvgl_sim
+FAILED: lvgl_sim
+: && /usr/bin/c++ -O3 -DNDEBUG -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/lvgl_sim.dir/main.c.o CMakeFiles/lvgl_sim.dir/hal/display_driver.c.o CMakeFiles/lvgl_sim.dir/export/screenshot.c.o CMakeFiles/lvgl_sim.dir/export/widget_tree.c.o CMakeFiles/lvgl_sim.dir/user_code.c.o -o lvgl_sim  lib/lvgl/lib/liblvgl.a  -lm && :
+Undefined symbols for architecture arm64:
+  "_lv_font_montserrat_13", referenced from:
+      _create_ui in user_code.c.o
+      _create_ui in user_code.c.o
+  "_my_helper", referenced from:
+      _create_ui in user_code.c.o
+ld: symbol(s) not found for architecture arm64
+c++: error: linker command failed with exit code 1 (use -v to see invocation)
+ninja: build stopped: subcommand failed.

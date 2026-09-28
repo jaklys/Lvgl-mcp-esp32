@@ -1,5 +1,6 @@
 import * as fs from "node:fs/promises";
 import { existsSync } from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import {
   cleanBuildOutput,
@@ -51,10 +52,45 @@ export interface CompileResult {
 }
 
 /**
+ * Where macOS package managers put cmake/ninja. MCP clients started from the
+ * Dock or Finder (Claude Desktop, VS Code, Cursor) get launchd's minimal PATH
+ * (/usr/bin:/bin:/usr/sbin:/sbin), which does not include Homebrew.
+ */
+export const DARWIN_TOOL_DIRS = [
+  "/opt/homebrew/bin", // Homebrew, Apple Silicon
+  "/usr/local/bin", // Homebrew, Intel
+  "/opt/local/bin", // MacPorts
+  "/Applications/CMake.app/Contents/bin", // cmake.org installer
+];
+
+/**
+ * A build tool for the POSIX path: the bare name when it is on PATH (resolved
+ * again at run time), else on macOS an absolute path from DARWIN_TOOL_DIRS,
+ * else the bare name (the doctor then reports it as missing).
+ */
+export function findPosixTool(
+  name: string,
+  env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+  isFile: (p: string) => boolean = (p) => resolveExecutable(p, env) !== undefined
+): string {
+  if (resolveExecutable(name, env)) return name;
+  if (platform === "darwin") {
+    for (const dir of DARWIN_TOOL_DIRS) {
+      const candidate = path.posix.join(dir, name);
+      if (isFile(candidate)) return candidate;
+    }
+  }
+  return name;
+}
+
+/**
  * Detect build tools for a simulator directory.
  * Windows: MSVC via vcvarsall (VCVARSALL_PATH > vswhere > known paths), Ninja.
- * POSIX: cmake/ninja from CMAKE_PATH/NINJA_PATH or PATH; Ninja when available,
- * otherwise Unix Makefiles.
+ * POSIX (Linux, macOS): cmake/ninja from CMAKE_PATH/NINJA_PATH or PATH (on
+ * macOS also the Homebrew/MacPorts/CMake.app locations); Ninja when
+ * available, otherwise Unix Makefiles. The C compiler is CMake's default
+ * (`cc`: gcc or clang on Linux, Apple clang on macOS) unless CC is set.
  */
 export function detectCompilerConfig(
   simulatorDir: string,
@@ -82,10 +118,10 @@ export function detectCompilerConfig(
     };
   }
 
-  const ninjaPath = env["NINJA_PATH"] || "ninja";
+  const ninjaPath = env["NINJA_PATH"] || findPosixTool("ninja", env);
   const generator = env["LVGL_CMAKE_GENERATOR"] || (resolveExecutable(ninjaPath, env) ? "Ninja" : "Unix Makefiles");
   return {
-    cmakePath: env["CMAKE_PATH"] || "cmake",
+    cmakePath: env["CMAKE_PATH"] || findPosixTool("cmake", env),
     ninjaPath,
     compilerPath: env["CC"] || undefined,
     cxxCompilerPath: env["CXX"] || undefined,
@@ -112,6 +148,17 @@ export function buildConfigureArgs(cfg: CompilerConfig): string[] {
   }
   if (cfg.compilerPath) args.push(`-DCMAKE_C_COMPILER=${cfg.compilerPath}`);
   if (cfg.cxxCompilerPath) args.push(`-DCMAKE_CXX_COMPILER=${cfg.cxxCompilerPath}`);
+  return args;
+}
+
+/**
+ * Arguments for `cmake --build`. Ninja parallelizes on its own; Make builds
+ * serially unless told otherwise, which would make the first full LVGL build
+ * (hundreds of files) far slower than the compile timeout allows.
+ */
+export function buildBuildArgs(cfg: CompilerConfig, jobs: number = os.availableParallelism()): string[] {
+  const args = ["--build", cfg.buildDir];
+  if (cfg.generator !== "Ninja") args.push("--parallel", String(Math.max(1, jobs)));
   return args;
 }
 
@@ -319,13 +366,13 @@ export class SimulatorCompiler {
     await this.writeSource(source, isFullFile ? null : code);
     await this.ensureConfigured(deadline, signal);
 
-    let res = await this.run(["--build", this.config.buildDir], deadline, signal, "Build");
+    let res = await this.run(buildBuildArgs(this.config), deadline, signal, "Build");
     if (res.code !== 0 && CACHE_MISSING_RE.test(res.stdout + res.stderr)) {
       // Build dir was deleted/corrupted while we were running: reconfigure once.
       this.configured = false;
       await this.writeSource(source, isFullFile ? null : code);
       await this.ensureConfigured(deadline, signal);
-      res = await this.run(["--build", this.config.buildDir], deadline, signal, "Build");
+      res = await this.run(buildBuildArgs(this.config), deadline, signal, "Build");
     }
 
     const output = focusOnUserFiles(cleanBuildOutput(`${res.stdout}\n${res.stderr}`, this.pathShortening), USER_FILES);
