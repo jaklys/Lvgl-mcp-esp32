@@ -1,11 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import type { RenderHistory } from "../history.js";
 import type { RenderResult, SimulatorBackend } from "../simulator/types.js";
 import { errorResult } from "./render.js";
 import { findNodes, fitJson, INSPECT_TEXT_BUDGET, pruneNode, treeForOutput, type PruneOptions } from "./format.js";
 
 export interface InspectArgs {
+  render_id?: string;
   code?: string;
   full: boolean;
   type?: string;
@@ -46,17 +48,22 @@ export function inspectResult(r: RenderResult, args: InspectArgs, source: string
   };
 }
 
-export function registerInspectTools(server: McpServer, backend: SimulatorBackend): void {
+export function registerInspectTools(server: McpServer, backend: SimulatorBackend, history: RenderHistory): void {
   server.registerTool(
     "lvgl_inspect",
     {
       title: "Inspect LVGL widget tree",
       description: [
         "Return the widget tree as compact JSON: type, name, position (x/y/w/h relative to parent, abs screen coords), hidden/visible, states, flags, text, values, layout, scroll overflow and main/indicator/knob styles (colors, font, paddings).",
-        "Without `code` it inspects the most recent lvgl_render/lvgl_render_full result (no recompilation). With `code` it renders that code first (snippet mode unless full=true, default resolution).",
+        "Without `code` it inspects the most recent render (any render tool, no recompilation), or the render named by `render_id` (r1, r2, ... as printed by the render tools; the last 20 are kept). With `code` it renders that code first (snippet mode unless full=true, default resolution).",
         "Filter with `type` (e.g. \"lv_label\" or \"label\") and/or `name` (lv_obj_set_name; `*` wildcards) to get just the matching widgets with their paths; limit depth with max_depth. Large trees are trimmed to fit ~60k characters.",
       ].join("\n\n"),
       inputSchema: {
+        render_id: z
+          .string()
+          .regex(/^r?\d{1,6}$/, "render_id like \"r3\"")
+          .optional()
+          .describe("Inspect this earlier render (\"r3\") instead of the latest. Ids are printed by every render tool."),
         code: z
           .string()
           .optional()
@@ -94,18 +101,37 @@ export function registerInspectTools(server: McpServer, backend: SimulatorBacken
       try {
         let r: RenderResult | null;
         let source = "the last render";
+        if (args.code && args.render_id) {
+          return {
+            content: [{ type: "text", text: "Pass either `code` (render and inspect) or `render_id` (inspect an earlier render), not both." }],
+            isError: true,
+          };
+        }
         if (args.code) {
           r = await backend.render({ code: args.code, full: args.full }, extra.signal);
-          source = "the rendered code";
+          const entry = history.add(r, "lvgl_inspect");
+          source = `the rendered code (render_id ${entry.id})`;
+        } else if (args.render_id) {
+          const entry = history.get(args.render_id);
+          if (!entry) {
+            return {
+              content: [{ type: "text", text: `Unknown render_id "${args.render_id}". Available: ${history.describe()}.` }],
+              isError: true,
+            };
+          }
+          r = entry.result;
+          source = `render ${entry.id} (${entry.tool})`;
         } else {
-          r = backend.getLastResult();
+          const latest = history.latest();
+          r = latest?.result ?? backend.getLastResult();
+          if (latest) source = `the last render (render_id ${latest.id}, ${latest.tool})`;
         }
         if (!r) {
           return {
             content: [
               {
                 type: "text",
-                text: "No render yet. Call lvgl_render / lvgl_render_full first, or pass `code` to lvgl_inspect.",
+                text: "No render yet. Call a render tool (lvgl_render, lvgl_render_full, lvgl_render_ui, lvgl_render_project, lvgl_interact) first, or pass `code` to lvgl_inspect.",
               },
             ],
             isError: true,

@@ -1,8 +1,8 @@
 import { formatDiagnostic } from "../simulator/diagnostics.js";
-import type { RenderResult, SimOutput, WidgetNode } from "../simulator/types.js";
+import type { CaptureImage, RenderResult, SimOutput, UiDiagnostic, WidgetNode } from "../simulator/types.js";
 
 /** Soft cap for the text returned by a render (images are separate). */
-export const RENDER_TEXT_BUDGET = 20_000;
+export const RENDER_TEXT_BUDGET = 24_000;
 /** Soft cap for lvgl_inspect output. */
 export const INSPECT_TEXT_BUDGET = 60_000;
 
@@ -191,23 +191,137 @@ export function fitJson(
   };
 }
 
+function kb(bytes: number): string {
+  return bytes >= 10 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+/** Images in content order: plain capture, then its annotated version. */
+export function imageList(r: RenderResult): Array<{ capture: CaptureImage; annotated: boolean; data: Buffer }> {
+  const caps = r.captures?.length ? r.captures : [{ n: 1, label: "final", elapsedMs: r.output.elapsed_ms, png: r.png }];
+  const out: Array<{ capture: CaptureImage; annotated: boolean; data: Buffer }> = [];
+  for (const c of caps) {
+    out.push({ capture: c, annotated: false, data: c.png });
+    if (c.annotated) out.push({ capture: c, annotated: true, data: c.annotated });
+  }
+  return out;
+}
+
+const SEVERITY_ORDER: Array<[UiDiagnostic["severity"], string]> = [
+  ["error", "Errors"],
+  ["warn", "Warnings"],
+  ["info", "Info"],
+];
+
+/** UI diagnostics grouped by severity; `max` lines in total. */
+export function formatUiDiagnostics(diags: UiDiagnostic[] | undefined, max = 60): string | null {
+  if (diags === undefined) return null;
+  if (diags.length === 0) {
+    return "UI diagnostics: none (checked: clipped/overflowing text, missing glyphs, off-screen and outside-parent objects, overlaps, contrast, touch-target size, zero size, device fonts, LVGL heap budget).";
+  }
+  // Accept "warning" as an alias of "warn" (robust against the binary's spelling).
+  const sevOf = (d: UiDiagnostic): string => (String(d.severity) === "warning" ? "warn" : String(d.severity));
+  const count = (sev: string) => diags.filter((d) => sevOf(d) === sev).length;
+  const lines = [`UI diagnostics (${count("error")} error(s), ${count("warn")} warning(s), ${count("info")} info):`];
+  let shown = 0;
+  for (const [sev, title] of SEVERITY_ORDER) {
+    const group = diags.filter((d) => sevOf(d) === sev);
+    if (!group.length) continue;
+    lines.push(`${title}:`);
+    for (const d of group) {
+      if (shown >= max) break;
+      shown++;
+      const who = [d.name ? `"${d.name}"` : "", d.path ?? ""].filter(Boolean).join(" ");
+      const at = d.abs ? ` @ ${d.abs.x1},${d.abs.y1} ${d.abs.x2 - d.abs.x1 + 1}x${d.abs.y2 - d.abs.y1 + 1}` : "";
+      lines.push(`  - ${d.code}${who ? ` ${who}` : ""}${at}: ${d.message}`);
+    }
+  }
+  const others = diags.filter((d) => !["error", "warn", "info"].includes(sevOf(d)));
+  for (const d of others.slice(0, Math.max(0, max - shown))) lines.push(`  - ${d.code} (${d.severity}): ${d.message}`);
+  if (diags.length > max) lines.push(`  ... ${diags.length - max} more (structuredContent.diagnostics has all)`);
+  return lines.join("\n");
+}
+
+/** "LVGL heap peak 71 KB / budget 64 KB (OVER BUDGET)". */
+export function formatMem(out: SimOutput): string | null {
+  const m = out.mem;
+  if (!m) return null;
+  let s = `LVGL heap peak ${kb(m.peak_bytes)}`;
+  if (m.budget_bytes) {
+    s += ` / budget ${kb(m.budget_bytes)}`;
+    const over = m.over_budget ?? m.peak_bytes > m.budget_bytes;
+    s += over ? " - OVER BUDGET: the UI would not fit in the device's LV_MEM_SIZE" : ` (${Math.round((m.peak_bytes / m.budget_bytes) * 100)} %)`;
+  } else {
+    s += " (no budget set: pass mem_budget_kb or a board to check it against the device's LV_MEM_SIZE)";
+  }
+  const extra = [
+    m.used_bytes !== undefined ? `in use at the end ${kb(m.used_bytes)}` : "",
+    m.frag_pct !== undefined ? `fragmentation ${m.frag_pct} %` : "",
+  ].filter(Boolean);
+  if (extra.length) s += `; ${extra.join(", ")}`;
+  return s;
+}
+
 /** Everything the render tools put into their text content. */
 export function formatRenderText(
   r: RenderResult,
   include: IncludeTree,
-  summary: TreeSummary
+  summary: TreeSummary,
+  renderId?: string
 ): { text: string; treeOpts?: PruneOptions } {
   const out = r.output;
+  const p = r.params;
   const parts: string[] = [];
   const cached = r.compileCached ? ", cached" : "";
+  const extras = [
+    p.board ? `board ${p.board}` : "",
+    p.colorFormat ? p.colorFormat.toUpperCase() : "",
+    p.scale && p.scale > 1 ? `scale ${p.scale}x` : "",
+  ].filter(Boolean);
+  const modeText = { snippet: "snippet", full: "full-file", ui: "JSON UI", project: "project" }[p.mode ?? (p.full ? "full" : "snippet")];
+  const build = p.mode === "ui" ? (r.binary === "prebuilt" ? "prebuilt binary, no compile" : `build ${(r.compileMs / 1000).toFixed(1)} s${cached}`) : `compile ${(r.compileMs / 1000).toFixed(1)} s${cached}`;
   parts.push(
-    `Rendered ${r.pngWidth}x${r.pngHeight} px (${r.params.width}x${r.params.height}, rotation ${r.params.rotation}, theme ${r.params.theme}, ${r.params.full ? "full-file" : "snippet"} mode) · LVGL ${out.lvgl_version} · ${out.elapsed_ms} ms simulated · ${summary.widget_count} widgets · ${out.anims_running} animations running · compile ${(r.compileMs / 1000).toFixed(1)} s${cached}, run ${(r.runMs / 1000).toFixed(1)} s`
+    `Rendered ${r.pngWidth}x${r.pngHeight} px${renderId ? ` · render_id ${renderId}` : ""} (${p.width}x${p.height}, rotation ${p.rotation}, theme ${p.theme}, ${modeText} mode${extras.length ? ", " + extras.join(", ") : ""}) · LVGL ${out.lvgl_version} · ${out.elapsed_ms} ms simulated · ${summary.widget_count} widgets · ${out.anims_running} animations running · ${build}, run ${(r.runMs / 1000).toFixed(1)} s`
   );
-  if (out.anims_running > 0 && !r.params.settle) {
-    parts.push("Note: animations were still running at capture time; pass settle=true or a larger time_ms to see the final state.");
+
+  const images = imageList(r);
+  if (images.length > 1) {
+    const list = images.map((img, i) => `#${i + 1} ${img.capture.label}${img.annotated ? " (annotated)" : ""} @ ${img.capture.elapsedMs} ms`);
+    parts.push(`Images in order (${images.length}): ${list.join(", ")}. The last capture is the final state.`);
   }
-  if (out.format_version !== 2) {
-    parts.push(`Note: simulator JSON format_version ${out.format_version} (expected 2); some fields may be missing.`);
+  const caps = r.captures ?? [];
+  if (caps.length > 1) {
+    const perCap = caps.map((c) => {
+      const n = c.screen ? countNodes(c.screen) + (c.layerTop ? countNodes(c.layerTop) : 0) : undefined;
+      return `${c.n} "${c.label}" @ ${c.elapsedMs} ms${n !== undefined ? `: ${n} widgets` : ""}`;
+    });
+    parts.push(
+      `Captures: ${perCap.join("; ")}. Diagnostics and the tree below describe the final state only (per-capture trees are trimmed from this text).`
+    );
+  }
+  if (out.anims_running > 0 && !p.settle) {
+    parts.push("Note: animations were still running at capture time; pass settle=true or a larger time_ms (or frames) to see the final state.");
+  }
+  if (out.format_version !== 2 && out.format_version !== 3) {
+    parts.push(`Note: simulator JSON format_version ${out.format_version} (expected 3); some fields may be missing.`);
+  }
+  for (const n of r.notes ?? []) parts.push(`Note: ${n}`);
+
+  const diag = formatUiDiagnostics(out.diagnostics);
+  if (diag) parts.push(diag);
+  const mem = formatMem(out);
+  if (mem) parts.push(mem);
+  if (out.fonts_used?.length) {
+    parts.push(`Fonts used: ${out.fonts_used.join(", ")}${p.fonts?.length ? ` (device fonts: ${p.fonts.join(", ")})` : ""}`);
+  }
+  if (p.actions?.length || p.frames?.length || out.events?.length) {
+    const ev = out.events ?? [];
+    const lines = ev.slice(0, 60).map((e) => `  t=${e.t_ms} ms ${e.name ?? e.path ?? "?"} ${e.event}`);
+    if (ev.length > 60) lines.push(`  ... ${ev.length - 60} more`);
+    const focused = out.input?.focused;
+    parts.push(
+      `Events (${ev.length})${ev.length ? ":\n" + lines.join("\n") : ": none fired"}` +
+        (focused !== undefined ? `\nFocused object: ${focused ?? "none"}` : "")
+    );
   }
   if (r.warnings.length) {
     parts.push(`Compiler warnings (${r.warnings.length}):\n` + r.warnings.slice(0, 30).map(formatDiagnostic).join("\n"));
@@ -222,8 +336,13 @@ export function formatRenderText(
     parts.push(`printf output:\n${stdout.length > 3000 ? stdout.slice(0, 3000) + "\n... (truncated)" : stdout}`);
   }
 
-  if (include === "summary") parts.push(formatTreeSummary(summary));
   let text = parts.join("\n\n");
+  if (include === "summary") {
+    const remaining = RENDER_TEXT_BUDGET - text.length - 100;
+    let tree = formatTreeSummary(summary);
+    if (tree.length > remaining) tree = tree.slice(0, Math.max(500, remaining)) + "\n... (summary truncated; use lvgl_inspect)";
+    text += "\n\n" + tree;
+  }
   let treeOpts: PruneOptions | undefined;
   if (include === "full") {
     const remaining = Math.max(2000, RENDER_TEXT_BUDGET - text.length - 200);

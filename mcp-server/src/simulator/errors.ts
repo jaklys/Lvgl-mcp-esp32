@@ -9,6 +9,9 @@ export type SimErrorKind =
   | "assertion" // LVGL assertion or argument check failed (exit 3)
   | "output" // simulator could not write PNG/JSON (exit 2)
   | "args" // simulator rejected its arguments (exit 1)
+  | "ui" // the JSON UI document was rejected (exit 5)
+  | "action" // the action script failed: bad action, unknown object name (exit 6)
+  | "project" // project files/paths rejected before compiling
   | "runtime" // any other non-zero exit / bad output
   | "cancelled"; // MCP request cancelled by the client
 

@@ -15,7 +15,7 @@
  */
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,7 +29,49 @@ function argValue(flag) {
 const outDir = path.resolve(argValue("--out") ?? path.join(packageDir, "..", "examples"));
 const only = argValue("--only")?.split(",").map((s) => s.trim());
 
-/** @type {Array<{name: string, title: string, tool: string, args: Record<string, unknown>}>} */
+/**
+ * JSON UI document for 06-ui when examples/06-ui.json does not exist yet
+ * (the simulator side owns that file; this keeps the script self-contained).
+ */
+const DEFAULT_UI_DOC = {
+  type: "lv_obj",
+  name: "screen",
+  styles: { bg_color: "#f5f5f5" },
+  children: [
+    { type: "lv_label", name: "title", text: "Living room", align: "top_mid", x: 0, y: 12, styles: { font: "montserrat_24", text_color: "#111827" } },
+    {
+      type: "lv_slider",
+      name: "target",
+      align: "center",
+      x: 0,
+      y: -10,
+      w: 260,
+      h: 12,
+      min: 16,
+      max: 30,
+      value: 23,
+      styles: { bg_color: "#e5e7eb" },
+      indicator: { bg_color: "#ff6b3d", bg_grad_color: "#3b82f6", bg_grad_dir: "hor" },
+      knob: { bg_color: "#ffffff", border_color: "#ff6b3d", border_width: 3, shadow_color: "#ff6b3d", shadow_width: 20, shadow_opa: 180 },
+    },
+    { type: "lv_label", name: "target_lbl", text: "Target 23 \u00b0C", align: "center", x: 0, y: 24, styles: { text_color: "#374151" } },
+    {
+      type: "lv_button",
+      name: "ok_btn",
+      align: "bottom_right",
+      x: -16,
+      y: -16,
+      w: 120,
+      h: 44,
+      children: [{ type: "lv_label", text: "Heat on", align: "center" }],
+    },
+  ],
+};
+
+/**
+ * @type {Array<{name: string, title: string, tool: string, args: Record<string, unknown>,
+ *   image?: "plain" | "annotated", uiFile?: string, saveTree?: boolean}>}
+ */
 const SCENARIOS = [
   {
     name: "01-button-slider",
@@ -214,6 +256,62 @@ void create_ui(void) {
       lv_label_set_text(status, "Sensor Active");
       lv_obj_set_style_text_color(status, lv_palette_main(LV_PALETTE_GREEN), 0);
     `,
+    width: 320,
+    height: 240,
+    },
+  },
+  {
+    name: "05-annotated",
+    title: "lvgl_render annotate=true — object outlines and names (CYD board preset)",
+    tool: "lvgl_render",
+    // Save the annotated image (the second image of the result), not the plain one.
+    image: "annotated",
+    args: {
+    code: `
+      lv_obj_t *title = lv_label_create(screen);
+      lv_obj_set_name(title, "title");
+      lv_label_set_text(title, "Thermostat");
+      lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+      lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
+
+      lv_obj_t *temp = lv_label_create(screen);
+      lv_obj_set_name(temp, "temp");
+      lv_label_set_text(temp, "21.5 °C");
+      lv_obj_set_style_text_font(temp, &lv_font_montserrat_32, 0);
+      lv_obj_align(temp, LV_ALIGN_CENTER, 0, -30);
+
+      lv_obj_t *target = lv_slider_create(screen);
+      lv_obj_set_name(target, "target");
+      lv_obj_set_width(target, 220);
+      lv_slider_set_range(target, 16, 30);
+      lv_slider_set_value(target, 22, LV_ANIM_OFF);
+      lv_obj_align(target, LV_ALIGN_CENTER, 0, 25);
+
+      lv_obj_t *heat = lv_button_create(screen);
+      lv_obj_set_name(heat, "heat_btn");
+      lv_obj_set_size(heat, 120, 44);
+      lv_obj_align(heat, LV_ALIGN_BOTTOM_LEFT, 20, -14);
+      lv_obj_t *heat_lbl = lv_label_create(heat);
+      lv_label_set_text(heat_lbl, LV_SYMBOL_CHARGE " Heat");
+      lv_obj_center(heat_lbl);
+
+      lv_obj_t *eco = lv_switch_create(screen);
+      lv_obj_set_name(eco, "eco_sw");
+      lv_obj_align(eco, LV_ALIGN_BOTTOM_RIGHT, -20, -22);
+    `,
+    board: "esp32-2432s028r",
+    annotate: true,
+    },
+  },
+  {
+    name: "06-ui",
+    title: "lvgl_render_ui — JSON UI document, no compiler (examples/06-ui.json)",
+    tool: "lvgl_render_ui",
+    // The document is examples/06-ui.json (written from DEFAULT_UI_DOC when missing);
+    // no tree is saved because 06-ui.json is the source.
+    uiFile: "06-ui.json",
+    saveTree: false,
+    args: {
     width: 320,
     height: 240,
     },
@@ -1157,15 +1255,28 @@ for (const s of SCENARIOS) {
   if (only && !only.includes(s.name)) continue;
   console.log(`\n[${s.name}] ${s.title}`);
   const t0 = Date.now();
-  const r = await call(s.tool, { ...s.args, include_tree: "none" });
+  const args = { ...s.args, include_tree: "none" };
+  if (s.uiFile) {
+    const uiPath = path.join(outDir, s.uiFile);
+    if (!existsSync(uiPath)) save(s.uiFile, JSON.stringify(DEFAULT_UI_DOC, null, 2) + "\n");
+    args.ui = JSON.parse(readFileSync(uiPath, "utf-8"));
+  }
+  const r = await call(s.tool, args);
   if (r.isError) {
     failures++;
     console.log(`  FAILED:\n${textOf(r)}`);
     continue;
   }
-  const img = r.content.find((c) => c.type === "image");
+  const imgs = r.content.filter((c) => c.type === "image");
+  // With annotate=true the annotated image follows the plain one.
+  const img = s.image === "annotated" ? imgs[1] : imgs[0];
+  if (!img) {
+    failures++;
+    console.log(`  FAILED: no ${s.image ?? "plain"} image in the result (${imgs.length} images)`);
+    continue;
+  }
   save(`${s.name}.png`, Buffer.from(img.data, "base64"));
-  await saveTree(`${s.name}.json`);
+  if (s.saveTree !== false) await saveTree(`${s.name}.json`);
   console.log(`  ${textOf(r).split("\n")[0]} (${Date.now() - t0} ms)`);
 }
 

@@ -24,6 +24,8 @@ export interface PathShortening {
   buildDir: string;
   /** Absolute simulator source directory. */
   simulatorDir: string;
+  /** Extra directories stripped first (project roots: keep project-relative file names). */
+  stripDirs?: string[];
 }
 
 function escapeRegExp(s: string): string {
@@ -46,6 +48,10 @@ function dirPattern(dir: string): RegExp {
  */
 export function shortenPaths(text: string, p: PathShortening): string {
   let out = text;
+  // Longest first: a project staged below the build dir must lose its full prefix.
+  for (const d of [...(p.stripDirs ?? [])].sort((a, b) => b.length - a.length)) {
+    if (d) out = out.replace(dirPattern(d), "");
+  }
   if (p.buildDir) out = out.replace(dirPattern(p.buildDir), "");
   if (p.simulatorDir) {
     out = out.replace(dirPattern(p.simulatorDir + "/lib/lvgl"), "lvgl/");
@@ -55,6 +61,8 @@ export function shortenPaths(text: string, p: PathShortening): string {
   }
   // Object files referenced by linkers: CMakeFiles/lvgl_sim.dir/.../user_code.c.o
   out = out.replace(/CMakeFiles[\\/]+lvgl_sim\.dir[\\/]+(?:[^\s:]*[\\/]+)?(user_code\.c)\.o(?:bj)?/g, "$1");
+  // Project sources: CMakeFiles/lvgl_sim.dir/<mangled path>/ui_main.c.o -> ui_main.c
+  out = out.replace(/CMakeFiles[\\/]+lvgl_sim\.dir[\\/]+(?:[^\s:]*[\\/]+)?([\w.+-]+\.(?:c|cpp|cc|cxx))\.o(?:bj)?/g, "$1");
   return out;
 }
 

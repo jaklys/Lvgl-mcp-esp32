@@ -2,16 +2,36 @@ import * as fs from "node:fs/promises";
 import { existsSync, statSync } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { boardDefaults } from "../boards.js";
 import { formatDoctorReport, runDoctor, type DoctorReport } from "../doctor.js";
-import { SimulatorCompiler, detectCompilerConfig, type CompileResult, type CompilerConfig } from "./compiler.js";
+import {
+  SimulatorCompiler,
+  USER_FILES,
+  detectCompilerConfig,
+  type CompileResult,
+  type CompileUnit,
+  type CompilerConfig,
+} from "./compiler.js";
 import { formatDiagnostic } from "./diagnostics.js";
 import { SimulatorError } from "./errors.js";
 import { withDirLock } from "./lock.js";
 import { pngSize } from "./png.js";
+import type { PrebuiltInfo } from "./prebuilt.js";
 import { envGet, isWindows, runProcess, type RunResult } from "./process.js";
+import {
+  ProjectPathError,
+  collectSources,
+  entryWrapperSource,
+  isValidDefine,
+  stageInlineFiles,
+  validateRelativePath,
+} from "./project.js";
 import type {
+  CaptureImage,
   CheckResult,
   ProjectConfig,
+  ProjectRequest,
+  RenderMode,
   RenderRequest,
   RenderResult,
   ResolvedRenderParams,
@@ -34,8 +54,21 @@ function envInt(env: NodeJS.ProcessEnv, key: string, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-/** Build the command line for the simulator binary (contract section 1). */
-export function buildSimArgs(p: ResolvedRenderParams, pngPath: string, jsonPath: string): string[] {
+export interface SimArgPaths {
+  /** Directory for multi-capture outputs (capture-<n>-<label>.png, annotated-...). */
+  outputDir?: string;
+  /** JSON action script file. */
+  actionsPath?: string;
+  /** JSON UI document file (UI mode). */
+  uiPath?: string;
+}
+
+/**
+ * Build the command line for the simulator binary (contract sections 1 and
+ * 10). 2.2.0 flags are only passed when used, so plain renders keep working
+ * with an older simulator binary.
+ */
+export function buildSimArgs(p: ResolvedRenderParams, pngPath: string, jsonPath: string, extra: SimArgPaths = {}): string[] {
   const args = [
     "--width",
     String(p.width),
@@ -57,7 +90,26 @@ export function buildSimArgs(p: ResolvedRenderParams, pngPath: string, jsonPath:
     p.assetsDir,
   ];
   if (p.settle) args.push("--settle");
+  if (extra.outputDir) args.push("--output-dir", extra.outputDir);
+  if (extra.actionsPath) args.push("--actions", extra.actionsPath);
+  if (p.frames && p.frames.length) args.push("--frames", p.frames.join(","));
+  if (p.annotate) args.push("--annotate");
+  if (p.scale !== undefined && p.scale !== 1) args.push("--scale", String(p.scale));
+  if (p.colorFormat) args.push("--color-format", p.colorFormat);
+  if (p.fonts && p.fonts.length) args.push("--fonts", p.fonts.join(","));
+  if (p.memBudgetKb !== undefined) args.push("--mem-budget-kb", String(p.memBudgetKb));
+  if (extra.uiPath) args.push("--ui", extra.uiPath);
   return args;
+}
+
+/** Whether a render produces several captures / annotated images (needs --output-dir). */
+export function needsOutputDir(p: ResolvedRenderParams): boolean {
+  return !!(p.annotate || (p.frames && p.frames.length) || (p.actions && p.actions.length));
+}
+
+/** Font names as the tree prints them: "lv_font_montserrat_14" -> "montserrat_14". */
+export function normalizeFontName(f: string): string {
+  return f.trim().replace(/^&?lv_font_/, "");
 }
 
 /**
@@ -101,6 +153,8 @@ export function splitStderr(stderr: string): { logs: string[]; phase?: string; o
 
 const PHASE_TEXT: Record<string, string> = {
   create_ui: "while running create_ui() (your code)",
+  ui: "while building the JSON UI document",
+  actions: "while running the action script",
   advance: "while advancing simulated time (timers, animations, event callbacks, layout or drawing)",
   capture: "while rendering the screenshot",
   export: "while exporting the PNG/JSON",
@@ -188,8 +242,42 @@ export function mapRunFailure(res: RunResult, runTimeoutMs: number): SimulatorEr
     }
     case 2:
       return new SimulatorError("output", "Simulator could not write its output files (PNG/JSON)." + suffix(), extra);
-    case 1:
+    case 1: {
+      const unknown = /Unknown (?:argument|option):?\s*(--[\w-]+)/i.exec(res.stderr);
+      if (unknown) {
+        return new SimulatorError(
+          "args",
+          `The simulator binary does not support ${unknown[1]} - it is older than this server (2.2.0 features need a 2.2.0 simulator). ` +
+            "Rebuild it (delete the build directory) or reinstall the npm package so the matching simulator is downloaded." +
+            suffix(),
+          extra
+        );
+      }
       return new SimulatorError("args", "Simulator rejected its arguments (exit 1)." + suffix(), extra);
+    }
+    case 5: {
+      // One line per problem: "ui: <json-path>: <message>" (contract section 10).
+      const problems = stderrLines.filter((l) => /^ui: /.test(l));
+      const body = problems.length ? problems.join("\n") : stderrLines.slice(-30).join("\n") || "(no details on stderr)";
+      return new SimulatorError(
+        "ui",
+        `The JSON UI document was rejected (${problems.length || "unknown number of"} problem${problems.length === 1 ? "" : "s"}):\n${body}\n` +
+          "Fix every listed path and render again. The vocabulary (widget types, keys, style names) is in lvgl_docs topic \"ui-json\"; it is the same as the widget tree the renders return." +
+          tailBlock("printf output", stdoutLines, 10),
+        extra
+      );
+    }
+    case 6: {
+      // stderr carries the problem and the list of known object names.
+      const detail = other.length ? other : stderrLines;
+      return new SimulatorError(
+        "action",
+        `Action script error${phase ? " " + phaseText(phase) : ""}:\n${detail.slice(-30).join("\n") || "(no details on stderr)"}\n` +
+          "Targets are object names set with lv_obj_set_name (or \"name\" in a JSON UI) or tree paths like \"lv_button#2\"; see lvgl_docs topic \"actions\"." +
+          tailBlock("LVGL log", logs, 10),
+        extra
+      );
+    }
     default:
       return new SimulatorError(
         "runtime",
@@ -200,8 +288,10 @@ export function mapRunFailure(res: RunResult, runTimeoutMs: number): SimulatorEr
 }
 
 /**
- * Parse the simulator JSON. Accepts format_version 2; a legacy (v1) file
- * whose root is the screen node is wrapped so callers see one shape.
+ * Parse the simulator JSON. Accepts format_version 2 and 3 (3 adds captures,
+ * mem, fonts_used, diagnostics, input, events - malformed optional fields are
+ * dropped rather than failing the render); a legacy (v1) file whose root is
+ * the screen node is wrapped so callers see one shape.
  */
 export function parseSimJson(text: string, fallback: { width: number; height: number }): SimOutput {
   const raw = JSON.parse(text) as Record<string, unknown>;
@@ -214,6 +304,16 @@ export function parseSimJson(text: string, fallback: { width: number; height: nu
       elapsed_ms: Number(out.elapsed_ms ?? 0),
       anims_running: Number(out.anims_running ?? 0),
       logs: Array.isArray(out.logs) ? out.logs.map(String) : [],
+      captures: Array.isArray(out.captures)
+        ? out.captures.filter((c) => c && typeof c === "object" && typeof c.png === "string")
+        : undefined,
+      mem: out.mem && typeof out.mem === "object" && typeof out.mem.peak_bytes === "number" ? out.mem : undefined,
+      fonts_used: Array.isArray(out.fonts_used) ? out.fonts_used.map(String) : undefined,
+      diagnostics: Array.isArray(out.diagnostics)
+        ? out.diagnostics.filter((d) => d && typeof d === "object" && typeof d.code === "string")
+        : undefined,
+      input: out.input && typeof out.input === "object" ? out.input : undefined,
+      events: Array.isArray(out.events) ? out.events.filter((e) => e && typeof e === "object") : undefined,
     };
   }
   if (typeof raw["type"] === "string") {
@@ -230,6 +330,70 @@ export function parseSimJson(text: string, fallback: { width: number; height: nu
   throw new Error("unrecognised widget tree JSON (no format_version/screen)");
 }
 
+
+/** Safe file name inside the output dir (the binary reports names relative to --output-dir). */
+function outputFile(dir: string, name: string): string {
+  return path.join(dir, path.basename(name));
+}
+
+/**
+ * Read every capture listed in the JSON `captures` array (plain + annotated
+ * PNGs). Without a captures array the final PNG is the only capture; an
+ * annotated image is then looked up by file name (annotated-*.png).
+ */
+export async function collectCaptures(
+  output: SimOutput,
+  outputDir: string,
+  finalPng: Buffer,
+  readFile: (p: string) => Promise<Buffer> = (p) => fs.readFile(p)
+): Promise<{ captures: CaptureImage[]; missing: string[] }> {
+  const missing: string[] = [];
+  const read = async (name: string | undefined): Promise<Buffer | undefined> => {
+    if (!name) return undefined;
+    try {
+      const buf = await readFile(outputFile(outputDir, name));
+      if (pngSize(buf)) return buf;
+    } catch {
+      /* reported below */
+    }
+    missing.push(name);
+    return undefined;
+  };
+  const captures: CaptureImage[] = [];
+  for (const [i, c] of (output.captures ?? []).entries()) {
+    const png = await read(c.png);
+    if (!png) continue;
+    captures.push({
+      n: typeof c.n === "number" ? c.n : i + 1,
+      label: String(c.label ?? `capture${i + 1}`),
+      elapsedMs: Number(c.elapsed_ms ?? 0),
+      png,
+      annotated: await read(c.annotated),
+      screen: c.screen,
+      layerTop: c.layer_top,
+    });
+  }
+  if (captures.length === 0) {
+    let annotated: Buffer | undefined;
+    try {
+      const names = (await fs.readdir(outputDir)).filter((n) => /^annotated-.*\.png$/i.test(n)).sort();
+      if (names.length) annotated = await read(names[names.length - 1]);
+    } catch {
+      /* no output dir listing */
+    }
+    captures.push({
+      n: 1,
+      label: "final",
+      elapsedMs: output.elapsed_ms,
+      png: finalPng,
+      annotated,
+      screen: output.screen,
+      layerTop: output.layer_top,
+    });
+  }
+  return { captures, missing };
+}
+
 export interface ManagerOptions {
   simulatorDir: string;
   serverVersion?: string;
@@ -240,11 +404,37 @@ export interface ManagerOptions {
   compilerConfig?: CompilerConfig;
   /** Toolchain check; default runDoctor(). */
   doctor?: (cfg: CompilerConfig) => Promise<DoctorReport>;
+  /** Override prebuilt detection (tests). */
+  prebuilt?: PrebuiltInfo;
+}
+
+/** Which simulator binary a JSON UI render uses (contract sections 7 and 10). */
+export type UiBinaryChoice = "built" | "prebuilt" | "build-then-built" | "none";
+
+/**
+ * JSON UI mode needs no user code, so any current simulator binary works:
+ *  - a binary built by this session is current -> use it;
+ *  - no binary in the build dir but a prebuilt lvgl_sim -> prebuilt (no toolchain needed);
+ *  - toolchain OK -> (re)build the build-dir binary (it may be stale from an older version);
+ *  - toolchain broken: prebuilt if present, else an existing built binary, else nothing.
+ */
+export function chooseUiBinary(s: {
+  builtThisSession: boolean;
+  hasBuiltBinary: boolean;
+  hasPrebuiltSim: boolean;
+  toolchainOk: boolean;
+}): UiBinaryChoice {
+  if (s.builtThisSession && s.hasBuiltBinary) return "built";
+  if (s.hasPrebuiltSim && !s.hasBuiltBinary) return "prebuilt";
+  if (s.toolchainOk) return "build-then-built";
+  if (s.hasPrebuiltSim) return "prebuilt";
+  if (s.hasBuiltBinary) return "built";
+  return "none";
 }
 
 export class SimulatorManager implements SimulatorBackend {
   readonly compilerConfig: CompilerConfig;
-  private readonly compiler: SimulatorCompiler;
+  readonly compiler: SimulatorCompiler;
   private readonly env: NodeJS.ProcessEnv;
   private readonly serverVersion: string;
   readonly compileTimeoutMs: number;
@@ -264,8 +454,16 @@ export class SimulatorManager implements SimulatorBackend {
     this.compileTimeoutMs = opts.compileTimeoutMs ?? envInt(this.env, "LVGL_COMPILE_TIMEOUT_MS", DEFAULT_COMPILE_TIMEOUT_MS);
     this.runTimeoutMs = opts.runTimeoutMs ?? envInt(this.env, "LVGL_RUN_TIMEOUT_MS", DEFAULT_RUN_TIMEOUT_MS);
     this.compilerConfig = opts.compilerConfig ?? detectCompilerConfig(opts.simulatorDir, this.env);
-    this.compiler = new SimulatorCompiler(this.compilerConfig, { timeoutMs: this.compileTimeoutMs });
+    this.compiler = new SimulatorCompiler(this.compilerConfig, {
+      timeoutMs: this.compileTimeoutMs,
+      prebuilt: opts.prebuilt,
+      env: this.env,
+    });
     this.doctorFn = opts.doctor ?? ((cfg) => runDoctor(cfg, this.env));
+  }
+
+  get prebuilt(): PrebuiltInfo {
+    return this.compiler.prebuilt;
   }
 
   /** Run the toolchain doctor (cached once it passed; re-run after a failure). */
@@ -306,39 +504,168 @@ export class SimulatorManager implements SimulatorBackend {
     return withDirLock(this.compilerConfig.buildDir, { waitMs: budget, staleMs: budget + 60_000, signal }, fn);
   }
 
+  /**
+   * Resolve a request into concrete parameters. Precedence: explicit
+   * parameter > board preset > session default (lvgl_set_resolution) >
+   * built-in default.
+   */
   resolveParams(req: RenderRequest): ResolvedRenderParams {
-    const assetsDir = path.resolve(req.assetsDir ?? this.env["LVGL_ASSETS_DIR"] ?? process.cwd());
+    const board = boardDefaults(req.board);
+    const mode: RenderMode = req.mode ?? (req.full ? "full" : "snippet");
+    const assetsDir = path.resolve(
+      req.assetsDir ?? (mode === "project" && req.project?.root ? req.project.root : undefined) ?? this.env["LVGL_ASSETS_DIR"] ?? process.cwd()
+    );
+    if (req.frames?.length && req.actions?.length) {
+      throw new SimulatorError(
+        "args",
+        'Pass either frames or actions, not both (add {"wait": ms} and {"capture": "label"} steps to the actions instead).'
+      );
+    }
     return {
-      full: req.full,
-      width: req.width ?? this.width,
-      height: req.height ?? this.height,
+      full: mode === "full",
+      mode,
+      width: req.width ?? board?.width ?? this.width,
+      height: req.height ?? board?.height ?? this.height,
       timeMs: req.timeMs ?? DEFAULT_TIME_MS,
       settle: req.settle ?? false,
-      rotation: req.rotation ?? 0,
+      rotation: req.rotation ?? board?.rotation ?? 0,
       theme: req.theme ?? "light",
-      dpi: req.dpi ?? DEFAULT_DPI,
+      dpi: req.dpi ?? board?.dpi ?? DEFAULT_DPI,
       assetsDir,
+      board: req.board,
+      colorFormat: req.colorFormat ?? board?.colorFormat,
+      scale: req.scale,
+      fonts: req.fonts?.length ? [...new Set(req.fonts.map(normalizeFontName))] : undefined,
+      memBudgetKb: req.memBudgetKb ?? board?.memBudgetKb,
+      annotate: req.annotate ?? false,
+      frames: req.frames?.length ? req.frames : undefined,
+      actions: req.actions?.length ? req.actions : undefined,
+      espShims: req.espShims ?? mode === "project",
     };
   }
 
-  private compileFailure(res: CompileResult): SimulatorError {
+  private compileFailure(res: CompileResult, extraHints: string[] = []): SimulatorError {
     const errors = res.diagnostics.filter((d) => d.severity === "error");
     const warnings = res.diagnostics.filter((d) => d.severity === "warning");
     let msg = `Compilation failed (${errors.length} error${errors.length === 1 ? "" : "s"}, ${warnings.length} warning${warnings.length === 1 ? "" : "s"}):\n`;
     msg += res.output || res.diagnostics.map(formatDiagnostic).join("\n") || "(no compiler output)";
-    if (res.hints.length) msg += "\n\nHints:\n" + res.hints.map((h) => `- ${h}`).join("\n");
+    const hints = [...res.hints, ...extraHints];
+    if (hints.length) msg += "\n\nHints:\n" + hints.map((h) => `- ${h}`).join("\n");
     return new SimulatorError("compile", msg, { diagnostics: res.diagnostics });
   }
 
   render(req: RenderRequest, signal?: AbortSignal): Promise<RenderResult> {
-    const params = this.resolveParams(req);
+    let params: ResolvedRenderParams;
+    try {
+      params = this.resolveParams(req);
+    } catch (err) {
+      return Promise.reject(err instanceof SimulatorError ? err : new SimulatorError("args", (err as Error).message));
+    }
     return this.enqueue(async () => {
       if (!existsSync(params.assetsDir) || !statSync(params.assetsDir).isDirectory()) {
         throw new SimulatorError("args", `assets_dir does not exist or is not a directory: ${params.assetsDir}`);
       }
+      if (params.mode === "ui") return this.renderUi(req, params, signal);
       await this.ensureReady();
       return this.locked(() => this.compileAndRun(req, params, signal), signal);
     }, signal);
+  }
+
+  /** JSON UI mode: no compilation when a prebuilt (or this session's) binary is available. */
+  private async renderUi(req: RenderRequest, params: ResolvedRenderParams, signal?: AbortSignal): Promise<RenderResult> {
+    if (!req.ui || typeof req.ui !== "object") throw new SimulatorError("args", "UI mode needs a `ui` document (JSON object).");
+    const hasBuilt = this.compiler.hasBuiltBinary();
+    const hasPrebuiltSim = !!this.prebuilt.simulator;
+    // Ask the doctor (slow on the first call) only when the answer matters.
+    let choice: UiBinaryChoice;
+    let report: DoctorReport | null = null;
+    if (this.compiler.builtThisSession && hasBuilt) choice = "built";
+    else if (hasPrebuiltSim && !hasBuilt) choice = "prebuilt";
+    else {
+      report = await this.doctor();
+      choice = chooseUiBinary({ builtThisSession: false, hasBuiltBinary: hasBuilt, hasPrebuiltSim, toolchainOk: report.ok });
+    }
+    if (choice === "none") {
+      throw new SimulatorError(
+        "setup",
+        `JSON UI rendering needs either the prebuilt simulator (${this.prebuilt.dir ?? `simulator/prebuilt/${this.prebuilt.platform ?? "<platform>"}`}/lvgl_sim, shipped in the release archives) or a working toolchain to build it.\n` +
+          (report ? formatDoctorReport(report) : "")
+      );
+    }
+    if (choice === "prebuilt") {
+      return this.runSimulator(this.prebuilt.simulator!, req, params, signal, { compileMs: 0, cached: true, warnings: [], notes: [] }, "prebuilt");
+    }
+    return this.locked(async () => {
+      const t0 = Date.now();
+      let compiled: CompileResult | null = null;
+      if (choice === "build-then-built") {
+        compiled = await this.compiler.ensureBinary(signal);
+        if (!compiled.success) throw this.compileFailure(compiled);
+      }
+      return this.runSimulator(
+        this.compiler.executablePath(),
+        req,
+        params,
+        signal,
+        { compileMs: Date.now() - t0, cached: compiled?.cached ?? true, warnings: [], notes: compiled?.notes ?? [] },
+        "built"
+      );
+    }, signal);
+  }
+
+  /** Build the compile unit for project mode (stage inline files / scan the root). */
+  private async projectUnit(p: ProjectRequest, espShims: boolean): Promise<{ unit: CompileUnit; hints: string[] }> {
+    try {
+      let root: string;
+      if (p.files && p.files.length) {
+        root = path.join(this.compilerConfig.buildDir, "user_project");
+        await stageInlineFiles(root, p.files);
+        root = await fs.realpath(root);
+      } else if (p.root) {
+        root = p.root;
+      } else {
+        throw new ProjectPathError("pass either `files` (inline sources) or `root` (a project directory)");
+      }
+      const col = await collectSources(root, p.exclude ?? []);
+      const includeDirs = [root, ...col.headerDirs];
+      for (const d of p.includeDirs ?? []) {
+        const abs = path.isAbsolute(d) ? d : path.join(root, ...validateRelativePath(d, "include dir").split("/"));
+        if (!includeDirs.includes(abs)) includeDirs.push(abs);
+      }
+      const defines = [...(p.defines ?? [])];
+      for (const d of defines) if (!isValidDefine(d)) throw new ProjectPathError(`invalid define "${d}" (expected NAME or NAME=value)`);
+      if (espShims) {
+        const shim = await this.compiler.espShimSettings();
+        includeDirs.push(...shim.includeDirs);
+        defines.push(...shim.defines);
+      }
+      const userFiles = [
+        ...USER_FILES,
+        ...col.relSources,
+        ...col.relHeaders,
+        ...col.relSources.map((f) => path.posix.basename(f)),
+        ...col.relHeaders.map((f) => path.posix.basename(f)),
+      ];
+      const hints: string[] = [];
+      if (col.hasCxx) hints.push(`In C++ files declare the entry function with C linkage: extern "C" void ${p.entry}(void);`);
+      return {
+        unit: {
+          source: entryWrapperSource(p.entry, espShims),
+          snippet: null,
+          fullFile: true,
+          sources: col.sources,
+          includeDirs,
+          defines,
+          userFiles,
+          stripDirs: [root, p.root ?? root],
+          cacheable: false,
+        },
+        hints,
+      };
+    } catch (err) {
+      if (err instanceof ProjectPathError) throw new SimulatorError("project", err.message);
+      throw err;
+    }
   }
 
   private async compileAndRun(
@@ -347,16 +674,56 @@ export class SimulatorManager implements SimulatorBackend {
     signal: AbortSignal | undefined
   ): Promise<RenderResult> {
     const t0 = Date.now();
-    const compiled = await this.compiler.compile(req.code, req.full, signal);
-    if (!compiled.success) throw this.compileFailure(compiled);
-    const compileMs = Date.now() - t0;
+    let compiled: CompileResult;
+    if (params.mode === "project") {
+      if (!req.project) throw new SimulatorError("args", "Project mode needs `files` or `root`.");
+      const { unit, hints } = await this.projectUnit(req.project, params.espShims);
+      compiled = await this.compiler.compileUnit(unit, signal);
+      const undefinedEntry = compiled.diagnostics.some((d) => d.message.includes(req.project!.entry));
+      if (!compiled.success) throw this.compileFailure(compiled, undefinedEntry ? hints : []);
+    } else {
+      compiled = await this.compiler.compile(req.code, params.mode === "full", signal, params.espShims);
+      if (!compiled.success) throw this.compileFailure(compiled);
+    }
+    return this.runSimulator(
+      compiled.executablePath!,
+      req,
+      params,
+      signal,
+      {
+        compileMs: Date.now() - t0,
+        cached: compiled.cached,
+        warnings: compiled.diagnostics.filter((d) => d.severity !== "error"),
+        notes: compiled.notes ?? [],
+      },
+      "built"
+    );
+  }
 
+  private async runSimulator(
+    exe: string,
+    req: RenderRequest,
+    params: ResolvedRenderParams,
+    signal: AbortSignal | undefined,
+    build: { compileMs: number; cached: boolean; warnings: CompileResult["diagnostics"]; notes: string[] },
+    binary: "built" | "prebuilt"
+  ): Promise<RenderResult> {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "lvgl-mcp-"));
     try {
       const pngPath = path.join(tmp, "screenshot.png");
       const jsonPath = path.join(tmp, "tree.json");
+      const extra: { outputDir?: string; actionsPath?: string; uiPath?: string } = {};
+      if (needsOutputDir(params)) extra.outputDir = tmp;
+      if (params.actions?.length) {
+        extra.actionsPath = path.join(tmp, "actions.json");
+        await fs.writeFile(extra.actionsPath, JSON.stringify(params.actions, null, 1), "utf-8");
+      }
+      if (params.mode === "ui") {
+        extra.uiPath = path.join(tmp, "ui.json");
+        await fs.writeFile(extra.uiPath, JSON.stringify(req.ui, null, 1), "utf-8");
+      }
       const t1 = Date.now();
-      const res = await runProcess(compiled.executablePath!, buildSimArgs(params, pngPath, jsonPath), {
+      const res = await runProcess(exe, buildSimArgs(params, pngPath, jsonPath, extra), {
         cwd: tmp,
         env: simulatorEnv(this.env),
         timeoutMs: this.runTimeoutMs,
@@ -364,7 +731,7 @@ export class SimulatorManager implements SimulatorBackend {
       });
       const runMs = Date.now() - t1;
       if (res.spawnError) {
-        throw new SimulatorError("runtime", `Could not start the simulator binary ${compiled.executablePath}: ${res.spawnError.message}`);
+        throw new SimulatorError("runtime", `Could not start the simulator binary ${exe}: ${res.spawnError.message}`);
       }
       if (res.aborted) throw new SimulatorError("cancelled", "Render cancelled by the client.");
       if (res.timedOut || res.code !== 0) throw mapRunFailure(res, this.runTimeoutMs);
@@ -386,19 +753,26 @@ export class SimulatorManager implements SimulatorBackend {
       } catch (err) {
         throw new SimulatorError("output", `Simulator produced an invalid widget tree JSON: ${(err as Error).message}`);
       }
+      const { captures, missing } = await collectCaptures(output, tmp, png);
+      const notes = [...build.notes];
+      if (missing.length) notes.push(`Capture image(s) listed in the JSON but missing or invalid: ${missing.join(", ")}`);
+      if (binary === "prebuilt") notes.push("Rendered with the prebuilt simulator binary (no compilation).");
       const stderrLogs = splitStderr(res.stderr).logs;
       const result: RenderResult = {
         png,
         pngWidth: size.width,
         pngHeight: size.height,
+        captures,
         output,
         params,
-        warnings: compiled.diagnostics.filter((d) => d.severity !== "error"),
+        warnings: build.warnings,
         logs: output.logs.length > 0 ? output.logs : stderrLogs,
         stdout: res.stdout,
-        compileMs,
+        compileMs: build.compileMs,
         runMs,
-        compileCached: compiled.cached,
+        compileCached: build.cached,
+        binary,
+        notes,
       };
       this.lastResult = result;
       if (output.lvgl_version && output.lvgl_version !== "unknown") this.lastLvglVersion = output.lvgl_version;
@@ -431,6 +805,7 @@ export class SimulatorManager implements SimulatorBackend {
 
   getConfig(): ProjectConfig {
     const r = this.doctorReport;
+    const pb = this.prebuilt;
     return {
       server_version: this.serverVersion,
       lvgl_version: this.lastLvglVersion ?? "unknown until first render",
@@ -438,13 +813,22 @@ export class SimulatorManager implements SimulatorBackend {
       default_height: this.height,
       default_time_ms: DEFAULT_TIME_MS,
       default_dpi: DEFAULT_DPI,
-      color_format: "XRGB8888 (32 bpp)",
+      color_format: "XRGB8888 (32 bpp) by default; color_format=\"rgb565\" or a board preset renders like a 16 bpp panel",
+      color_formats: ["xrgb8888", "rgb565"],
       themes: ["light", "dark"],
       rotations: [0, 90, 180, 270],
       simulator_dir: this.compilerConfig.simulatorDir,
       build_dir: this.compilerConfig.buildDir,
       compile_timeout_ms: this.compileTimeoutMs,
       run_timeout_ms: this.runTimeoutMs,
+      platform_id: pb.platform,
+      prebuilt: {
+        dir: pb.dir,
+        library: pb.library,
+        simulator: pb.simulator,
+        disabled: this.compiler.prebuiltDisabled,
+      },
+      ui_without_toolchain: !!pb.simulator,
       toolchain: r ? { ok: r.ok, problems: r.problems, notes: r.notes } : "not checked yet",
     };
   }
