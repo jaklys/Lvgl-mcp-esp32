@@ -196,13 +196,13 @@ Once configured, Claude has access to these MCP tools:
 |------|------------|---------|
 | `lvgl_render` | `code` + [common render parameters](#common-render-parameters) | Render a snippet (body of `create_ui()`); returns one image per capture + summary, diagnostics, tree |
 | `lvgl_render_full` | same as `lvgl_render` | Render a complete C file that defines `void create_ui(void)` |
-| `lvgl_render_ui` | `ui` (JSON UI document), `width?`, `height?`, `board?`, `theme?`, `assets_dir?`, `annotate?`, `actions?`, `frames?`, `scale?`, `fonts?`, `mem_budget_kb?`, `color_format?` | Render a [JSON UI document](#render-ui-from-json-no-toolchain-needed): no C code, no compilation, no toolchain |
-| `lvgl_render_project` | `files` (`[{path, content}]`) or `root` (directory), `include_dirs?`, `defines?`, `entry?` (`ui_init`), `esp_shims?` (true) + common | Compile and render a whole UI project (all `.c`/`.cpp` files) by calling `entry()` |
-| `lvgl_interact` | `code`, `ui`, or `files`/`root`, plus `actions` + common | Render with an [action script](#seeing-more-captures-annotate-frames) (clicks, keys, drags); one image per capture |
+| `lvgl_render_ui` | `ui` (JSON UI document) + common (all except `esp_shims`) | Render a [JSON UI document](#render-ui-from-json-no-toolchain-needed): no C code, no compilation, no toolchain |
+| `lvgl_render_project` | `files` (`[{path, content}]`) or `root` (directory), `include_dirs?`, `defines?`, `exclude?` (globs), `entry?` (`ui_init`), `esp_shims?` (true) + common | Compile and render a whole UI project (all `.c`/`.cpp` files) by calling `entry()` |
+| `lvgl_interact` | `actions` (required) and one of `code` (+ `full?`), `ui`, or `files`/`root` (+ `include_dirs?`, `defines?`, `exclude?`, `entry?`) + common | Render with an [action script](#seeing-more-captures-annotate-frames) (clicks, keys, drags); one image per capture |
 | `lvgl_diff` | `a`, `b` (render ids such as `r3`), `threshold?` (0) | Pixel diff (count, %, bounding box, diff image) and object diff (added, removed, moved, resized, text/style changes) between two renders |
 | `lvgl_inspect` | `code?`, `full?`, `render_id?`, `type?`, `name?`, `max_depth?`, `include_styles?` (true) | Widget tree (of the last render, or of `render_id`), filterable |
 | `lvgl_check` | `code`, `full?` (false) | Compile only, no run; structured diagnostics |
-| `lvgl_docs` | `topic` | LVGL 9.6 reference text: `widgets/<name>`, `styles`, `layouts`, `events`, `anim`, `fonts`, `symbols`, `v8-migration`, `simulator`, `ui-json`, `actions`, `esp32` |
+| `lvgl_docs` | `topic` | LVGL 9.6 reference text: `simulator`, `widgets` (index) and `widgets/<name>` (34 widgets), `layouts`, `styles`, `events`, `anim`, `fonts`, `symbols`, `v8-migration`, `actions`, `ui-json`, `diagnostics`, `esp32`, `boards` |
 | `lvgl_set_resolution` | `width`, `height` | Set the **default** resolution for later calls (initially 800x480) |
 
 Every render gets an id (`r1`, `r2`, ...; the last 20 are kept in memory) for `lvgl_diff` and `lvgl_inspect`.
@@ -218,7 +218,7 @@ Every render gets an id (`r1`, `r2`, ...; the last 20 are kept in memory) for `l
 | `color_format` | `xrgb8888` | `rgb565` renders through a real RGB565 buffer (banding like the device) |
 | `scale` | 1 | 1–4, nearest-neighbour upscale of every image (tree coordinates stay logical) |
 | `annotate` | false | Also return an overlay image per capture: object outlines coloured by depth, with names |
-| `frames` | none | Capture at these simulated times, e.g. `[0, 150, 300]` |
+| `frames` | none | Capture at these simulated times after the UI is built, e.g. `[0, 150, 300]`; the final state is captured last as well (4 images) |
 | `actions` | none | [Action script](docs/actions.md): input and captures |
 | `fonts` | no restriction | Fonts enabled on the device, e.g. `["montserrat_14", "montserrat_20"]`; others are flagged `FONT_NOT_ON_DEVICE` |
 | `mem_budget_kb` | none | The device's `LV_MEM_SIZE`; peak LVGL heap use above it is flagged `MEM_OVER_BUDGET` |
@@ -295,21 +295,22 @@ void create_ui(void) {
 
 - `lvgl://api-reference` — LVGL 9.6 cheat sheet: widgets, styles, layouts, colors, symbols, "deprecated in 9.6 → replacement" notes, a v8 → v9 rename table and the simulator's constraints.
 - `lvgl://project-config` — current configuration as JSON: default resolution, LVGL version, color format, timeouts, simulator/build paths, toolchain and prebuilt status.
+- `lvgl://boards` — the [board presets](#boards) as JSON (the same data as `lvgl_docs {topic: "boards"}`).
 
 ## Seeing more (captures, annotate, frames)
 
 One screenshot of the final state hides most of what goes wrong in embedded UIs: animations, pressed states, what happens after a tap, and which box is which. Every render can return more than one image:
 
-- **`frames: [0, 150, 300]`** captures the screen at those simulated times: an animation or a screen transition as a strip of images.
+- **`frames: [0, 150, 300]`** captures the screen at those simulated times (measured from the moment the UI is built) and then the final state, so four images: an animation or a screen transition as a strip of images.
 - **`annotate: true`** adds an overlay image per capture with a 1 px outline around every visible object, coloured by depth, and its name (or `type#index` path). Padding, alignment and overlaps become visible at a glance. The overlay is drawn on LVGL's system layer and removed again, so the widget tree is unaffected.
-- **`actions`** (or `lvgl_interact`) drives real LVGL input devices, a pointer and a keypad with a default group, so event callbacks, states, scrolling and focus behave as on the device:
+- **`actions`** (or `lvgl_interact`) drives real LVGL input devices after `time_ms` has passed, a pointer and (when the script uses `key`, `type` or `focus`) a keypad with a default group, so event callbacks, states, scrolling and focus behave as on the device:
 
   ```json
   [{"click": {"name": "ok_btn"}}, {"wait": 300}, {"capture": "after_click"},
    {"drag": {"from": {"name": "target"}, "to": {"x": 280, "y": 86}}}, {"key": "ENTER"}]
   ```
 
-  Steps: `wait`, `click`/`press`/`release`/`drag` (by coordinates or object name), `key`, `type`, `focus`, `capture`, `settle`, and `load_screen` for JSON UI documents. The final state is always captured last. The result lists the LVGL events fired (`clicked`, `value_changed`, `focused`, ...). Full reference: [docs/actions.md](docs/actions.md).
+  Steps: `wait`, `click`/`press`/`release`/`drag` (by coordinates or object name), `key`, `type`, `focus`, `capture`, `settle`, and `load_screen` for JSON UI documents. The final state is always captured last. The result lists the LVGL events fired (`pressed`, `clicked`, `value_changed` with the new `value`, `focused`, `screen_loaded`, ...). Full reference: [docs/actions.md](docs/actions.md).
 - **`scale: 2`** (1–4) upscales images of small displays so details stay readable; coordinates in the tree stay logical.
 - **`color_format: "rgb565"`** renders through an RGB565 buffer, so gradients band like they do on most ESP32 panels.
 - **`lvgl_diff {a: "r3", b: "r4"}`** compares two renders: changed pixels (count, percentage, bounding box, and an image with changes in magenta over a dimmed base) and changed objects by name/path (added, removed, moved with old → new rectangle, resized, text and style changes). Use it to check that a fix changed only what it should.
@@ -318,24 +319,24 @@ One screenshot of the final state hides most of what goes wrong in embedded UIs:
 
 The simulator measures the finished UI and reports problems it can prove, with numbers, so the assistant does not have to guess from pixels.
 
-**Diagnostics.** Each has a code, a severity, the object's name/path and absolute rectangle, and a message such as `label text 'Living room temperature' needs 212 px, has 160 px (long_mode clip)`.
+**Diagnostics.** Each has a code, a severity, the object's name/path and absolute rectangle, and a message such as `label text 'Living room temperature' needs 204 px, has 160 px (long_mode clip)`. Hidden objects are not checked.
 
 | Code | Severity | Reported when |
 |------|----------|---------------|
-| `LABEL_CLIPPED` | warn | label text is cut off |
-| `TEXT_OVERFLOW` | warn | wrapped text is larger than the object's content box |
+| `LABEL_CLIPPED` | warn | a label in a single-line long mode (`clip`, `dots`, `scroll`, `scroll_circular`) has text wider than its content box |
+| `TEXT_OVERFLOW` | warn | wrapped text is taller than the content box (or has a word wider than it); other modes: text taller than the box |
 | `MISSING_GLYPH` | error | a character is not in the font (a placeholder box is drawn) |
-| `OFF_SCREEN` | warn | an object is partly or fully outside the screen |
-| `OUTSIDE_PARENT` | warn | an object is outside its parent's clip area and the parent does not scroll |
-| `OVERLAP` | info | two visible siblings overlap and the parent has no layout |
-| `LOW_CONTRAST` | warn | text vs. effective background contrast ratio below 3.0 |
-| `SMALL_TOUCH_TARGET` | info | a clickable object is smaller than 40x40 px on a display with DPI <= 160 |
+| `OFF_SCREEN` | warn | a direct child of the screen (or `layer_top`) is partly or fully outside the display |
+| `OUTSIDE_PARENT` | warn | a deeper object extends beyond its plain `lv_obj`/`lv_button` parent in a direction the parent cannot scroll |
+| `OVERLAP` | info | two visible siblings partly overlap (one fully inside the other does not count) and the parent has no layout |
+| `LOW_CONTRAST` | warn | label text vs. the background composed under it has a WCAG contrast ratio below 3.0 (once per colour pair) |
+| `SMALL_TOUCH_TARGET` | info | on a display with DPI <= 160, a button's click area is below 40 px in width or height (other input widgets: in both) |
 | `ZERO_SIZE` | warn | a visible object has width or height 0 |
 | `FONT_NOT_ON_DEVICE` | error | an object uses a font the device does not enable (`fonts`) |
 | `MEM_OVER_BUDGET` | error | LVGL's peak heap use exceeds the device budget (`mem_budget_kb`) |
-| `HIDDEN_CLICKABLE` | info | a clickable object is hidden or invisible |
-| `ANIM_UNFINISHED` | info | animations were still running at the final capture |
-| `APP_LOOP_DETECTED` | info | firmware-style `while (1)` loop detected; captured after 5 s simulated time |
+| `HIDDEN_CLICKABLE` | info | a touch target is fully transparent (`opa` 0) but still clickable |
+| `ANIM_UNFINISHED` | info | finite animations were still running at the final capture |
+| `APP_LOOP_DETECTED` | info | firmware-style `while (1)` loop detected; the simulator left it after 5 s of simulated time and captured |
 
 Meaning and typical fix for each: [docs/diagnostics.md](docs/diagnostics.md).
 
@@ -347,25 +348,26 @@ Meaning and typical fix for each: [docs/diagnostics.md](docs/diagnostics.md).
 
 `board` applies a preset for a common ESP32 display board: resolution, colour format, DPI, default rotation and typical `LV_MEM_SIZE` budget. Explicit parameters override the preset. The presets are defined in `mcp-server/src/boards.ts` (the single source of truth, including the values not shown here); this table is generated from it.
 
-<!-- boards:start (generated from mcp-server/src/boards.ts, do not edit by hand) -->
-| Preset | Board | Resolution | Notes |
-|--------|-------|------------|-------|
-| `esp32-2432s028r` | ESP32-2432S028R ("Cheap Yellow Display", 2.8") | 320x240 | ILI9341, RGB565, 48 KB |
-| `esp32-8048s070` | ESP32-8048S070 (7") | 800x480 | RGB565, 64 KB |
-| `wt32-sc01-plus` | WT32-SC01 Plus (3.5") | 480x320 | |
-| `lilygo-t-display-s3` | LilyGO T-Display-S3 (1.9") | 320x170 | |
-| `lilygo-t-display` | LilyGO T-Display (1.14") | 135x240 | |
-| `m5stack-core2` | M5Stack Core2 | 320x240 | |
-| `m5stack-cores3` | M5Stack CoreS3 | 320x240 | |
-| `waveshare-esp32-s3-touch-lcd-1.28` | Waveshare ESP32-S3-Touch-LCD-1.28 | 240x240 | Round GC9A01 |
-| `esp32-s3-box-3` | Espressif ESP32-S3-BOX-3 | 320x240 | |
-| `esp32-c3-0.42-oled` | ESP32-C3 with 0.42" OLED | 72x40 | Monochrome panel, previewed in RGB565 |
-| `ssd1306-128x64` | SSD1306 OLED | 128x64 | Monochrome panel |
-| `st7735-160x80` | ST7735 (0.96") | 160x80 | |
-| `generic-320x240` | Generic | 320x240 | |
-| `generic-480x320` | Generic | 480x320 | |
-| `generic-800x480` | Generic | 800x480 | |
-<!-- boards:end -->
+<!-- generated from mcp-server/src/boards.ts by mcp-server/scripts/gen-boards-md.mjs --write; do not edit by hand -->
+<!-- BOARDS:BEGIN -->
+| id | Board | Resolution | Color | DPI | Rotation | LV_MEM_SIZE | Panel | Notes |
+|---|---|---|---|---|---|---|---|---|
+| `esp32-2432s028r` | ESP32-2432S028R "Cheap Yellow Display" 2.8" | 320x240 | RGB565 | 143 | 0 | 48 KB | ILI9341 (SPI), XPT2046 resistive touch | ESP32-WROOM, no PSRAM: keep the LVGL heap small, 1/10-screen draw buffers. |
+| `esp32-8048s070` | Sunton ESP32-8048S070 7" | 800x480 | RGB565 | 133 | 0 | 64 KB | 16-bit RGB parallel TFT, GT911 capacitive touch | ESP32-S3 with 8 MB PSRAM; framebuffers in PSRAM. |
+| `wt32-sc01-plus` | Wireless-Tag WT32-SC01 Plus 3.5" | 480x320 | RGB565 | 165 | 0 | 64 KB | ST7796 (8-bit parallel), FT6336U capacitive touch | ESP32-S3 with 2 MB PSRAM. |
+| `lilygo-t-display-s3` | LILYGO T-Display-S3 1.9" | 320x170 | RGB565 | 190 | 0 | 64 KB | ST7789 (8-bit parallel), optional touch | Native panel is 170x320 portrait; most UIs rotate to landscape. Two buttons, often no touch. |
+| `lilygo-t-display` | LILYGO T-Display 1.14" | 135x240 | RGB565 | 241 | 0 | 48 KB | ST7789 (SPI) | Classic ESP32, no touch (two buttons): design for keypad/encoder navigation. |
+| `m5stack-core2` | M5Stack Core2 2.0" | 320x240 | RGB565 | 200 | 0 | 64 KB | ILI9342C (SPI), FT6336U capacitive touch | ESP32 with 8 MB PSRAM; three touch buttons below the screen. |
+| `m5stack-cores3` | M5Stack CoreS3 2.0" | 320x240 | RGB565 | 200 | 0 | 64 KB | ILI9342C (SPI), FT6336U capacitive touch | ESP32-S3 with 8 MB PSRAM. |
+| `waveshare-esp32-s3-touch-lcd-1.28` | Waveshare ESP32-S3-Touch-LCD-1.28 (round) | 240x240 | RGB565 | 265 | 0 | 48 KB | GC9A01 round (SPI), CST816S capacitive touch | Round panel: the corners of the 240x240 square are not visible - keep content inside the circle. |
+| `esp32-s3-box-3` | Espressif ESP32-S3-BOX-3 2.4" | 320x240 | RGB565 | 167 | 0 | 64 KB | ILI9342C (SPI), capacitive touch | ESP32-S3 with 16 MB flash / 16 MB PSRAM; esp_lvgl_port based BSP. |
+| `esp32-c3-0.42-oled` | ESP32-C3 0.42" OLED dev board | 72x40 | RGB565 | 196 | 0 | 32 KB | SSD1306 72x40 monochrome (I2C) | Monochrome panel: rendered as RGB565 here - use only black/white and high contrast; no touch. |
+| `ssd1306-128x64` | SSD1306 0.96" OLED 128x64 | 128x64 | RGB565 | 149 | 0 | 32 KB | SSD1306 monochrome (I2C/SPI) | Monochrome panel: rendered as RGB565 here - use only black/white, small fonts (unscii_8, montserrat_10); no touch. |
+| `st7735-160x80` | ST7735 0.96" IPS 160x80 | 160x80 | RGB565 | 186 | 0 | 32 KB | ST7735S (SPI) | Tiny color panel, no touch. |
+| `generic-320x240` | Generic 320x240 (QVGA) | 320x240 | RGB565 | 130 | 0 | 64 KB | any 2.4"-3.2" SPI panel (ILI9341, ST7789) | LVGL's default DPI. |
+| `generic-480x320` | Generic 480x320 (HVGA) | 480x320 | RGB565 | 130 | 0 | 64 KB | any 3.5" panel (ILI9488, ST7796) | LVGL's default DPI. |
+| `generic-800x480` | Generic 800x480 (WVGA) | 800x480 | RGB565 | 130 | 0 | 64 KB | any 4.3"-7" RGB parallel panel | LVGL's default DPI. |
+<!-- BOARDS:END -->
 
 ## Less friction (JSON UI without a toolchain, prebuilt LVGL, render_project, ESP-IDF shims)
 
@@ -373,7 +375,7 @@ Meaning and typical fix for each: [docs/diagnostics.md](docs/diagnostics.md).
 
 `lvgl_render_ui` takes a JSON UI document instead of C code. The simulator binary interprets it at run time and makes the matching LVGL calls: nothing is compiled, so it works on a machine with no compiler, CMake or Ninja, using the prebuilt `lvgl_sim` from the npm install. The vocabulary is the one every render returns in its widget tree (same widget types, `name`, `x`/`y`/`w`/`h`, `align`, the same `styles` keys and part blocks such as `indicator` and `knob`), so the assistant reads and writes one language, and a UI-mode render round-trips: what the document sets comes back in the tree with the same values.
 
-[`examples/06-ui.json`](examples/06-ui.json):
+A minimal document (the larger example with two screens, a gradient card and an animation is [`examples/06-ui.json`](examples/06-ui.json), rendered as [`examples/06-ui.png`](examples/06-ui.png)):
 
 ```json
 { "type": "lv_obj", "name": "screen", "styles": {"bg_color": "#f5f5f5"},
@@ -384,7 +386,7 @@ Meaning and typical fix for each: [docs/diagnostics.md](docs/diagnostics.md).
      "styles": {"bg_color": "#e5e7eb"}, "indicator": {"bg_color": "#ff6b3d", "bg_grad_color": "#3b82f6", "bg_grad_dir": "hor"},
      "knob": {"bg_color": "#ffffff", "border_color": "#ff6b3d", "border_width": 3, "shadow_color": "#ff6b3d", "shadow_width": 20, "shadow_opa": 180}},
     {"type": "lv_button", "name": "ok_btn", "align": "bottom_right", "x": -16, "y": -16, "w": 120, "h": 44,
-     "children": [{"type": "lv_label", "text": "Heat on", "align": "center"}]}
+     "text": "Heat on"}
   ] }
 ```
 
@@ -392,7 +394,7 @@ Meaning and typical fix for each: [docs/diagnostics.md](docs/diagnostics.md).
 Use lvgl_render_ui with width=320 height=240 and ui = <the document above>
 ```
 
-Documents also support flex and grid layouts, state variants (`styles_pressed`, ...), animations, `layer_top` and several screens switched by a `load_screen` action. Unknown keys are errors, and all problems are reported at once with their JSON path (`children[2].type: unknown widget "lv_meter"`). Diagnostics, `annotate`, `frames` and `actions` work exactly as for C code. Schema: [docs/ui-json.md](docs/ui-json.md) (also `lvgl_docs {topic: "ui-json"}`).
+Documents also support flex and grid layouts, state variants (`styles_pressed`, `indicator_checked`, ...), widget data (`chart_type` + `series` for `lv_chart`, `rows` for `lv_table`, `tabs` for `lv_tabview`, `items` for `lv_list`, ...), animations, `layer_top` and several screens switched by a `load_screen` action. Unknown keys are errors, and all problems are reported at once with their JSON path (`children[2].type: unknown widget "lv_meter"`). Diagnostics, `annotate`, `frames` and `actions` work exactly as for C code. Schema: [docs/ui-json.md](docs/ui-json.md) (also `lvgl_docs {topic: "ui-json"}`).
 
 LVGL's own XML format is part of LVGL Pro and is not supported here; the JSON UI format is this project's own and maps 1:1 to LVGL calls.
 
@@ -401,17 +403,17 @@ LVGL's own XML format is part of LVGL Pro and is not supported here; the JSON UI
 Each release archive contains `simulator/prebuilt/<platform>/` (`linux-x64`, `windows-x64`, `macos-arm64`, `macos-x64`): LVGL compiled in Release as a static library (`liblvgl.a`, `lvgl.lib` with MSVC) with the simulator's `lv_conf.h`, its headers, the `lv_conf.h` checksum and a ready-to-run `lvgl_sim` built from the same tree (fully static on Linux, static C runtime on Windows). postinstall reports whether it is present ("JSON UI rendering (lvgl_render_ui) is available without a toolchain").
 
 - `lvgl_render_ui` runs that `lvgl_sim` directly: no toolchain at all.
-- Renders of C code configure CMake with `-DLVGL_PREBUILT_DIR=<simulator>/prebuilt/<platform>` and only compile your code and the simulator's four files, instead of all of LVGL.
+- Renders of C code configure CMake with `-DLVGL_PREBUILT_DIR=<simulator>/prebuilt/<platform>` and only compile your code and the simulator's own sources, instead of all of LVGL.
 - The library bakes in `lv_conf.h`. If `simulator/lv_conf.h` no longer matches the checksum stored next to the library (or the LVGL version differs), CMake prints `LVGL_PREBUILT: not using the prebuilt LVGL ...` and builds LVGL from source. If linking against it fails (for example with an older MSVC than the one that built it), the server logs a warning, reconfigures without it and builds from source once; that choice is kept for the session.
 - In a checkout, `./scripts/build-prebuilt.sh` (Linux, macOS) or `scripts\build-prebuilt.ps1` (Windows, Developer PowerShell for VS) builds it for your machine; `--verify` / `-Verify` also checks that the prebuilt link renders byte-identical PNGs. See [CONTRIBUTING.md](CONTRIBUTING.md#prebuilt-lvgl).
 
 ### `lvgl_render_project` — render a real UI project
 
-Pass the UI files of your firmware project, inline (`files: [{path, content}]`) or as a `root` directory that lies inside one of the MCP client's roots or `LVGL_PROJECT_ROOT`. All `.c` files (and `.cpp`, which enables C++) are compiled with your `include_dirs` and `defines`, and the wrapper calls `entry()` (default `ui_init`, what SquareLine Studio and EEZ Studio exports use). Paths are checked against the allowed roots; diagnostics keep your file names. `esp_shims` is on by default here.
+Pass the UI files of your firmware project, inline (`files: [{path, content}]`) or as a `root` directory that lies inside one of the MCP client's roots, a directory listed in `LVGL_ALLOWED_ROOTS` or the server's working directory. All `.c` and `.cpp` files are compiled with your `include_dirs` and `defines` (C++ files must declare the entry function `extern "C"`), and the wrapper (`simulator/templates/project_wrapper.c`) calls `entry()` (default `ui_init`, what SquareLine Studio and EEZ Studio exports use; `app_main` works too). Project headers win over the ESP-IDF stand-ins and never collide with the simulator's own headers. Paths are checked against the allowed roots; diagnostics keep your file names. `esp_shims` is on by default here.
 
 ### ESP-IDF shims and `sim.h`
 
-Code copied from firmware usually logs with `ESP_LOGI`, waits with `vTaskDelay` and sometimes starts tasks. With `esp_shims: true` (default for `lvgl_render_project`) the simulator includes `esp_shim.h`, so that code compiles unchanged:
+Code copied from firmware usually logs with `ESP_LOGI`, waits with `vTaskDelay` and sometimes starts tasks. The headers `esp_log.h`, `esp_err.h`, `esp_check.h`, `esp_timer.h`, `esp_system.h`, `sdkconfig.h`, `esp_lvgl_port.h`, `freertos/FreeRTOS.h`, `freertos/task.h`, `freertos/semphr.h` and `freertos/queue.h` resolve to stand-ins in `simulator/templates/esp_shim/` that include `simulator/templates/esp_shim.h`, so that code compiles unchanged. `esp_shims: true` (default for `lvgl_render_project`) configures the build with `-DLVGL_SIM_ESP_SHIMS=ON`, which also makes the snippet wrapper include `esp_shim.h` (snippets have no `#include` lines of their own):
 
 | ESP-IDF / FreeRTOS | In the simulator |
 |--------------------|------------------|
@@ -422,6 +424,9 @@ Code copied from firmware usually logs with `ESP_LOGI`, waits with `vTaskDelay` 
 | `esp_err_t`, `ESP_OK`, `ESP_ERROR_CHECK` | defined |
 | `xTaskCreate(fn, ...)` | runs `fn` once, synchronously |
 | `vTaskDelete` | no-op |
+| `xSemaphoreCreateMutex`, `xSemaphoreTake/Give`, `lvgl_port_lock/unlock` | always succeed |
+| `xQueueCreate`, `xQueueSend`, `xQueueReceive`, `xQueuePeek`, ... | real FIFOs within the one simulated task; waiting on an empty (or full) queue lets the timeout pass (at most 1 s per call) and fails |
+| `ESP_RETURN_ON_ERROR`, `ESP_GOTO_ON_ERROR`, ... (`esp_check.h`) | as in ESP-IDF, logging through `sim_log` |
 | `while (1) { lv_timer_handler(); vTaskDelay(...); }` | detected at run time: after 5 s of simulated time the screen is captured and the run ends normally with `APP_LOOP_DETECTED` (info) |
 
 Your code can also use the simulator helpers directly. Snippets get `sim.h` from the wrapper; full files and projects add `#include "sim.h"`:
@@ -438,60 +443,63 @@ The simulator runs LVGL **9.6.0**, which is available in the ESP-IDF component r
 
 ## JSON output format
 
-The simulator writes the widget tree as compact JSON, `format_version` 3. Version 3 only adds fields to version 2 (2.1.0). An abridged example of a render with `frames: [0, 300]` and `mem_budget_kb: 64` (illustrative, pretty-printed; `...` marks omitted parts):
+The simulator writes the widget tree as compact JSON, `format_version` 3. Version 3 only adds fields to version 2 (2.1.0). Real output (pretty-printed; `"...": "..."` marks trees and styles left out here) of a 320x240 `lvgl_render_ui` call with `annotate: true`, `mem_budget_kb: 48` and one action, `[{"click": {"name": "wifi_sw"}}]`, on this document:
+
+```json
+{"type": "lv_obj", "styles": {"bg_color": "#ffffff"}, "children": [
+  {"type": "lv_label", "name": "title", "text": "Living room temperature", "x": 10, "y": 10, "w": 160,
+   "long_mode": "clip", "styles": {"font": "montserrat_16"}},
+  {"type": "lv_label", "name": "hint", "text": "Tap to toggle", "x": 10, "y": 40, "styles": {"text_color": "#c0c0c0"}},
+  {"type": "lv_switch", "name": "wifi_sw", "align": "top_right", "x": -10, "y": 10}
+]}
+```
 
 ```json
 {
   "format_version": 3,
   "lvgl_version": "9.6.0",
-  "display": { "width": 320, "height": 240, "rotation": 0, "dpi": 130, "color_format": "RGB565", "theme": "light", "scale": 1 },
-  "elapsed_ms": 330,
-  "anims_running": 0,
+  "display": {"width": 320, "height": 240, "rotation": 0, "dpi": 130, "color_format": "XRGB8888", "theme": "light", "scale": 1},
+  "elapsed_ms": 423,
+  "anims_running": 3,
   "logs": [],
-  "captures": [
-    { "n": 1, "label": "t0", "elapsed_ms": 0, "png": "capture-1-t0.png", "screen": { "type": "lv_obj", "...": "..." } },
-    { "n": 2, "label": "t300", "elapsed_ms": 297, "png": "capture-2-t300.png", "screen": { "type": "lv_obj", "...": "..." } },
-    { "n": 3, "label": "final", "elapsed_ms": 330, "png": "capture-3-final.png", "screen": { "type": "lv_obj", "...": "..." } }
-  ],
-  "mem": { "peak_bytes": 71234, "used_bytes": 60000, "frag_pct": 3, "budget_bytes": 65536, "over_budget": true },
-  "fonts_used": ["montserrat_14", "montserrat_24"],
-  "diagnostics": [
-    { "code": "MEM_OVER_BUDGET", "severity": "error", "path": "lv_obj#0",
-      "abs": { "x1": 0, "y1": 0, "x2": 319, "y2": 239 },
-      "message": "LVGL heap peak 69.6 KB exceeds the 64 KB budget by 5.6 KB" },
-    { "code": "LABEL_CLIPPED", "severity": "warn", "name": "title", "path": "lv_label#3",
-      "abs": { "x1": 80, "y1": 12, "x2": 239, "y2": 39 },
-      "message": "label text 'Living room temperature' needs 212 px, has 160 px (long_mode clip)" }
-  ],
-  "input": { "pointer": true, "keypad": true, "focused": null },
-  "events": [],
   "screen": {
     "type": "lv_obj",
-    "x": 0, "y": 0, "w": 320, "h": 240,
-    "abs": { "x1": 0, "y1": 0, "x2": 319, "y2": 239 },
+    "path": "lv_obj#0",
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 240,
+    "abs": {"x1": 0, "y1": 0, "x2": 319, "y2": 239},
     "flags": ["clickable", "scrollable"],
-    "styles": { "bg_opa": 255, "bg_color": "#f5f5f5", "text_color": "#212121", "font": "montserrat_14", "line_height": 16 },
+    "styles": {"bg_opa": 255, "bg_color": "#ffffff", "pad_row": 8, "pad_column": 8, "text_color": "#212121", "font": "montserrat_14", "line_height": 16},
     "children": [
-      {
-        "type": "lv_button",
-        "name": "ok_btn",
-        "x": 184, "y": 180, "w": 120, "h": 44,
-        "abs": { "x1": 184, "y1": 180, "x2": 303, "y2": 223 },
-        "flags": ["clickable"],
-        "styles": { "bg_opa": 255, "bg_color": "#2196f3", "radius": 7, "text_color": "#ffffff", "font": "montserrat_14", "line_height": 16 },
-        "children": [
-          { "type": "lv_label", "x": 32, "y": 14, "w": 56, "h": 16,
-            "abs": { "x1": 216, "y1": 194, "x2": 271, "y2": 209 },
-            "text": "Heat on", "long_mode": "wrap",
-            "styles": { "bg_opa": 0, "text_color": "#ffffff", "font": "montserrat_14", "line_height": 16 } }
-        ]
-      }
+      {"type": "lv_label", "name": "title", "path": "lv_label#0", "x": 10, "y": 10, "w": 160, "h": 18, "abs": {"x1": 10, "y1": 10, "x2": 169, "y2": 27}, "flags": ["scrollable"], "text": "Living room temperature", "long_mode": "clip", "scroll": {"x": 0, "y": 0, "overflow_x": true, "overflow_y": false}, "styles": {"bg_opa": 0, "text_color": "#212121", "font": "montserrat_16", "line_height": 18}},
+      { "type": "lv_label", "name": "hint", "...": "..." },
+      {"type": "lv_switch", "name": "wifi_sw", "path": "lv_switch#0", "x": 258, "y": 10, "w": 52, "h": 30, "abs": {"x1": 258, "y1": 10, "x2": 309, "y2": 39}, "states": ["checked", "focused"], "flags": ["clickable", "checkable"], "checked": true, "styles": { "...": "..." } }
     ]
-  }
+  },
+  "captures": [
+    {"n": 1, "label": "final", "elapsed_ms": 423, "png": "capture-1-final.png", "annotated": "annotated-1-final.png", "screen": { "type": "lv_obj", "...": "..." } }
+  ],
+  "mem": {"peak_bytes": 13224, "used_bytes": 11960, "frag_pct": 1, "budget_bytes": 49152, "over_budget": false, "pool_bytes": 8383208, "note": "excludes draw buffers"},
+  "fonts_used": ["montserrat_14", "montserrat_16"],
+  "diagnostics": [
+    {"code": "LABEL_CLIPPED", "severity": "warn", "name": "title", "path": "lv_label#0", "abs": {"x1": 10, "y1": 10, "x2": 169, "y2": 27}, "message": "label text 'Living room temperature' needs 204 px, has 160 px (long_mode clip)"},
+    {"code": "LOW_CONTRAST", "severity": "warn", "name": "hint", "path": "lv_label#1", "abs": {"x1": 10, "y1": 40, "x2": 106, "y2": 55}, "message": "label text 'Tap to toggle' has contrast 1.8:1 (#c0c0c0 on #ffffff), below 3.0:1"},
+    {"code": "ANIM_UNFINISHED", "severity": "info", "name": null, "path": null, "abs": null, "message": "3 animations were still running at the final capture (423 ms); use settle or a longer time to capture the end state"}
+  ],
+  "input": {"pointer": true, "keypad": false, "focused": null},
+  "events": [
+    {"t_ms": 330, "event": "pressed", "name": "wifi_sw", "path": "lv_switch#0", "type": "lv_switch"},
+    {"t_ms": 330, "event": "focused", "name": "wifi_sw", "path": "lv_switch#0", "type": "lv_switch"},
+    {"t_ms": 390, "event": "value_changed", "name": "wifi_sw", "path": "lv_switch#0", "type": "lv_switch", "value": true},
+    {"t_ms": 390, "event": "released", "name": "wifi_sw", "path": "lv_switch#0", "type": "lv_switch"},
+    {"t_ms": 390, "event": "clicked", "name": "wifi_sw", "path": "lv_switch#0", "type": "lv_switch"}
+  ]
 }
 ```
 
-`captures` appears only with more than one capture or with `annotate` (each then has an `annotated` image too); `events` lists what actions triggered. Every field of the document and of the widget nodes is described in [docs/json-format.md](docs/json-format.md).
+Actions start after `time_ms` (330 ms by default), which is why the events begin at 330 ms; the click holds for 60 ms and the capture follows one 33 ms step after the release, so the switch animation is still running (`ANIM_UNFINISHED`; add `{"settle": 1000}` to capture the end state). The pointer device exists because actions were given, the keypad device only when the script uses `key`, `type` or `focus` (so `input.keypad` is false and nothing is focused through a group here). Diagnostics about no particular object have `name`, `path` and `abs` set to `null`. `captures` appears only with more than one capture or with `annotate` (each then has an `annotated` image too); `frames: [0, 100, 300]` gives four captures (`t0`, `t100`, `t300` and `final`). `events` lists what the actions triggered, with `value` for value changes. Every field of the document and of the widget nodes is described in [docs/json-format.md](docs/json-format.md).
 
 > Changed in 2.2.0: `format_version` 3 adds `captures`, `mem`, `fonts_used`, `diagnostics`, `input`, `events` and `display.scale`; nothing was removed or renamed. Changed in 2.1.0: format version 2 replaced the bare screen node. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -502,7 +510,8 @@ Set these in the `env` block of your MCP client configuration.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `LVGL_SIM_PATH` | auto | Simulator directory (contains `CMakeLists.txt`). Overrides auto-detection (npm package's `simulator/`, else `../simulator` in a checkout) |
-| `LVGL_PROJECT_ROOT` | auto | Repository root that contains `simulator/` (older alternative to `LVGL_SIM_PATH`); also a directory `lvgl_render_project` may read `root` from |
+| `LVGL_PROJECT_ROOT` | auto | Repository root that contains `simulator/` (older alternative to `LVGL_SIM_PATH`) |
+| `LVGL_ALLOWED_ROOTS` | (none) | Extra directories `lvgl_render_project` may read a `root` from, separated like `PATH` (`:` on Linux/macOS, `;` on Windows). The MCP client's roots and the server's working directory (unless it is `/` or your home directory) are always allowed |
 | `LVGL_BUILD_DIR` | `<simulator>/build` | CMake build directory |
 | `LVGL_ASSETS_DIR` | server working dir | Default directory for `S:` file paths (`assets_dir` parameter) |
 | `LVGL_COMPILE_TIMEOUT_MS` | `180000` | Time limit for configure + build |
@@ -535,7 +544,8 @@ The [examples/](examples/) directory contains rendered output from the MCP serve
 | [01-button-slider.png](examples/01-button-slider.png) | [JSON](examples/01-button-slider.json) | Button + slider basic layout at 480x320 |
 | [02-dashboard.png](examples/02-dashboard.png) | [JSON](examples/02-dashboard.json) | Multi-card dashboard at 800x480 (`lvgl_render_full`) |
 | [04-esp32-small.png](examples/04-esp32-small.png) | [JSON](examples/04-esp32-small.json) | ESP32 status screen at 320x240 |
-| [06-ui.png](examples/06-ui.png) | [UI document](examples/06-ui.json) | Thermostat card from a JSON UI document at 320x240 (`lvgl_render_ui`, no toolchain) |
+| [05-annotated.png](examples/05-annotated.png) | [JSON](examples/05-annotated.json) | Thermostat on the `esp32-2432s028r` board preset (320x240, RGB565) with `annotate: true`: the annotated overlay image (outlines coloured by depth, names) |
+| [06-ui.png](examples/06-ui.png) | [UI document](examples/06-ui.json) | Home screen from a JSON UI document with two screens, a gradient card and a fade-in animation, at 480x320 (`lvgl_render_ui`, no toolchain) |
 
 ### E-BREW brewery control screens (real project)
 
@@ -567,11 +577,11 @@ The simulator can also be run by hand:
 ```bash
 simulator/build/lvgl_sim --width 320 --height 240 --time-ms 330 --theme dark \
   --output-png out.png --output-json out.json
-simulator/build/lvgl_sim --ui examples/06-ui.json --width 320 --height 240 --annotate --frames 0,300 \
+simulator/build/lvgl_sim --ui examples/06-ui.json --width 480 --height 320 --annotate --frames 0,300 \
   --output-dir out/ --output-png out/final.png --output-json out/ui.json
 ```
 
-Options: `--width`, `--height` (16–4096), `--output-png`, `--output-json` (required), `--time-ms` (default 330; `--ticks N` = N × 33 ms), `--settle`, `--rotation 0|90|180|270`, `--theme light|dark`, `--dpi` (default 130), `--assets-dir`, `--ui PATH` (JSON UI document), `--actions PATH` (action script), `--output-dir DIR` (per-capture images `capture-<n>-<label>.png`, `annotated-<n>-<label>.png`), `--frames 0,100,300`, `--annotate`, `--scale 1..4`, `--color-format xrgb8888|rgb565`, `--fonts a,b,c`, `--mem-budget-kb N`, `--help`. Exit codes: 0 ok, 1 bad arguments, 2 output write failed, 3 LVGL assertion, 5 UI document error, 6 action script error; anything else is a crash in user code. LVGL log lines go to stderr, `printf` output of your code to stdout.
+Options: `--width`, `--height` (16–4096), `--output-png`, `--output-json` (required), `--time-ms` (default 330; `--ticks N` = N × 33 ms), `--settle`, `--rotation 0|90|180|270`, `--theme light|dark`, `--dpi` (default 130), `--assets-dir`, `--ui PATH` (JSON UI document), `--actions PATH` (action script), `--output-dir DIR` (per-capture images `capture-<n>-<label>.png`, `annotated-<n>-<label>.png`), `--frames 0,100,300` (then the final capture), `--annotate`, `--scale 1..4`, `--color-format xrgb8888|rgb565`, `--fonts a,b,c`, `--mem-budget-kb N`, `--help`. Exit codes: 0 ok, 1 bad arguments, 2 output write failed, 3 LVGL assertion, 5 UI document error, 6 action script error; anything else is a crash in user code. LVGL log lines go to stderr, `printf` output of your code to stdout.
 
 ## Project structure
 
@@ -581,12 +591,18 @@ Lvgl-mcp-esp32/
 │   ├── CMakeLists.txt            Build config (C + C++, Release, Ninja/Make, MSVC or gcc/clang)
 │   ├── lv_conf.h                 LVGL config (XRGB8888/RGB565, built-in heap, all widgets, fonts 8-48, decoders, S: drive)
 │   ├── main.c                    CLI (see above), LVGL log capture, assert handler
-│   ├── hal/                      Framebuffer-only display, input devices (no SDL/window)
-│   ├── export/                   PNG export, widget tree + diagnostics → JSON (format v3)
+│   ├── sim_runtime.c             Simulated time, captures, app-loop detection, JSON document
+│   ├── hal/                      Framebuffer-only display (no SDL/window)
+│   ├── input/                    Pointer/keypad input devices, action scripts
+│   ├── export/                   PNG export, annotations, widget tree, diagnostics, events, memory → JSON (format v3)
+│   ├── ui/                       JSON UI document interpreter (--ui)
+│   ├── util/                     JSON parser and writer
 │   ├── templates/
 │   │   ├── user_code_wrapper.c   Template for wrapping code snippets
-│   │   ├── sim.h                 sim_advance_ms / sim_capture / sim_log for user code
-│   │   └── esp_shim.h            ESP-IDF / FreeRTOS shim
+│   │   ├── project_wrapper.c     Entry wrapper for lvgl_render_project (%ENTRY%)
+│   │   ├── sim.h / sim.c         sim_advance_ms / sim_capture / sim_log for user code
+│   │   ├── esp_shim.h            ESP-IDF / FreeRTOS shim
+│   │   └── esp_shim/             Stand-ins for esp_log.h, freertos/*.h, esp_lvgl_port.h, ...
 │   ├── prebuilt/<platform>/      Prebuilt LVGL + lvgl_sim (release archives, or scripts/build-prebuilt.*)
 │   └── lib/
 │       ├── lvgl/                 LVGL v9.6.0 (git submodule)
@@ -639,7 +655,7 @@ Changing `simulator/lv_conf.h` invalidates the prebuilt LVGL library; the build 
 
 ## Security
 
-Rendering C code compiles and runs arbitrary C code **locally, with your user's rights**. There is no sandbox: the code can read and write any file your account can. The compiled simulator (which runs your code) is started with a minimal, allow-listed environment, so environment variables such as API keys in your MCP client's configuration are not passed to it; the build tools (CMake, the compiler) inherit the server's environment. None of this is isolation. Only render code you would compile yourself, and use a container or VM if you need a hard boundary. `lvgl_render_project` only reads directories inside the MCP client's roots or `LVGL_PROJECT_ROOT`. JSON UI documents run no user code, but they can reference image files (`S:` paths) under `assets_dir`.
+Rendering C code compiles and runs arbitrary C code **locally, with your user's rights**. There is no sandbox: the code can read and write any file your account can. The compiled simulator (which runs your code) is started with a minimal, allow-listed environment, so environment variables such as API keys in your MCP client's configuration are not passed to it; the build tools (CMake, the compiler) inherit the server's environment. None of this is isolation. Only render code you would compile yourself, and use a container or VM if you need a hard boundary. `lvgl_render_project` only reads directories inside the MCP client's roots, `LVGL_ALLOWED_ROOTS` or the server's working directory. JSON UI documents run no user code, but they can reference image files (`S:` paths) under `assets_dir`.
 
 Downloads are pinned to the package version and verified with SHA-256; release archives (including the prebuilt binaries in them) also carry GitHub build provenance (`gh attestation verify <archive> --repo jaklys/Lvgl-mcp-esp32`), and npm packages are published with provenance.
 

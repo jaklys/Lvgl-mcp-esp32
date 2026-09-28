@@ -38,7 +38,8 @@ compiler. LVGL stays at v9.6.0.
     `children[2].type: unknown widget "lv_meter"`. LVGL's own XML format is
     part of LVGL Pro and is not supported.
   - `lvgl_render_project` compiles a whole UI project (inline `files` or a
-    `root` directory inside an MCP root or `LVGL_PROJECT_ROOT`; `.c` and
+    `root` directory inside an MCP root, `LVGL_ALLOWED_ROOTS` (new, a
+    PATH-style list) or the server's working directory; `.c` and
     `.cpp`, `include_dirs`, `defines`) and calls its entry function
     (`ui_init` by default). Paths are checked against the allowed roots and
     diagnostics keep the project's file names.
@@ -48,9 +49,12 @@ compiler. LVGL stays at v9.6.0.
     image, and an object-level diff by name/path (added, removed, moved,
     resized, text and style changes).
   - `lvgl_docs {topic}` returns focused LVGL 9.6 reference text
-    (`widgets/<name>`, `styles`, `layouts`, `events`, `anim`, `fonts`,
-    `symbols`, `v8-migration`, `simulator`, `ui-json`, `actions`, `esp32`).
-- **Seeing more.** `frames` captures the screen at several simulated times;
+    (`widgets` and `widgets/<name>` for 34 widgets, `styles`, `layouts`,
+    `events`, `anim`, `fonts`, `symbols`, `v8-migration`, `simulator`,
+    `ui-json`, `actions`, `diagnostics`, `esp32`, `boards`); the board
+    presets are also the resource `lvgl://boards`.
+- **Seeing more.** `frames` captures the screen at several simulated times
+  (plus the final state, so `[0, 100, 300]` gives four images);
   `annotate` adds an overlay image with every object's outline (coloured by
   depth) and name; `scale` (1-4) upscales images for small displays;
   `color_format: "rgb565"` renders through a real RGB565 buffer so banding
@@ -58,7 +62,8 @@ compiler. LVGL stays at v9.6.0.
 - **Input.** `actions` drives real LVGL pointer and keypad input devices:
   `click`/`press`/`release`/`drag` by coordinates or object name, `key`,
   `type`, `focus`, `wait`, `settle`, `capture`, `load_screen`. Events fired
-  (clicked, value changed, focused, screen loaded, ...) are reported.
+  (pressed, clicked, value changed with the new value, focused, screen
+  loaded, ...) are reported.
 - **Diagnostics** computed from the rendered UI, each with object name/path,
   absolute rectangle and a message with numbers: `LABEL_CLIPPED`,
   `TEXT_OVERFLOW`, `MISSING_GLYPH`, `OFF_SCREEN`, `OUTSIDE_PARENT`,
@@ -70,9 +75,11 @@ compiler. LVGL stays at v9.6.0.
   flags every other font; `board` applies a preset (resolution, colour
   format, DPI, rotation, memory budget) for common ESP32 display boards.
 - **Helpers for user code:** `sim.h` (`sim_advance_ms`, `sim_capture`,
-  `sim_log`) and an ESP-IDF shim (`esp_shims`: `ESP_LOGx`, `vTaskDelay`,
-  `pdMS_TO_TICKS`, `esp_timer_get_time`, `xTaskCreate`, ...) so code taken
-  from firmware compiles unchanged; a `while (1) { lv_timer_handler();
+  `sim_log`) and ESP-IDF stand-ins (`simulator/templates/esp_shim.h` and
+  `esp_log.h`, `esp_check.h`, `sdkconfig.h`, `freertos/*.h`,
+  `esp_lvgl_port.h` ... in `templates/esp_shim/`; `esp_shims`: `ESP_LOGx`,
+  `vTaskDelay`, `pdMS_TO_TICKS`, `esp_timer_get_time`, `xTaskCreate`,
+  semaphores, queues, ...) so code taken from firmware compiles unchanged; a `while (1) { lv_timer_handler();
   vTaskDelay(...); }` loop is detected, captured and reported.
 - **Prebuilt LVGL** in every release archive
   (`simulator/prebuilt/<platform>/`: static library, headers, `lvgl_sim`).
@@ -97,6 +104,12 @@ compiler. LVGL stays at v9.6.0.
   measurements (`mem`) possible; the budget is checked against the
   device's size, not the pool's.
 - `lvgl_inspect` accepts `render_id` to inspect an earlier render.
+- User code (snippet, full file, project sources) is compiled as its own
+  CMake object library, `lvgl_sim_user`, whose include path holds only the
+  project's directories, `simulator/templates` and LVGL, so project headers
+  such as `events.h` or `json.h` are not shadowed by the simulator's own.
+  Project mode passes `USER_EXTRA_SOURCES`, `USER_INCLUDE_DIRS`,
+  `USER_COMPILE_DEFINITIONS` and `LVGL_SIM_ESP_SHIMS` to CMake.
 - The Release workflow builds and verifies the prebuilt LVGL on Linux x64,
   macOS arm64 (`macos-latest`), macOS x64 (`macos-26-intel`) and Windows x64,
   and smoke-tests the packaged `lvgl_sim` with no compiler, CMake, Ninja or

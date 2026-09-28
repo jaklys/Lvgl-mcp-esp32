@@ -1,5 +1,5 @@
 {
-  "format_version": 2,
+  "format_version": 3,
   "lvgl_version": "9.6.0",
   "display": {
     "width": 320,
@@ -7,10 +7,12 @@
     "rotation": 0,
     "dpi": 130,
     "color_format": "XRGB8888",
-    "theme": "light"
+    "theme": "light",
+    "scale": 1
   },
   "screen": {
     "type": "lv_obj",
+    "path": "lv_obj#0",
     "x": 0,
     "y": 0,
     "w": 320,
@@ -44,6 +46,7 @@
     "children": [
       {
         "type": "lv_arc",
+        "path": "lv_arc#0",
         "x": 100,
         "y": 47,
         "w": 120,
@@ -62,6 +65,10 @@
         "max": 100,
         "styles": {
           "bg_opa": 0,
+          "arc_opa": 255,
+          "arc_width": 10,
+          "arc_color": "#e0e0e0",
+          "arc_rounded": true,
           "text_color": "#212121",
           "font": "montserrat_14",
           "line_height": 16
@@ -69,15 +76,22 @@
         "indicator": {
           "arc_opa": 255,
           "arc_width": 10,
-          "arc_color": "#00bcd4"
+          "arc_color": "#00bcd4",
+          "arc_rounded": true
         },
         "knob": {
           "bg_opa": 255,
-          "bg_color": "#2196f3"
+          "bg_color": "#2196f3",
+          "radius": 32767,
+          "pad_top": 5,
+          "pad_bottom": 5,
+          "pad_left": 5,
+          "pad_right": 5
         },
         "children": [
           {
             "type": "lv_label",
+            "path": "lv_label#0",
             "x": 36,
             "y": 47,
             "w": 48,
@@ -104,6 +118,7 @@
       },
       {
         "type": "lv_label",
+        "path": "lv_label#1",
         "x": 110,
         "y": 177,
         "w": 99,

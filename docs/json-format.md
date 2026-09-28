@@ -19,12 +19,12 @@ its name and meaning.
 | `logs` | 2 | LVGL log lines (and `sim_log` output), max 200 |
 | `screen` | 2 | the final widget tree (node, below) |
 | `layer_top`, `layer_sys` | 2 | present when those layers have children |
-| `captures` | 3 | only with more than one capture or with `annotate`: `[{n, label, elapsed_ms, png, annotated?, screen, layer_top?}]`; `screen` is the full tree at that moment; the last entry is `final` |
-| `mem` | 3 | `peak_bytes`, `used_bytes`, `frag_pct`, and with a budget `budget_bytes`, `over_budget` |
+| `captures` | 3 | only with more than one capture or with `annotate`: `[{n, label, elapsed_ms, png, annotated?, screen, layer_top?}]`; `screen` is the full tree at that moment; the last entry is always `final` (so `frames: [0, 100, 300]` gives 4 entries: `t0`, `t100`, `t300`, `final`) |
+| `mem` | 3 | LVGL heap (`LV_STDLIB_BUILTIN`, 8 MB pool): `peak_bytes`, `used_bytes`, `frag_pct`, with a budget `budget_bytes` and `over_budget`, then `pool_bytes` (the pool size) and `note` (`"excludes draw buffers"`). The simulator's own input devices and recorders are not counted |
 | `fonts_used` | 3 | built-in fonts used by visible objects, e.g. `["montserrat_14", "montserrat_28"]` |
-| `diagnostics` | 3 | `[{code, severity, name?, path, abs, message}]`, see [diagnostics.md](diagnostics.md) |
-| `input` | 3 | `{pointer, keypad, focused}` (name of the focused object or `null`) |
-| `events` | 3 | with actions: `[{t_ms, name, event}]`, max 200, see [actions.md](actions.md) |
+| `diagnostics` | 3 | `[{code, severity, name, path, abs, message}]`, errors first, then warnings, then info; `name` is `null` for unnamed objects, and `name`, `path` and `abs` are `null` for findings about no object (`MEM_OVER_BUDGET`, `ANIM_UNFINISHED`, `APP_LOOP_DETECTED`). At most 200; `diagnostics_dropped` counts the rest. See [diagnostics.md](diagnostics.md) |
+| `input` | 3 | `{pointer, keypad, focused}`: whether the pointer / keypad input device exists (the pointer only with actions, the keypad only when the script uses `key`, `type` or `focus`), and the name (or path) of the object focused in the keypad's group, or `null` |
+| `events` | 3 | with actions: `[{t_ms, event, name, path, type, value?}]` (`name` falls back to the path when the object has none; `value` on `value_changed`: the new value, checked state or selected index), max 200, `events_dropped` counts the rest; see [actions.md](actions.md) |
 
 ## Widget nodes
 

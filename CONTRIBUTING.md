@@ -103,8 +103,10 @@ turns that off), Windows builds it with the static C runtime (`/MT`, while
 1. Add the board to `mcp-server/src/boards.ts` (id in lower-case kebab case,
    display name, width, height, colour format, DPI, default rotation, typical
    `LV_MEM_SIZE` in KB, notes). It is the single source of truth.
-2. Regenerate the README boards table (between the `boards:start` and
-   `boards:end` markers) with the generator script in `mcp-server/scripts/`.
+2. Regenerate the boards tables in README.md and docs/boards.md (between the
+   `<!-- BOARDS:BEGIN -->` and `<!-- BOARDS:END -->` markers) with
+   `node mcp-server/scripts/gen-boards-md.mjs --write`; CI runs it with
+   `--check`.
 3. Add or extend a unit test so the preset's defaults are checked, and
    mention the board in `CHANGELOG.md`.
 

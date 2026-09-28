@@ -19,9 +19,9 @@ export const SIMULATOR = `# The simulator (lvgl-mcp 2.2)
   without changing coordinates.
 - Simulated time: ~330 ms (time_ms) in 33 ms steps before capture; settle=true waits for animations (max 3 s);
   \`frames\` captures several points in time.
-- Input: a POINTER and a KEYPAD input device exist (all focusable objects are in the default group).
-  They are driven by the \`actions\` parameter (click, drag, key, type, focus ...; topic "actions"). Without
-  actions nothing is pressed; preview states with lv_obj_add_state() (or [9.6+] lv_obj_set_checked()...).
+- Input: with the \`actions\` parameter (click, drag, key, type, focus ...; topic "actions") a POINTER input
+  device exists, and a KEYPAD device whose default group holds all focusable objects when the script uses
+  key/type/focus. Without actions there are no input devices and nothing is pressed; preview states with lv_obj_add_state() (or [9.6+] lv_obj_set_checked()...).
 - Fonts: lv_font_montserrat_8 .. _48 (even sizes), lv_font_montserrat_28_compressed, lv_font_unscii_8/16.
   **On the ESP32 only the sizes enabled in the device's lv_conf.h (LV_FONT_MONTSERRAT_xx 1) exist** -
   pass \`fonts\` (the device's font list) and the render reports FONT_NOT_ON_DEVICE for anything else.
@@ -107,18 +107,26 @@ Simulated time advances in 33 ms steps.
 The final state is always captured last (label "final"). Every capture becomes one image in the result
 (plus its annotated image with \`annotate: true\`), in order.
 
-The result lists the events that fired (\`events\`: CLICKED, VALUE_CHANGED, PRESSED, RELEASED, FOCUSED,
-SCREEN_LOADED with time and object name) and the focused object (\`input.focused\`).
+The result lists the events that fired (\`events\`: pressed, released, clicked, value_changed with the new
+\`value\`, focused, defocused, screen_loaded, ready, cancel - with time, object name and path) and the focused
+object (\`input.focused\`).
 
 Errors: an unknown action, bad JSON or an object name that does not exist fails the render with the
-message and the list of known object names - name the objects you want to interact with.
+message and the list of known object names - name the objects you want to interact with. Names resolve as:
+exact lv_obj_set_name name (first match in tree order when C code reuses a name), then a "type#index" path,
+then lv_obj_find_by_name().
 
 Example - toggle a switch and check the event:
 \`\`\`json
 [{"capture": "before"}, {"click": {"name": "wifi_sw"}}, {"wait": 200}]
 \`\`\`
-\`frames\` (e.g. [0, 100, 300]) is sugar for wait+capture steps (labels "t0", "t100", ...); use either
-frames or actions.
+\`frames\` (e.g. [0, 100, 300]) is sugar for wait+capture steps measured from the moment the UI is built
+(labels "t0", "t100", ...; time_ms/settle do not apply); the final state is still captured last, so [0, 100, 300]
+gives 4 images (t0, t100, t300, final). Use either frames or actions.
+
+Timing: actions start after time_ms (330 ms by default). A click is press, 60 ms, release, then one 33 ms step.
+The pointer device exists whenever actions are given; the keypad device and its default group only when the
+script uses key, type or focus (\`input.keypad\` / \`input.focused\` report them).
 `;
 
 export const UI_JSON = `# JSON UI documents (lvgl_render_ui)
@@ -145,44 +153,76 @@ The root object is the screen (type "lv_obj"). All keys are optional except \`ty
   ] }
 \`\`\`
 
-## Node keys
+## Node keys (every node)
 - \`type\`: lv_obj, lv_label, lv_button, lv_image, lv_slider, lv_bar, lv_arc, lv_switch, lv_checkbox, lv_dropdown,
-  lv_roller, lv_textarea, lv_spinner, lv_led, lv_line, lv_chart (line or bar chart, \`series\`: [{color, points: [..]}],
-  \`range\`), lv_table (\`rows\`: [[..]]), lv_buttonmatrix (\`map\`: [..]), lv_tabview (\`tabs\`: [{title, children}]),
-  lv_msgbox (\`title\`, \`text\`, \`buttons\`), lv_spinbox, lv_scale, lv_list (\`items\`: [{icon?, text}]).
-- \`name\` (the target for actions and the label in diagnostics/annotations - name everything you care about).
-- Geometry: \`x\`, \`y\` (int; offsets when \`align\` is set), \`w\`, \`h\` (int px, "content" or "50%"), \`align\`:
-  top_left | top_mid | top_right | left_mid | center | right_mid | bottom_left | bottom_mid | bottom_right.
+  lv_roller, lv_textarea, lv_spinner, lv_led, lv_line, lv_chart, lv_table, lv_buttonmatrix, lv_tabview, lv_msgbox,
+  lv_spinbox, lv_scale, lv_list.
+- \`name\` (unique; the target for actions/animations and the label in diagnostics/annotations - name everything
+  you care about).
+- Geometry: \`x\`, \`y\` (int px or "N%"; offsets when \`align\` is set), \`w\`, \`h\` (int px, "content" or "50%"),
+  \`align\`: default | top_left | top_mid | top_right | left_mid | center | right_mid | bottom_left | bottom_mid |
+  bottom_right | out_top_left | out_bottom_mid | out_right_mid | ... (all out_* variants).
 - \`hidden\` (bool), \`states\` ["checked", "disabled", "focused"], \`flags\` ["clickable", "scrollable", "checkable",
-  "floating", "ignore_layout", "hidden"] (prefix "-" to remove, e.g. "-scrollable").
-- Content: \`text\`, \`placeholder\`, \`long_mode\`, \`one_line\`; \`value\`, \`min\`, \`max\`, \`anim\` (bool); \`checked\`;
-  \`options\` [..], \`selected\`; \`src\` ("S:path.png" relative to assets_dir, or "symbol:OK" for LV_SYMBOL_OK).
-- \`layout\`: \`{"type": "flex", "flow": "row|column|row_wrap|column_wrap", "main": "start|end|center|space_between|space_around|space_evenly", "cross": "start|end|center", "track": "start|end|center"}\`
-  (children may set \`"grow": N\`) or \`{"type": "grid", "cols": [100, "fr1", "content"], "rows": [...]}\` with
-  \`"cell": {"col": 0, "col_span": 1, "row": 0, "row_span": 1, "x_align": "stretch|start|center|end", "y_align": ...}\` on children.
+  "floating", "ignore_layout", "hidden", "overflow_visible", "click_focusable", "event_bubble", "scroll_on_focus",
+  "scroll_elastic", "scroll_momentum", "snappable", "press_lock", "adv_hittest"] (prefix "-" to clear, e.g. "-scrollable").
+- \`layout\`: \`{"type": "flex", "flow": "row|column|row_wrap|column_wrap|row_reverse|...", "main": "start|end|center|space_between|space_around|space_evenly", "cross": "start|end|center", "track": ...}\`
+  (children may set \`"grow": N\`), \`{"type": "grid", "cols": [100, "fr1", "content"], "rows": [...], "col_align": ..., "row_align": ...}\`
+  with \`"cell": {"col": 0, "col_span": 1, "row": 0, "row_span": 1, "x_align": "stretch|start|center|end", "y_align": ...}\`
+  on children, or \`{"type": "none"}\`.
 - Styles: \`styles\` (LV_PART_MAIN, default state), part blocks \`indicator\`, \`knob\`, \`selected\`, \`items\`, \`cursor\`,
   \`scrollbar\`, and state variants \`styles_pressed\`, \`styles_checked\`, \`styles_disabled\`, \`styles_focused\`
-  (also \`indicator_checked\` etc.).
+  (also \`indicator_checked\`, \`knob_pressed\` ...). \`selected\` / \`items\` given as an object are style blocks; as a
+  number (dropdown/roller index) or an array (lv_list items) they are widget values.
+- \`children\` (not on lv_tabview: use \`tabs\`).
+
+## Widget keys (anything else is an error)
+- lv_label: \`text\`, \`long_mode\` (wrap|dots|scroll|scroll_circular|clip)
+- lv_button: \`text\` (shortcut for a centred lv_label child)
+- lv_image: \`src\` ("S:file.png" in assets_dir, or "symbol:OK" / "symbol:WIFI" ... for LV_SYMBOL_*)
+- lv_slider, lv_bar: \`value\`, \`min\`, \`max\`, \`anim\` (bool) - lv_arc: \`value\`, \`min\`, \`max\`, \`rotation\`,
+  \`bg_start_angle\`, \`bg_end_angle\`
+- lv_switch: \`checked\` - lv_checkbox: \`text\`, \`checked\`
+- lv_dropdown: \`options\` [..], \`selected\` (index) - lv_roller: \`options\` [..], \`selected\`, \`visible_rows\`, \`infinite\`
+- lv_textarea: \`text\`, \`placeholder\`, \`one_line\`, \`password\`, \`max_length\`
+- lv_spinner: \`duration\`, \`arc_length\` - lv_led: \`color\`, \`brightness\`, \`on\`
+- lv_line: \`points\` [[x, y], ...] - lv_chart: \`chart_type\` (line|bar), \`series\` [{color, points: [..]}], \`range\` [min, max],
+  \`div_lines\` [hor, ver]
+- lv_table: \`rows\` [["a", "b"], ...], \`col_widths\` [px, ...] - lv_buttonmatrix: \`map\` ["1", "2", "\\n", "3"]
+- lv_tabview: \`tabs\` [{title, name, children, layout, styles}], \`tab_bar\` (top|bottom|left|right), \`tab_bar_size\`,
+  \`active_tab\`
+- lv_msgbox: \`title\`, \`text\`, \`close_button\`, \`buttons\` ["OK", {"text": "Cancel", "name": "cancel_btn"}]
+- lv_spinbox: \`value\`, \`min\`, \`max\`, \`digits\`, \`decimals\`, \`step\`
+- lv_scale: \`mode\` (horizontal_top|horizontal_bottom|vertical_left|vertical_right|round_inner|round_outer), \`min\`,
+  \`max\`, \`total_ticks\`, \`major_every\`, \`labels\`, \`angle_range\`, \`rotation\`
+- lv_list: \`items\` ["text", {"text": "Wi-Fi", "icon": "symbol:WIFI", "name": "wifi_item", "header": false}]
 
 ## Style keys (the names the widget tree prints)
-bg_color, bg_opa, bg_grad_color, bg_grad_dir (hor|ver|none), bg_grad_stops [{color, frac 0..255}],
-border_color, border_width, border_opa, border_side (full|top|bottom|left|right|none), outline_width,
-outline_color, outline_pad, radius (int or "circle"), pad_top/bottom/left/right, pad_all, pad_hor, pad_ver,
-pad_row, pad_column, pad_gap, margin_*, shadow_color, shadow_width, shadow_spread, shadow_opa, shadow_ofs_x,
-shadow_ofs_y, text_color, text_opa, font (montserrat_8..48, unscii_8/16), text_align (left|center|right|auto),
-text_letter_space, text_line_space, line_width, line_color, line_rounded, arc_width, arc_color, arc_opa,
-arc_rounded, opa, width, height, min_width, max_width, min_height, max_height, transform_rotation (0.1 deg),
-transform_scale (256 = 1.0), translate_x, translate_y, clip_corner (bool).
+bg_color, bg_opa, bg_grad_color, bg_grad_dir (hor|ver|none), bg_main_stop, bg_grad_stop, bg_main_opa, bg_grad_opa,
+bg_grad_stops [{color, frac 0..255, opa}] (2..8 stops), border_color, border_width, border_opa,
+border_side (full|top|bottom|left|right|none), outline_width, outline_color, outline_opa, outline_pad,
+radius (int or "circle"), clip_corner (bool), pad_top/bottom/left/right, pad_row, pad_column, margin_top/bottom/left/right,
+shorthands pad_all, pad_hor, pad_ver, pad_gap, margin_all, margin_hor, margin_ver (the tree shows the individual keys),
+shadow_color, shadow_width, shadow_spread, shadow_opa, shadow_ofs_x, shadow_ofs_y, text_color, text_opa,
+font (montserrat_8..48 in steps of 2, montserrat_28_compressed, unscii_8/16), text_align (left|center|right|auto),
+text_letter_space, text_line_space, line_width, line_color, line_opa, line_rounded, arc_width, arc_color, arc_opa,
+arc_rounded, image_opa, image_recolor, image_recolor_opa, opa, width, height, min_width, max_width, min_height,
+max_height, transform_rotation (0.1 deg), transform_scale (256 = 1.0), transform_scale_x/y, transform_pivot_x/y,
+translate_x, translate_y. \`line_height\` is printed in the tree but read-only (setting it is an error).
 Colours "#rrggbb" or "#rgb"; opacities 0..255 or "50%".
 
 ## Document extras
 - \`"theme": "light" | "dark"\`
-- \`"layer_top": [nodes]\` (message boxes, toasts)
+- \`"layer_top": [nodes]\` (message boxes, toasts; reported as \`layer_top\` in the tree)
 - \`"animations": [{"target": "name", "prop": "x|y|w|h|opa|value|rotation", "from": 0, "to": 100, "duration": 500,
-  "delay": 0, "repeat": 2 | "infinite", "playback": true, "path": "linear|ease_in|ease_out|ease_in_out|overshoot|bounce"}]\`
-  (combine with \`frames\` or settle to see the motion)
-- \`"screens": {"name": node, ...}\` + \`"active": "name"\` - several screens; the action
+  "delay": 0, "repeat": 2 | "infinite", "playback": true, "path": "linear|ease_in|ease_out|ease_in_out|overshoot|bounce|step"}]\`
+  (target, prop, from, to required; combine with \`frames\` or settle to see the motion)
+- \`"screens": {"name": node, ...}\` + \`"active": "name"\` - several screens (each named after its key; \`type\` may be
+  omitted; no node keys at the top level then); the action
   \`{"load_screen": {"name": "...", "anim": "fade|move_left|...", "duration": 300}}\` switches between them.
+
+## Errors
+All problems at once, sorted by path, one per line: \`ui: children[2].type: unknown widget "lv_meter" (known: ...)\`,
+\`ui: children[0].txt: unknown key (did you mean "text"?) ...\`; the render fails (simulator exit code 5).
 
 ## Example 1 - card with gradient and glow
 \`\`\`json
@@ -234,14 +274,18 @@ export const ESP32 = `# ESP32 / ESP-IDF integration
   catch what would fail on the device.
 
 ## ESP-IDF shims (\`esp_shims: true\`; default on in lvgl_render_project)
-Code copied from an ESP-IDF project compiles unchanged: \`esp_log.h\`, \`esp_err.h\`, \`esp_timer.h\`,
+The stand-in headers (simulator/templates/esp_shim/) are always on the include path; \`esp_shims\` additionally
+makes the snippet wrapper include esp_shim.h (snippets have no #include lines). Code copied from an ESP-IDF
+project compiles unchanged: \`esp_log.h\`, \`esp_err.h\`, \`esp_timer.h\`,
 \`esp_system.h\`, \`esp_check.h\`, \`sdkconfig.h\`, \`freertos/FreeRTOS.h\`, \`freertos/task.h\`, \`freertos/semphr.h\`,
 \`freertos/queue.h\` and \`esp_lvgl_port.h\` resolve to stand-ins:
 - ESP_LOGI/W/E/D/V(tag, fmt, ...) -> sim_log (shows in the LVGL log of the result)
 - vTaskDelay(ticks) -> sim_advance_ms(ticks * portTICK_PERIOD_MS); pdMS_TO_TICKS(ms); portTICK_PERIOD_MS = 10
 - esp_timer_get_time() -> lv_tick_get() * 1000; TickType_t, portMAX_DELAY; esp_err_t, ESP_OK, ESP_ERROR_CHECK
 - xTaskCreate runs the task function once, synchronously; vTaskDelete is a no-op
-- mutexes/semaphores/queues and lvgl_port_lock/unlock are no-ops that succeed
+- mutexes/semaphores and lvgl_port_lock/unlock always succeed; queues are real FIFOs within the one simulated
+  task (xQueueSend copies in, xQueueReceive copies out; waiting on an empty/full queue lets the timeout pass, at most
+  1 s per call, and fails); ESP_RETURN_ON_ERROR & co. log through sim_log
 - A \`while (1) { lv_timer_handler(); vTaskDelay(...); }\` loop is detected: after 5 s of simulated time the
   simulator captures and ends the render with the info diagnostic APP_LOOP_DETECTED.
 Hardware (GPIO, I2C, SPI, Wi-Fi, NVS) is not simulated: keep it out of the UI code or behind #ifdef.
@@ -268,25 +312,26 @@ lv_dpx() for sizes that should scale with the panel.
 
 export const DIAGNOSTICS = `# UI diagnostics (every render)
 
-Computed by the simulator on the final state; each carries the object's name/path, absolute rectangle and a
-message with numbers. Grouped in the result by severity.
+Computed by the simulator on the final state (hidden objects are skipped, except for FONT_NOT_ON_DEVICE); each
+carries the object's name (null when unnamed), path, absolute rectangle and a message with numbers. Findings about
+no object (MEM_OVER_BUDGET, ANIM_UNFINISHED, APP_LOOP_DETECTED) have name/path/abs null. Grouped by severity.
 
-| Code | Severity | Meaning |
+| Code | Severity | Reported when |
 |---|---|---|
-| LABEL_CLIPPED | warn | label text needs more space than the label has (clip / dots long mode) |
-| TEXT_OVERFLOW | warn | wrapped text is taller than the object's content box |
-| MISSING_GLYPH | error | a character is not in the font (drawn as an empty box) |
-| OFF_SCREEN | warn | object partly or fully outside its screen |
-| OUTSIDE_PARENT | warn | object outside its parent's clip area and the parent does not scroll |
-| OVERLAP | info | two visible siblings overlap and the parent has no layout |
-| LOW_CONTRAST | warn | text vs. effective background contrast ratio < 3.0 (WCAG formula) |
-| SMALL_TOUCH_TARGET | info | clickable object smaller than 40x40 px on a display with dpi <= 160 |
-| ZERO_SIZE | warn | width or height is 0 while not hidden |
-| FONT_NOT_ON_DEVICE | error | object uses a font not in \`fonts\` (the device's font list) |
+| LABEL_CLIPPED | warn | a label in a single-line long mode (clip, dots, scroll, scroll_circular) has text wider than its content box |
+| TEXT_OVERFLOW | warn | wrap mode: a word wider than the content box or wrapped text taller than it; other modes: text taller than the box |
+| MISSING_GLYPH | error | a character is not in the font (drawn as an empty box); labels, placeholders, checkboxes, dropdown options, button matrix maps |
+| OFF_SCREEN | warn | a direct child of the screen / layer_top is partly or fully outside the display |
+| OUTSIDE_PARENT | warn | a deeper object extends beyond its plain lv_obj/lv_button parent in a direction the parent cannot scroll (no overflow_visible) |
+| OVERLAP | info | two visible siblings partly overlap (> 4 px², neither inside the other) and the parent has no layout; max 20 |
+| LOW_CONTRAST | warn | label text vs. the background composed under its centre (bg colours, opacities, gradient ends) < 3.0 (WCAG); once per colour pair |
+| SMALL_TOUCH_TARGET | info | dpi <= 160: a button's click area < 40 px wide or high; other input widgets < 40 px in both directions |
+| ZERO_SIZE | warn | width or height is 0 while not hidden (empty labels excluded) |
+| FONT_NOT_ON_DEVICE | error | an object draws text with a built-in font not in \`fonts\` (the device's font list) |
 | MEM_OVER_BUDGET | error | LVGL heap peak exceeds \`mem_budget_kb\` / the board's LV_MEM_SIZE |
-| HIDDEN_CLICKABLE | info | clickable but hidden or invisible |
-| ANIM_UNFINISHED | info | animations still running at the final capture (use settle or a larger time_ms) |
-| APP_LOOP_DETECTED | info | an endless lv_timer_handler()/vTaskDelay loop was stopped after 5 s (ESP shims) |
+| HIDDEN_CLICKABLE | info | a touch target is fully transparent (opa 0) but still clickable |
+| ANIM_UNFINISHED | info | finite animations still running at the final capture (use settle or a larger time_ms) |
+| APP_LOOP_DETECTED | info | create_ui()/the entry spent 5 s of simulated time (a lv_timer_handler()/vTaskDelay loop): left there and captured |
 
 A clean UI has zero diagnostics. Fix errors first, then warnings; info items are judgement calls
 (e.g. an intentional overlap).

@@ -32,9 +32,9 @@ from the panel diagonal. Monochrome OLEDs are rendered as RGB565 - design them i
 This table is generated from `mcp-server/src/boards.ts` (the single source of truth):
 
 ```sh
-node mcp-server/scripts/gen-boards-md.mjs --write            # updates this file
-node mcp-server/scripts/gen-boards-md.mjs --write README.md  # any file with the BOARDS markers
-node mcp-server/scripts/gen-boards-md.mjs --check            # CI: fail when out of date
+node mcp-server/scripts/gen-boards-md.mjs --write              # updates this file and README.md
+node mcp-server/scripts/gen-boards-md.mjs --write other.md     # any file with the BOARDS markers
+node mcp-server/scripts/gen-boards-md.mjs --check              # CI: fail when either is out of date
 ```
 
 Missing your board? Add an entry to `BOARDS` in `mcp-server/src/boards.ts` and regenerate.
