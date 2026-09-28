@@ -1,5 +1,5 @@
 {
-  "format_version": 2,
+  "format_version": 3,
   "lvgl_version": "9.6.0",
   "display": {
     "width": 800,
@@ -7,10 +7,12 @@
     "rotation": 0,
     "dpi": 130,
     "color_format": "XRGB8888",
-    "theme": "light"
+    "theme": "light",
+    "scale": 1
   },
   "screen": {
     "type": "lv_obj",
+    "path": "lv_obj#0",
     "x": 0,
     "y": 0,
     "w": 800,
@@ -37,6 +39,7 @@
     "children": [
       {
         "type": "lv_label",
+        "path": "lv_label#0",
         "x": 349,
         "y": 177,
         "w": 103,
@@ -61,6 +64,7 @@
       },
       {
         "type": "lv_label",
+        "path": "lv_label#1",
         "x": 350,
         "y": 251,
         "w": 100,
@@ -85,6 +89,7 @@
       },
       {
         "type": "lv_bar",
+        "path": "lv_bar#0",
         "x": 250,
         "y": 290,
         "w": 300,
@@ -111,7 +116,8 @@
         },
         "indicator": {
           "bg_opa": 255,
-          "bg_color": "#d4af37"
+          "bg_color": "#d4af37",
+          "radius": 32767
         }
       }
     ]

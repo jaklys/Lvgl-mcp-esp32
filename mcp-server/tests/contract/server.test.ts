@@ -37,10 +37,21 @@ test("server reports name and version from package metadata", () => {
   assert.match(client.getInstructions() ?? "", /lvgl_render/);
 });
 
-test("tools/list exposes the 2.1.0 tool set with titles, annotations and schemas", async () => {
+test("tools/list exposes the 2.2.0 tool set with titles, annotations and schemas", async () => {
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name).sort();
-  assert.deepEqual(names, ["lvgl_check", "lvgl_inspect", "lvgl_render", "lvgl_render_full", "lvgl_set_resolution"]);
+  assert.deepEqual(names, [
+    "lvgl_check",
+    "lvgl_diff",
+    "lvgl_docs",
+    "lvgl_inspect",
+    "lvgl_interact",
+    "lvgl_render",
+    "lvgl_render_full",
+    "lvgl_render_project",
+    "lvgl_render_ui",
+    "lvgl_set_resolution",
+  ]);
   for (const t of tools) {
     assert.ok(t.title, `${t.name} has a title`);
     assert.ok(t.description && t.description.length > 80, `${t.name} has a real description`);
@@ -68,7 +79,8 @@ test("tools/list exposes the 2.1.0 tool set with titles, annotations and schemas
   assert.match(render.description!, /montserrat_8 \.\. lv_font_montserrat_48/);
   assert.match(render.description!, /S:<file>/);
   assert.match(render.description!, /330 ms/);
-  assert.match(render.description!, /No input devices/);
+  assert.match(render.description!, /actions/);
+  assert.match(render.description!, /render_id/);
   assert.match(render.description!, /lv_obj_t \*screen/);
   assert.match(render.description!, /C11/);
 
@@ -79,8 +91,44 @@ test("tools/list exposes the 2.1.0 tool set with titles, annotations and schemas
   assert.deepEqual(Object.keys(tools.find((t) => t.name === "lvgl_check")!.inputSchema.properties ?? {}).sort(), ["code", "full"]);
   assert.deepEqual(
     Object.keys(tools.find((t) => t.name === "lvgl_inspect")!.inputSchema.properties ?? {}).sort(),
-    ["code", "full", "include_styles", "max_depth", "name", "type"]
+    ["code", "full", "include_styles", "max_depth", "name", "render_id", "type"]
   );
+
+  // 2.2.0 common render params on every render tool
+  const common = ["board", "color_format", "scale", "fonts", "mem_budget_kb", "annotate", "frames", "actions"];
+  for (const name of ["lvgl_render", "lvgl_render_full", "lvgl_render_ui", "lvgl_render_project", "lvgl_interact"]) {
+    const t = tools.find((x) => x.name === name)!;
+    const p = t.inputSchema.properties as Record<string, Record<string, unknown>>;
+    for (const k of common) assert.ok(p[k], `${name}.${k}`);
+    assert.ok((t.outputSchema?.properties as Record<string, unknown>)["render_id"], `${name} outputs render_id`);
+  }
+  assert.deepEqual(props["board"]["enum"] && (props["board"]["enum"] as string[]).includes("esp32-2432s028r"), true);
+  assert.deepEqual(props["color_format"]["enum"], ["xrgb8888", "rgb565"]);
+  assert.equal(props["scale"]["maximum"], 4);
+  assert.equal(props["annotate"]["default"], false);
+  assert.equal(props["esp_shims"]["default"], false);
+  assert.equal(props["dpi"]["default"], undefined, "dpi default comes from the board or 130");
+  const actionsProp = props["actions"] as { items?: { anyOf?: unknown[] }; description?: string };
+  assert.ok((actionsProp.items?.anyOf?.length ?? 0) >= 11, "actions items are a union of the action kinds");
+  assert.match(String(actionsProp.description), /lv_obj_set_name/);
+  const proj = tools.find((t) => t.name === "lvgl_render_project")!;
+  const pp = proj.inputSchema.properties as Record<string, Record<string, unknown>>;
+  assert.equal(pp["entry"]["default"], "ui_init");
+  assert.equal(pp["esp_shims"]["default"], true);
+  const ui = tools.find((t) => t.name === "lvgl_render_ui")!;
+  assert.deepEqual(ui.inputSchema.required, ["ui"]);
+  assert.match(String((ui.inputSchema.properties as Record<string, { description?: string }>)["ui"].description), /LVGL Pro/);
+  assert.match(ui.description!, /no compilation/i);
+  const interact = tools.find((t) => t.name === "lvgl_interact")!;
+  assert.deepEqual(interact.inputSchema.required, ["actions"]);
+  const diff = tools.find((t) => t.name === "lvgl_diff")!;
+  assert.deepEqual(diff.inputSchema.required, ["a", "b"]);
+  const docs = tools.find((t) => t.name === "lvgl_docs")!;
+  const topics = (docs.inputSchema.properties as Record<string, { enum?: string[] }>)["topic"].enum!;
+  for (const t of ["widgets/label", "widgets/slider", "styles", "layouts", "events", "anim", "fonts", "symbols", "v8-migration", "simulator", "ui-json", "actions", "esp32", "boards"]) {
+    assert.ok(topics.includes(t), `docs topic ${t}`);
+  }
+  assert.ok(!topics.includes("xml"), "no xml topic (LVGL XML is LVGL Pro only)");
 });
 
 test("lvgl_inspect before any render is an error with guidance", async () => {
@@ -92,6 +140,8 @@ test("lvgl_inspect before any render is an error with guidance", async () => {
 test("lvgl_render returns a PNG image, a summary text and structured content", async () => {
   const r = await call("lvgl_render", { code: "lv_label_create(screen);" });
   assert.notEqual(r.isError, true);
+  assert.equal(r.content.filter((c) => c.type === "image").length, 1);
+  assert.equal(r.content[r.content.length - 1]?.type, "text", "images first, then the text");
   const img = r.content.find((c) => c.type === "image") as { data: string; mimeType: string };
   assert.equal(img.mimeType, "image/png");
   assert.equal(Buffer.from(img.data, "base64").subarray(1, 4).toString(), "PNG");
@@ -109,6 +159,8 @@ test("lvgl_render returns a PNG image, a summary text and structured content", a
   assert.equal(sc["lvgl_version"], "9.6.0");
   assert.equal(sc["widget_count"], 3);
   assert.equal(sc["tree"], undefined);
+  assert.match(String(sc["render_id"]), /^r\d+$/);
+  assert.ok(t.includes(`render_id ${sc["render_id"]}`), "render_id in the text");
 });
 
 test("render options are forwarded; width/height are per call and not sticky", async () => {
@@ -143,13 +195,13 @@ test("include_tree=none omits the summary; full adds compact JSON", async () => 
   assert.ok((full.structuredContent as Record<string, unknown>)["tree"]);
 });
 
-test("huge trees are trimmed so the text stays under ~20k characters", async () => {
+test("huge trees are trimmed so the text stays under ~25k characters", async () => {
   const r = await call("lvgl_render", { code: "HUGE_TREE", include_tree: "full" });
   const t = text(r);
-  assert.ok(t.length < 21000, `text length ${t.length}`);
+  assert.ok(t.length < 25000, `text length ${t.length}`);
   assert.match(t, /lvgl_inspect/);
   const summary = await call("lvgl_render", { code: "HUGE_TREE" });
-  assert.ok(text(summary).length < 21000);
+  assert.ok(text(summary).length < 25000);
 });
 
 test("lvgl_render_full uses full-file mode", async () => {
@@ -246,7 +298,7 @@ test("cancellation reaches the backend through extra.signal", async () => {
 test("resources: api-reference (9.6) and project-config", async () => {
   const { resources } = await client.listResources();
   const uris = resources.map((r) => r.uri).sort();
-  assert.deepEqual(uris, ["lvgl://api-reference", "lvgl://project-config"]);
+  assert.deepEqual(uris, ["lvgl://api-reference", "lvgl://boards", "lvgl://project-config"]);
   const ref = await client.readResource({ uri: "lvgl://api-reference" });
   const md = (ref.contents[0] as { text: string }).text;
   assert.match(md, /LVGL 9\.6/);

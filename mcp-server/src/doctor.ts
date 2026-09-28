@@ -3,6 +3,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import type { CompilerConfig } from "./simulator/compiler.js";
 import { captureVcvarsEnv } from "./simulator/msvc.js";
+import { detectPrebuilt, type PrebuiltInfo } from "./simulator/prebuilt.js";
 import { isWindows, resolveExecutable, runProcess } from "./simulator/process.js";
 
 export interface DoctorReport {
@@ -67,11 +68,15 @@ const XCRUN_MISSING_RE = /invalid active developer path|xcode-select: note|xcrun
  */
 export async function runDoctor(
   cfg: CompilerConfig,
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
+  prebuilt: PrebuiltInfo = detectPrebuilt(cfg.simulatorDir)
 ): Promise<DoctorReport> {
   const problems: string[] = [];
   const notes: string[] = [];
   const sim = cfg.simulatorDir;
+
+  // --- prebuilt artifacts (contract section 7) -----------------------------
+  notes.push(...prebuiltNotes(prebuilt));
 
   // --- simulator sources -------------------------------------------------
   if (!existsSync(sim)) {
@@ -85,9 +90,9 @@ export async function runDoctor(
       }
     }
     if (!existsSync(path.join(sim, "lib", "lvgl", "lvgl.h"))) {
-      problems.push(
-        `LVGL sources missing in ${path.join(sim, "lib", "lvgl")}. In a git checkout run: git submodule update --init --recursive`
-      );
+      const msg = `LVGL sources missing in ${path.join(sim, "lib", "lvgl")}. In a git checkout run: git submodule update --init --recursive`;
+      if (prebuilt.library) notes.push(`${msg} (builds use the prebuilt library; no fallback to a source build is possible)`);
+      else problems.push(msg);
     }
   }
 
@@ -175,6 +180,18 @@ export async function runDoctor(
   }
 
   return { ok: problems.length === 0, problems, notes };
+}
+
+/** Doctor notes about the prebuilt library / simulator binary. */
+export function prebuiltNotes(p: PrebuiltInfo): string[] {
+  const notes: string[] = [];
+  if (p.library) notes.push(`Prebuilt LVGL library: ${p.library} (builds skip compiling LVGL; falls back to a source build if it does not link)`);
+  notes.push(
+    p.simulator
+      ? `JSON UI rendering (lvgl_render_ui) available without a toolchain: yes (prebuilt ${p.simulator})`
+      : `JSON UI rendering (lvgl_render_ui) available without a toolchain: no (no prebuilt lvgl_sim for ${p.platform ?? "this platform"}${p.dir ? ` in ${p.dir}` : ""})`
+  );
+  return notes;
 }
 
 const DARWIN_PATH_NOTE =

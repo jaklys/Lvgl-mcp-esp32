@@ -104,6 +104,18 @@ test("shortenPaths handles mixed separators and case on Windows paths", () => {
   assert.equal(u, "simulator/main.c:1:1: error");
 });
 
+test("shortenPaths: project-relative names use / on Windows (MSVC) and POSIX", () => {
+  const root = "C:\\Users\\dev\\proj";
+  const s = shortenPaths(`${root}\\ui\\screens\\home.c(2): error C4013: 'nope' undefined`, { ...WIN, stripDirs: [root] });
+  assert.equal(s, "ui/screens/home.c(2): error C4013: 'nope' undefined");
+  assert.deepEqual(
+    { file: parseDiagnostics(s)[0]!.file, line: parseDiagnostics(s)[0]!.line },
+    { file: "ui/screens/home.c", line: 2 }
+  );
+  const t = shortenPaths("/home/u/proj/ui/screens/home.c:2:3: error: x", { ...POSIX, stripDirs: ["/home/u/proj"] });
+  assert.equal(t, "ui/screens/home.c:2:3: error: x");
+});
+
 test("hints for v8 names and helper functions in snippets", () => {
   const d = parseDiagnostics(
     "snippet.c:1:17: error: implicit declaration of function 'lv_btn_create'; did you mean 'lv_button_create'? [-Werror=implicit-function-declaration]\n" +

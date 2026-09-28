@@ -1,5 +1,5 @@
 {
-  "format_version": 2,
+  "format_version": 3,
   "lvgl_version": "9.6.0",
   "display": {
     "width": 800,
@@ -7,10 +7,12 @@
     "rotation": 0,
     "dpi": 130,
     "color_format": "XRGB8888",
-    "theme": "light"
+    "theme": "light",
+    "scale": 1
   },
   "screen": {
     "type": "lv_obj",
+    "path": "lv_obj#0",
     "x": 0,
     "y": 0,
     "w": 800,
@@ -37,6 +39,7 @@
     "children": [
       {
         "type": "lv_button",
+        "path": "lv_button#0",
         "x": 350,
         "y": 10,
         "w": 100,
@@ -53,6 +56,10 @@
         "styles": {
           "bg_opa": 255,
           "bg_color": "#d4af37",
+          "shadow_width": 2,
+          "shadow_color": "#9e9e9e",
+          "shadow_opa": 127,
+          "shadow_ofs_y": 2,
           "radius": 20,
           "pad_top": 11,
           "pad_bottom": 11,
@@ -67,6 +74,7 @@
         "children": [
           {
             "type": "lv_label",
+            "path": "lv_label#0",
             "x": 6,
             "y": 1,
             "w": 49,
@@ -93,6 +101,7 @@
       },
       {
         "type": "lv_label",
+        "path": "lv_label#1",
         "x": 30,
         "y": 20,
         "w": 100,
@@ -117,6 +126,7 @@
       },
       {
         "type": "lv_label",
+        "path": "lv_label#2",
         "x": 730,
         "y": 20,
         "w": 50,
@@ -141,6 +151,7 @@
       },
       {
         "type": "lv_obj",
+        "path": "lv_obj#1",
         "x": 20,
         "y": 120,
         "w": 370,
@@ -173,6 +184,7 @@
         "children": [
           {
             "type": "lv_label",
+            "path": "lv_label#3",
             "x": 20,
             "y": 30,
             "w": 66,
@@ -197,6 +209,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#4",
             "x": 247,
             "y": 30,
             "w": 59,
@@ -221,6 +234,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#5",
             "x": 20,
             "y": 85,
             "w": 54,
@@ -245,6 +259,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#6",
             "x": 251,
             "y": 85,
             "w": 55,
@@ -269,6 +284,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#7",
             "x": 20,
             "y": 140,
             "w": 48,
@@ -293,6 +309,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#8",
             "x": 246,
             "y": 140,
             "w": 60,
@@ -317,6 +334,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#9",
             "x": 20,
             "y": 195,
             "w": 49,
@@ -341,6 +359,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#10",
             "x": 250,
             "y": 195,
             "w": 56,
@@ -367,6 +386,7 @@
       },
       {
         "type": "lv_obj",
+        "path": "lv_obj#2",
         "x": 410,
         "y": 120,
         "w": 370,
@@ -399,6 +419,7 @@
         "children": [
           {
             "type": "lv_label",
+            "path": "lv_label#11",
             "x": 15,
             "y": 15,
             "w": 134,
@@ -423,6 +444,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#12",
             "x": 269,
             "y": 15,
             "w": 42,
@@ -447,6 +469,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#13",
             "x": 25,
             "y": 40,
             "w": 85,
@@ -471,6 +494,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#14",
             "x": 268,
             "y": 40,
             "w": 43,
@@ -495,6 +519,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#15",
             "x": 15,
             "y": 80,
             "w": 124,
@@ -519,6 +544,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#16",
             "x": 270,
             "y": 80,
             "w": 41,
@@ -543,6 +569,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#17",
             "x": 25,
             "y": 105,
             "w": 85,
@@ -567,6 +594,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#18",
             "x": 267,
             "y": 105,
             "w": 44,
@@ -591,6 +619,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#19",
             "x": 15,
             "y": 145,
             "w": 57,
@@ -615,6 +644,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#20",
             "x": 270,
             "y": 145,
             "w": 41,
@@ -639,6 +669,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#21",
             "x": 15,
             "y": 177,
             "w": 116,
@@ -663,6 +694,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#22",
             "x": 270,
             "y": 177,
             "w": 41,
@@ -687,6 +719,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#23",
             "x": 15,
             "y": 209,
             "w": 66,
@@ -711,6 +744,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#24",
             "x": 270,
             "y": 209,
             "w": 41,
@@ -735,6 +769,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#25",
             "x": 15,
             "y": 241,
             "w": 39,
@@ -759,6 +794,7 @@
           },
           {
             "type": "lv_label",
+            "path": "lv_label#26",
             "x": 274,
             "y": 241,
             "w": 37,

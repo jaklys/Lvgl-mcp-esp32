@@ -13,6 +13,9 @@ import type { ResolvedRenderParams } from "../../src/simulator/types.js";
 
 const params: ResolvedRenderParams = {
   full: false,
+  mode: "snippet",
+  annotate: false,
+  espShims: false,
   width: 320,
   height: 240,
   timeMs: 500,

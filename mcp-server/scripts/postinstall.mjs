@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * postinstall.mjs - installs the LVGL simulator sources that match this
- * package version from the GitHub release `v<version>`.
+ * postinstall.mjs - installs the LVGL simulator (sources + the prebuilt LVGL
+ * library and lvgl_sim for this platform) that matches this package version
+ * from the GitHub release `v<version>`.
  *
  * Runs after `npm install lvgl-mcp-server`. Uses only Node.js built-ins.
  *
@@ -46,21 +47,31 @@ const IDLE_TIMEOUT_MS = 60_000; // no bytes received for this long -> abort
 const MAX_REDIRECTS = 5;
 const MAX_ATTEMPTS = 3;
 
-// Platform -> release asset. The archives are platform-neutral source trees
-// (simulator + LVGL sources, no binaries): the simulator is compiled on the
-// user's machine on the first render. There is one archive per tested OS; the
-// macOS archive is built and tested on Apple Silicon and also serves Intel
-// Macs (same sources; the local clang picks the architecture).
+// Platform -> release asset. Each archive holds the simulator + LVGL sources
+// (renders of C code compile them on the user's machine) plus
+// simulator/prebuilt/<id>/ for the platform it was built on: a static LVGL
+// library that saves the first full LVGL compile, and a ready-to-run
+// lvgl_sim that renders JSON UI documents (lvgl_render_ui) with no toolchain.
+// macOS has one archive per architecture (built and tested on macos-latest
+// and macos-26-intel).
 export const ASSETS = {
   "win32-x64": "lvgl-mcp-esp32-windows-x64.zip",
   "linux-x64": "lvgl-mcp-esp32-linux-x64.tar.gz",
-  "darwin-arm64": "lvgl-mcp-esp32-macos.tar.gz",
-  "darwin-x64": "lvgl-mcp-esp32-macos.tar.gz",
-  // Same source tree as linux-x64: nothing in it is x64-specific.
+  "darwin-arm64": "lvgl-mcp-esp32-macos-arm64.tar.gz",
+  "darwin-x64": "lvgl-mcp-esp32-macos-x64.tar.gz",
+  // The linux-x64 sources work on arm64; its x64 prebuilt dir does not and is
+  // removed after extraction, so every render compiles from source there.
   "linux-arm64": "lvgl-mcp-esp32-linux-x64.tar.gz",
 };
 // Platforms whose archive should work but that no CI job exercises.
 export const UNTESTED_PLATFORMS = new Set(["linux-arm64"]);
+// Node platform -> simulator/prebuilt/<id> directory shipped for it.
+export const PREBUILT_IDS = {
+  "win32-x64": "windows-x64",
+  "linux-x64": "linux-x64",
+  "darwin-arm64": "macos-arm64",
+  "darwin-x64": "macos-x64",
+};
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageDir = resolve(__dirname, "..");
@@ -85,8 +96,8 @@ function buildFromSourceSteps(version) {
     "    ./scripts/setup.sh                                   (Linux/macOS)",
     "    powershell -ExecutionPolicy Bypass -File scripts\\setup.ps1   (Windows)",
     "  then point the server at it:  LVGL_SIM_PATH=<checkout>/simulator",
-    "  A C/C++ compiler, CMake >= 3.16 and Ninja (or Make) are required in",
-    "  every case, because each render compiles your code against LVGL.",
+    "  A C/C++ compiler, CMake >= 3.16 and Ninja (or Make) are required to",
+    "  build it, and for every render of C code (it is compiled against LVGL).",
   ].join("\n");
 }
 
@@ -383,6 +394,45 @@ function findExtractedSimulator(root) {
   return null;
 }
 
+// ── Prebuilt LVGL ────────────────────────────────────────────────────
+
+/**
+ * Checks simulator/prebuilt/<id> for this platform after extraction: makes
+ * lvgl_sim executable and removes prebuilt dirs of other platforms (they
+ * cannot run here). Returns { id, ok, missing } where `missing` lists the
+ * expected files that are absent. Never throws for a missing prebuilt: the
+ * simulator still works, it just compiles LVGL on the first C render.
+ */
+export function preparePrebuilt(simDir, key = `${process.platform}-${process.arch}`) {
+  const id = PREBUILT_IDS[key] ?? null;
+  const root = join(simDir, "prebuilt");
+  if (existsSync(root)) {
+    for (const entry of readdirSync(root)) {
+      if (entry !== id) rmSync(join(root, entry), { recursive: true, force: true });
+    }
+  }
+  if (!id) return { id: null, ok: false, missing: [] };
+
+  const dir = join(root, id);
+  const isWin = id.startsWith("windows-");
+  const sim = join(dir, isWin ? "lvgl_sim.exe" : "lvgl_sim");
+  const expected = [
+    sim,
+    join(dir, isWin ? "lvgl.lib" : "liblvgl.a"),
+    join(dir, "include", "lvgl.h"),
+    join(dir, "lv_conf.sha256"),
+  ];
+  const missing = expected.filter((p) => !existsSync(p));
+  if (!isWin && existsSync(sim)) {
+    try {
+      chmodSync(sim, 0o755);
+    } catch {
+      /* best effort */
+    }
+  }
+  return { id, ok: missing.length === 0, missing };
+}
+
 // ── Main ─────────────────────────────────────────────────────────────
 
 function readPackageVersion() {
@@ -419,7 +469,13 @@ function skipReason(version) {
 }
 
 // `baseUrl` is for tests only; installs always use the pinned release URL.
-export async function install({ version, asset, targetDir = simulatorDir, baseUrl }) {
+export async function install({
+  version,
+  asset,
+  targetDir = simulatorDir,
+  baseUrl,
+  platformKey = `${process.platform}-${process.arch}`,
+}) {
   const base = baseUrl ?? releaseBaseUrl(version);
   const workDir = join(packageDir, ".lvgl-download");
   rmSync(workDir, { recursive: true, force: true });
@@ -457,6 +513,19 @@ export async function install({ version, asset, targetDir = simulatorDir, baseUr
     if (!extracted) throw new Error(`${asset} does not contain simulator/CMakeLists.txt`);
 
     writeFileSync(join(extracted, ".version"), `${version}\n`);
+    const prebuilt = preparePrebuilt(extracted, platformKey);
+    if (prebuilt.ok) {
+      log(
+        `Prebuilt LVGL for ${prebuilt.id} found: JSON UI rendering (lvgl_render_ui) is available without a toolchain, ` +
+          "and the first C render links the prebuilt library instead of compiling LVGL."
+      );
+    } else if (prebuilt.id) {
+      log(
+        `Note: ${asset} has no complete prebuilt LVGL for ${prebuilt.id} (missing: ${prebuilt.missing
+          .map((p) => p.slice(extracted.length + 1))
+          .join(", ")}); every render compiles LVGL, so a C/C++ toolchain, CMake and Ninja/Make are required.`
+      );
+    }
     for (const bin of ["lvgl_sim", join("build", "lvgl_sim")]) {
       const p = join(extracted, bin);
       if (existsSync(p)) {

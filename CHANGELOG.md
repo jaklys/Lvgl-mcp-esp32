@@ -7,13 +7,116 @@ npm version of `lvgl-mcp-server`; release tags are `v<version>`.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-09-28
+
+"Give the AI everything it needs to see and understand": more than one
+screenshot per render, a picture of the layout itself, input, measured
+problems instead of guesses, the device's real limits, and renders without a
+compiler. LVGL stays at v9.6.0.
+
+### Breaking changes
+
+- **Widget tree JSON is now `format_version: 3`.** Every 2.1.0 field keeps its
+  name, meaning and position; version 3 only adds fields (`captures`, `mem`,
+  `fonts_used`, `diagnostics`, `input`, `events`, `display.scale`). Readers
+  that check `format_version == 2` must accept 3. The text part of tool
+  results keeps its 2.1.0 lines and gains new ones.
+- **Two macOS release archives** replace `lvgl-mcp-esp32-macos.tar.gz`:
+  `lvgl-mcp-esp32-macos-arm64.tar.gz` and `lvgl-mcp-esp32-macos-x64.tar.gz`,
+  because archives now contain platform binaries. postinstall picks the
+  right one; only manual downloads are affected.
+
 ### Added
 
+- **New tools.**
+  - `lvgl_render_ui` renders a **JSON UI document** (this project's own
+    format, same vocabulary as the widget tree the renders return: widget
+    types, `name`, geometry, `styles`, part blocks, flex/grid layouts,
+    animations, several screens). The simulator interprets it at run time:
+    no C code, no compilation, and with the prebuilt `lvgl_sim` no toolchain.
+    Mistakes are reported all at once with their JSON path, e.g.
+    `children[2].type: unknown widget "lv_meter"`. LVGL's own XML format is
+    part of LVGL Pro and is not supported.
+  - `lvgl_render_project` compiles a whole UI project (inline `files` or a
+    `root` directory inside an MCP root, `LVGL_ALLOWED_ROOTS` (new, a
+    PATH-style list) or the server's working directory; `.c` and
+    `.cpp`, `include_dirs`, `defines`) and calls its entry function
+    (`ui_init` by default). Paths are checked against the allowed roots and
+    diagnostics keep the project's file names.
+  - `lvgl_interact`: a render with an action script, one image per capture.
+  - `lvgl_diff` compares two earlier renders (ids `r1`, `r2`, ...; the last
+    20 are kept): changed pixel count, percentage and bounding box, a diff
+    image, and an object-level diff by name/path (added, removed, moved,
+    resized, text and style changes).
+  - `lvgl_docs {topic}` returns focused LVGL 9.6 reference text
+    (`widgets` and `widgets/<name>` for 34 widgets, `styles`, `layouts`,
+    `events`, `anim`, `fonts`, `symbols`, `v8-migration`, `simulator`,
+    `ui-json`, `actions`, `diagnostics`, `esp32`, `boards`); the board
+    presets are also the resource `lvgl://boards`.
+- **Seeing more.** `frames` captures the screen at several simulated times
+  (plus the final state, so `[0, 100, 300]` gives four images);
+  `annotate` adds an overlay image with every object's outline (coloured by
+  depth) and name; `scale` (1-4) upscales images for small displays;
+  `color_format: "rgb565"` renders through a real RGB565 buffer so banding
+  looks like the device.
+- **Input.** `actions` drives real LVGL pointer and keypad input devices:
+  `click`/`press`/`release`/`drag` by coordinates or object name, `key`,
+  `type`, `focus`, `wait`, `settle`, `capture`, `load_screen`. Events fired
+  (pressed, clicked, value changed with the new value, focused, screen
+  loaded, ...) are reported.
+- **Diagnostics** computed from the rendered UI, each with object name/path,
+  absolute rectangle and a message with numbers: `LABEL_CLIPPED`,
+  `TEXT_OVERFLOW`, `MISSING_GLYPH`, `OFF_SCREEN`, `OUTSIDE_PARENT`,
+  `OVERLAP`, `LOW_CONTRAST`, `SMALL_TOUCH_TARGET`, `ZERO_SIZE`,
+  `FONT_NOT_ON_DEVICE`, `MEM_OVER_BUDGET`, `HIDDEN_CLICKABLE`,
+  `ANIM_UNFINISHED`, `APP_LOOP_DETECTED`. See `docs/diagnostics.md`.
+- **Device limits.** `mem_budget_kb` compares LVGL's peak heap use with the
+  device's `LV_MEM_SIZE`; `fonts` lists the fonts enabled on the device and
+  flags every other font; `board` applies a preset (resolution, colour
+  format, DPI, rotation, memory budget) for common ESP32 display boards.
+- **Helpers for user code:** `sim.h` (`sim_advance_ms`, `sim_capture`,
+  `sim_log`) and ESP-IDF stand-ins (`simulator/templates/esp_shim.h` and
+  `esp_log.h`, `esp_check.h`, `sdkconfig.h`, `freertos/*.h`,
+  `esp_lvgl_port.h` ... in `templates/esp_shim/`; `esp_shims`: `ESP_LOGx`,
+  `vTaskDelay`, `pdMS_TO_TICKS`, `esp_timer_get_time`, `xTaskCreate`,
+  semaphores, queues, ...) so code taken from firmware compiles unchanged; a `while (1) { lv_timer_handler();
+  vTaskDelay(...); }` loop is detected, captured and reported.
+- **Prebuilt LVGL** in every release archive
+  (`simulator/prebuilt/<platform>/`: static library, headers, `lvgl_sim`).
+  The first C render links it instead of compiling LVGL, and UI documents
+  render without any toolchain. CMake uses it through `-DLVGL_PREBUILT_DIR`
+  and falls back to building LVGL from source (with a warning) when
+  `lv_conf.h` changed; the server falls back automatically if linking fails.
+  `scripts/build-prebuilt.sh` / `.ps1` build it locally.
+- New simulator CLI options: `--ui`, `--actions`, `--output-dir`, `--frames`,
+  `--annotate`, `--scale`, `--color-format`, `--fonts`, `--mem-budget-kb`;
+  exit codes 5 (UI document error) and 6 (action script error).
 - **Tag release workflow** (`.github/workflows/tag.yml`): Actions -> "Tag
   release" -> Run workflow with the version creates the annotated tag
   `vX.Y.Z` on `main` after checking `package.json`, the CHANGELOG, existing
   tags, GitHub releases and npm, then starts the Release workflow for it. No
   local `git push` of the tag is needed.
+
+### Changed
+
+- LVGL now uses its built-in allocator with an 8 MB pool
+  (`LV_USE_STDLIB_MALLOC LV_STDLIB_BUILTIN`), which is what makes heap
+  measurements (`mem`) possible; the budget is checked against the
+  device's size, not the pool's.
+- `lvgl_inspect` accepts `render_id` to inspect an earlier render.
+- User code (snippet, full file, project sources) is compiled as its own
+  CMake object library, `lvgl_sim_user`, whose include path holds only the
+  project's directories, `simulator/templates` and LVGL, so project headers
+  such as `events.h` or `json.h` are not shadowed by the simulator's own.
+  Project mode passes `USER_EXTRA_SOURCES`, `USER_INCLUDE_DIRS`,
+  `USER_COMPILE_DEFINITIONS` and `LVGL_SIM_ESP_SHIMS` to CMake.
+- The Release workflow builds and verifies the prebuilt LVGL on Linux x64,
+  macOS arm64 (`macos-latest`), macOS x64 (`macos-26-intel`) and Windows x64,
+  and smoke-tests the packaged `lvgl_sim` with no compiler, CMake, Ninja or
+  Make on `PATH`. CI adds a Linux job for the prebuilt library (gcc build,
+  clang link) and a PowerShell syntax check.
+- `scripts/smoke-test.mjs` checks `format_version` 3 and gained `--ui`,
+  `--expect-names` and `--no-toolchain`.
 
 ## [2.1.0] - 2026-09-27
 
@@ -219,7 +322,8 @@ Note: `package.json` still said 1.2.0, so this release run published npm
   `lvgl://api-reference` resource, Windows (MSVC) build scripts, CI and a
   tag-triggered release pipeline.
 
-[Unreleased]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v1.2.2...v2.0.0
 [1.2.2]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v1.2.1...v1.2.2

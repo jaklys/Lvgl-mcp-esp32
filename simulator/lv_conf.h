@@ -22,7 +22,15 @@
    STDLIB WRAPPER SETTINGS
  *=========================*/
 
-#define LV_USE_STDLIB_MALLOC    LV_STDLIB_CLIB
+/*LVGL's own TLSF heap, like LV_MEM_SIZE on the device: lv_mem_monitor() then
+ *reports the peak for the JSON "mem" block and --mem-budget-kb. The pool is
+ *large so that any UI fits; the device budget is checked against the peak.
+ *The display frame buffer is malloc()ed outside this pool (hal/display_driver.c).*/
+#define LV_USE_STDLIB_MALLOC    LV_STDLIB_BUILTIN
+#if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
+    #define LV_MEM_SIZE (8U * 1024U * 1024U)
+    #define LV_MEM_ADR 0
+#endif
 #define LV_USE_STDLIB_STRING    LV_STDLIB_CLIB
 #define LV_USE_STDLIB_SPRINTF   LV_STDLIB_CLIB
 
@@ -76,7 +84,7 @@
         #define LV_DRAW_SW_CIRCLE_CACHE_SIZE 4
     #endif
     #define LV_USE_DRAW_SW_ASM     LV_DRAW_SW_ASM_NONE
-    #define LV_USE_DRAW_SW_COMPLEX_GRADIENTS    0
+    #define LV_USE_DRAW_SW_COMPLEX_GRADIENTS    1   /*radial and conic gradients*/
 #endif
 
 /* Disable all GPU/hardware accelerators */
@@ -344,6 +352,8 @@
 #define LV_USE_FRAGMENT 1
 #define LV_USE_IMGFONT 1
 #define LV_USE_OBSERVER 1
+/*No LV_USE_XML: LVGL removed its XML loader in v9.5 (it moved to LVGL Pro). The
+ *simulator builds UIs from its own JSON documents instead (--ui, ui/ui_doc.c).*/
 #define LV_USE_IME_PINYIN 0
 #define LV_USE_FILE_EXPLORER 0
 #define LV_USE_TEST 0

@@ -73,12 +73,12 @@ describe("e2e: real simulator", { skip: E2E ? false : "set LVGL_E2E=1 to run end
 
     const inspect = await call("lvgl_inspect", {});
     const t = text(inspect);
-    assert.match(t, /format_version 2/);
+    assert.match(t, /format_version 3/);
     assert.ok(t.includes("Hello E2E costs $5 $& $1"), "label text (with $-patterns) present in the tree");
     assert.match(t, /"name":"greeting"/);
     assert.match(t, /"abs":\{"x1":/);
     const last = manager.getLastResult();
-    assert.equal(last?.output.format_version, 2);
+    assert.equal(last?.output.format_version, 3);
     assert.equal(last?.output.display.width, 320);
   });
 
