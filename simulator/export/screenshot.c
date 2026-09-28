@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * Convert one row of `w` pixels in color format `cf` to packed RGB.
@@ -47,17 +48,15 @@ static bool row_to_rgb(uint8_t *dst, const uint8_t *src, int32_t w, lv_color_for
     }
 }
 
-int screenshot_save_png(const char *filename, lv_display_t *disp)
+int screenshot_save_draw_buf(const char *filename, const lv_draw_buf_t *buf, int32_t w, int32_t h,
+                             int32_t scale)
 {
-    lv_draw_buf_t *buf = lv_display_get_buf_active(disp);
     if (!buf || !buf->data) {
         fprintf(stderr, "[sim] screenshot: display has no draw buffer\n");
         return -1;
     }
+    if (scale < 1) scale = 1;
 
-    /* Logical resolution: already swapped by LVGL for 90/270 rotation */
-    int32_t w = lv_display_get_horizontal_resolution(disp);
-    int32_t h = lv_display_get_vertical_resolution(disp);
     lv_color_format_t cf = (lv_color_format_t)buf->header.cf;
     uint32_t px_size = lv_color_format_get_size(cf);
     uint32_t stride = buf->header.stride;
@@ -75,25 +74,48 @@ int screenshot_save_png(const char *filename, lv_display_t *disp)
         return -1;
     }
 
-    uint8_t *rgb = (uint8_t *)malloc((size_t)w * (size_t)h * 3);
-    if (!rgb) {
+    size_t out_w = (size_t)w * (size_t)scale;
+    size_t out_h = (size_t)h * (size_t)scale;
+    uint8_t *row = (uint8_t *)malloc((size_t)w * 3);
+    uint8_t *rgb = (uint8_t *)malloc(out_w * out_h * 3);
+    if (!rgb || !row) {
+        free(row);
+        free(rgb);
         fprintf(stderr, "[sim] screenshot: out of memory\n");
         return -1;
     }
 
     for (int32_t y = 0; y < h; y++) {
         const uint8_t *src = buf->data + (size_t)y * stride;
-        if (!row_to_rgb(rgb + (size_t)y * (size_t)w * 3, src, w, cf)) {
+        if (!row_to_rgb(row, src, w, cf)) {
             fprintf(stderr, "[sim] screenshot: unsupported color format %u\n", (unsigned)cf);
+            free(row);
             free(rgb);
             return -1;
         }
+        /* Nearest-neighbour upscale: repeat each pixel and each row `scale` times */
+        uint8_t *dst = rgb + (size_t)y * (size_t)scale * out_w * 3;
+        if (scale == 1) {
+            memcpy(dst, row, (size_t)w * 3);
+        } else {
+            uint8_t *d = dst;
+            for (int32_t x = 0; x < w; x++) {
+                for (int32_t k = 0; k < scale; k++) {
+                    d[0] = row[x * 3];
+                    d[1] = row[x * 3 + 1];
+                    d[2] = row[x * 3 + 2];
+                    d += 3;
+                }
+            }
+            for (int32_t k = 1; k < scale; k++) memcpy(dst + (size_t)k * out_w * 3, dst, out_w * 3);
+        }
     }
+    free(row);
 
     /* Encode in memory so that write errors (e.g. disk full) are detected;
      * stbi_write_png() does not check fwrite/fclose. */
     int png_len = 0;
-    unsigned char *png = stbi_write_png_to_mem(rgb, (int)(w * 3), (int)w, (int)h, 3, &png_len);
+    unsigned char *png = stbi_write_png_to_mem(rgb, (int)(out_w * 3), (int)out_w, (int)out_h, 3, &png_len);
     free(rgb);
     if (!png) {
         fprintf(stderr, "[sim] screenshot: PNG encoding failed\n");
@@ -105,4 +127,12 @@ int screenshot_save_png(const char *filename, lv_display_t *disp)
     if (f && fclose(f) != 0) ok = false;
     STBIW_FREE(png);
     return ok ? 0 : -1;
+}
+
+int screenshot_save_png(const char *filename, lv_display_t *disp, int32_t scale)
+{
+    /* Logical resolution: already swapped by LVGL for 90/270 rotation */
+    return screenshot_save_draw_buf(filename, lv_display_get_buf_active(disp),
+                                    lv_display_get_horizontal_resolution(disp),
+                                    lv_display_get_vertical_resolution(disp), scale);
 }

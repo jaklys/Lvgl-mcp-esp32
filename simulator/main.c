@@ -1,22 +1,25 @@
 /**
  * @file main.c
- * Headless LVGL simulator: runs the user's create_ui(), advances simulated
- * time, then writes a PNG screenshot and a JSON widget tree.
+ * Headless LVGL simulator: builds the UI (the user's create_ui() or a JSON
+ * UI document), advances simulated time, optionally runs an action script
+ * or frame captures, then writes PNG screenshot(s) and a JSON document
+ * (widget tree, captures, diagnostics, memory, events).
  *
  * Streams: stderr carries every LVGL log line plus "[sim] ..." markers,
  * stdout carries only the user's own printf output.
  *
  * Exit codes: 0 ok, 1 bad arguments, 2 output file write failed,
- * 3 LVGL assertion / argument check failed, anything else = crash.
+ * 3 LVGL assertion / argument check failed, 5 UI document error,
+ * 6 action script error, anything else = crash.
  */
 #include "lvgl.h"
+#include "actions.h"
 #include "display_driver.h"
-#include "screenshot.h"
+#include "events.h"
+#include "indev.h"
 #include "sim_assert.h"
-#include "widget_tree.h"
-
-/* Pending-invalidation counter (inv_p) for --settle */
-#include "src/display/lv_display_private.h"
+#include "sim_runtime.h"
+#include "ui_doc.h"
 
 #include <limits.h>
 #include <signal.h>
@@ -34,46 +37,12 @@
 #define sim_getcwd getcwd
 #endif
 
-#define FORMAT_VERSION  2
-#define STEP_MS         33      /* one LVGL refresh period (LV_DEF_REFR_PERIOD) */
-#define SETTLE_CAP_MS   3000    /* --settle stops at this total simulated time */
-#define MAX_TIME_MS     60000
-#define MAX_LOG_LINES   200
-#define CWD_MAX         4096
-
 /* Provided by user_code.c (compiled separately) */
 extern void create_ui(void);
-
-typedef struct {
-    int32_t width;
-    int32_t height;
-    const char *png_path;
-    const char *json_path;
-    int32_t time_ms;
-    bool settle;
-    int32_t rotation;       /* degrees */
-    bool dark;
-    int32_t dpi;
-    const char *assets_dir;
-} sim_options_t;
-
-/* Current phase, reported by the crash and assert handlers */
-static const char *volatile current_phase = "init";
-
-/* LVGL log lines collected for the JSON "logs" array */
-static char *log_lines[MAX_LOG_LINES];
-static uint32_t log_count;
-static uint32_t log_dropped;
 
 /**********************
  *  Diagnostics
  **********************/
-
-static void set_phase(const char *phase)
-{
-    current_phase = phase;
-    fprintf(stderr, "[sim] phase=%s\n", phase);
-}
 
 /**
  * LVGL log callback: forward the line verbatim to stderr and keep a copy
@@ -83,25 +52,14 @@ static void log_print_cb(lv_log_level_t level, const char *buf)
 {
     LV_UNUSED(level);
     fputs(buf, stderr);
-
-    if (log_count >= MAX_LOG_LINES) {
-        log_dropped++;
-        return;
-    }
-    size_t len = strlen(buf);
-    while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) len--;
-    char *line = (char *)malloc(len + 1);
-    if (!line) return;
-    memcpy(line, buf, len);
-    line[len] = '\0';
-    log_lines[log_count++] = line;
+    sim_store_log(buf);
 }
 
 void sim_assert_fail(void)
 {
-    fprintf(stderr, "[sim] LVGL assertion failed in phase %s\n", current_phase);
+    fprintf(stderr, "[sim] LVGL assertion failed in phase %s\n", sim_get_phase());
     fflush(NULL);
-    _exit(3);
+    _exit(SIM_EXIT_ASSERT);
 }
 
 #ifndef _WIN32
@@ -131,7 +89,7 @@ static void crash_handler(int sig)
     append_str(msg, sizeof(msg), &pos, "[sim] crashed: signal ");
     while (n > 0 && pos + 1 < sizeof(msg)) msg[pos++] = num[--n];
     append_str(msg, sizeof(msg), &pos, " in phase ");
-    append_str(msg, sizeof(msg), &pos, current_phase);
+    append_str(msg, sizeof(msg), &pos, sim_get_phase());
     append_str(msg, sizeof(msg), &pos, "\n");
     if (write(STDERR_FILENO, msg, pos) < 0) {
         /* nothing else we can do */
@@ -166,10 +124,10 @@ static void print_usage(FILE *out, const char *prog)
             "Usage: %s --output-png PATH --output-json PATH [options]\n"
             "  --width N                 Display width, 16..4096 (default: 800)\n"
             "  --height N                Display height, 16..4096 (default: 480)\n"
-            "  --output-png PATH         PNG screenshot path (required)\n"
-            "  --output-json PATH        JSON widget tree path (required)\n"
-            "  --time-ms N               Simulated time to advance before capture, in 33 ms\n"
-            "                            steps, 0..%d (default: 330)\n"
+            "  --output-png PATH         PNG of the final frame (required)\n"
+            "  --output-json PATH        JSON document (required)\n"
+            "  --time-ms N               Simulated time to advance after building the UI, in\n"
+            "                            33 ms steps, 0..%d (default: 330)\n"
             "  --ticks N                 Alias for --time-ms N*33\n"
             "  --settle                  Keep advancing until animations and redraws are done\n"
             "                            (at most %d ms simulated time in total)\n"
@@ -178,8 +136,28 @@ static void print_usage(FILE *out, const char *prog)
             "  --theme light|dark        Default theme variant (default: light)\n"
             "  --dpi N                   Display DPI, 1..1000 (default: 130)\n"
             "  --assets-dir PATH         Directory served as LVGL drive 'S:' (default: cwd)\n"
-            "  --help                    Show this help\n",
-            prog, MAX_TIME_MS, SETTLE_CAP_MS);
+            "  --actions PATH            JSON action script (click, drag, key, type, capture, ...);\n"
+            "                            runs after --time-ms/--settle\n"
+            "  --frames T1,T2,...        Capture at these simulated times in ms after the UI is\n"
+            "                            built (ascending, up to %d); labels \"t<ms>\";\n"
+            "                            --time-ms/--settle do not apply\n"
+            "  --output-dir DIR          Directory for capture-<n>-<label>.png and\n"
+            "                            annotated-<n>-<label>.png (default: directory of\n"
+            "                            --output-png)\n"
+            "  --annotate                Also write annotated PNGs (outlines + names)\n"
+            "  --scale N                 Integer PNG upscale 1..4 (default: 1)\n"
+            "  --color-format xrgb8888|rgb565\n"
+            "                            Frame buffer format (default: xrgb8888)\n"
+            "  --fonts A,B,...           Fonts available on the device (e.g. montserrat_14);\n"
+            "                            others are reported as FONT_NOT_ON_DEVICE\n"
+            "  --mem-budget-kb N         Device LV_MEM_SIZE in KB; MEM_OVER_BUDGET when the LVGL\n"
+            "                            heap peak exceeds it\n"
+            "  --ui PATH                 Build the UI from a JSON UI document instead of\n"
+            "                            create_ui()\n"
+            "  --help                    Show this help\n"
+            "Exit codes: 0 ok, 1 bad arguments, 2 output write failed, 3 LVGL assertion,\n"
+            "5 UI document error, 6 action script error.\n",
+            prog, SIM_MAX_TIME_MS, SIM_SETTLE_CAP_MS, SIM_MAX_FRAMES);
 }
 
 /** Parse a decimal integer in [min, max]; the whole string must be consumed */
@@ -195,6 +173,44 @@ static bool parse_int(const char *s, long min, long max, int32_t *out)
     return true;
 }
 
+/** "0,100,300": ascending integers 0..SIM_MAX_TIME_MS */
+static bool parse_frames(const char *s, sim_options_t *opt)
+{
+    char buf[1024];
+    if (strlen(s) >= sizeof(buf)) return false;
+    strcpy(buf, s);
+    opt->frame_count = 0;
+    for (char *tok = strtok(buf, ","); tok; tok = strtok(NULL, ",")) {
+        int32_t v;
+        if (opt->frame_count >= SIM_MAX_FRAMES || !parse_int(tok, 0, SIM_MAX_TIME_MS, &v)) return false;
+        if (opt->frame_count > 0 && v < opt->frames[opt->frame_count - 1]) return false;
+        opt->frames[opt->frame_count++] = v;
+    }
+    return opt->frame_count > 0;
+}
+
+/** "a,b,c" -> opt->fonts (points into argv) */
+static bool parse_fonts(char *s, sim_options_t *opt)
+{
+    opt->font_count = 0;
+    opt->fonts_given = true;
+    for (char *tok = strtok(s, ","); tok; tok = strtok(NULL, ",")) {
+        while (*tok == ' ') tok++;
+        size_t n = strlen(tok);
+        while (n > 0 && tok[n - 1] == ' ') tok[--n] = '\0';
+        if (!n) continue;
+        if (opt->font_count >= SIM_MAX_FONTS) return false;
+        opt->fonts[opt->font_count++] = tok;
+    }
+    return true;
+}
+
+static const char *const value_options[] = {
+    "--width", "--height", "--output-png", "--output-json", "--time-ms", "--ticks", "--rotation", "--theme",
+    "--dpi", "--assets-dir", "--actions", "--output-dir", "--frames", "--scale", "--color-format", "--fonts",
+    "--mem-budget-kb", "--ui",
+};
+
 /**
  * Parse argv into `opt`.
  * @return -1 to continue, otherwise the process exit code (0 for --help)
@@ -203,8 +219,9 @@ static int parse_args(int argc, char *argv[], sim_options_t *opt)
 {
     for (int i = 1; i < argc; i++) {
         const char *arg = argv[i];
-        const char *val = NULL;
+        char *val = NULL;
         bool ok = true;
+        bool known = false;
 
         if (strcmp(arg, "--help") == 0 || strcmp(arg, "-h") == 0) {
             print_usage(stdout, argv[0]);
@@ -214,21 +231,24 @@ static int parse_args(int argc, char *argv[], sim_options_t *opt)
             opt->settle = true;
             continue;
         }
+        if (strcmp(arg, "--annotate") == 0) {
+            opt->annotate = true;
+            continue;
+        }
 
         /* Every other option takes a value */
-        if (strcmp(arg, "--width") != 0 && strcmp(arg, "--height") != 0 &&
-            strcmp(arg, "--output-png") != 0 && strcmp(arg, "--output-json") != 0 &&
-            strcmp(arg, "--time-ms") != 0 && strcmp(arg, "--ticks") != 0 &&
-            strcmp(arg, "--rotation") != 0 && strcmp(arg, "--theme") != 0 &&
-            strcmp(arg, "--dpi") != 0 && strcmp(arg, "--assets-dir") != 0) {
+        for (size_t k = 0; k < sizeof(value_options) / sizeof(value_options[0]); k++) {
+            known = known || strcmp(arg, value_options[k]) == 0;
+        }
+        if (!known) {
             fprintf(stderr, "Unknown argument: %s\n", arg);
             print_usage(stderr, argv[0]);
-            return 1;
+            return SIM_EXIT_ARGS;
         }
         if (i + 1 >= argc) {
             fprintf(stderr, "Missing value for %s\n", arg);
             print_usage(stderr, argv[0]);
-            return 1;
+            return SIM_EXIT_ARGS;
         }
         val = argv[++i];
 
@@ -241,11 +261,11 @@ static int parse_args(int argc, char *argv[], sim_options_t *opt)
         } else if (strcmp(arg, "--output-json") == 0) {
             opt->json_path = val;
         } else if (strcmp(arg, "--time-ms") == 0) {
-            ok = parse_int(val, 0, MAX_TIME_MS, &opt->time_ms);
+            ok = parse_int(val, 0, SIM_MAX_TIME_MS, &opt->time_ms);
         } else if (strcmp(arg, "--ticks") == 0) {
             int32_t ticks;
-            ok = parse_int(val, 0, MAX_TIME_MS / STEP_MS, &ticks);
-            if (ok) opt->time_ms = ticks * STEP_MS;
+            ok = parse_int(val, 0, SIM_MAX_TIME_MS / SIM_STEP_MS, &ticks);
+            if (ok) opt->time_ms = ticks * SIM_STEP_MS;
         } else if (strcmp(arg, "--rotation") == 0) {
             ok = parse_int(val, 0, 270, &opt->rotation) && opt->rotation % 90 == 0;
         } else if (strcmp(arg, "--theme") == 0) {
@@ -253,155 +273,104 @@ static int parse_args(int argc, char *argv[], sim_options_t *opt)
             opt->dark = strcmp(val, "dark") == 0;
         } else if (strcmp(arg, "--dpi") == 0) {
             ok = parse_int(val, 1, 1000, &opt->dpi);
-        } else {
+        } else if (strcmp(arg, "--assets-dir") == 0) {
             opt->assets_dir = val;
+        } else if (strcmp(arg, "--actions") == 0) {
+            opt->actions_path = val;
+        } else if (strcmp(arg, "--output-dir") == 0) {
+            opt->output_dir = val;
+        } else if (strcmp(arg, "--frames") == 0) {
+            ok = parse_frames(val, opt);
+        } else if (strcmp(arg, "--scale") == 0) {
+            ok = parse_int(val, 1, 4, &opt->scale);
+        } else if (strcmp(arg, "--color-format") == 0) {
+            ok = strcmp(val, "xrgb8888") == 0 || strcmp(val, "rgb565") == 0;
+            opt->rgb565 = strcmp(val, "rgb565") == 0;
+        } else if (strcmp(arg, "--fonts") == 0) {
+            ok = parse_fonts(val, opt);
+            if (!ok) {
+                fprintf(stderr, "Invalid value for --fonts: at most %d fonts\n", SIM_MAX_FONTS);
+                return SIM_EXIT_ARGS;
+            }
+            continue; /* an empty list is allowed: no built-in font on the device */
+        } else if (strcmp(arg, "--mem-budget-kb") == 0) {
+            ok = parse_int(val, 1, 1024 * 1024, &opt->mem_budget_kb);
+        } else if (strcmp(arg, "--ui") == 0) {
+            opt->ui_path = val;
         }
 
         if (!ok || !*val) {
             fprintf(stderr, "Invalid value for %s: '%s'\n", arg, val);
             print_usage(stderr, argv[0]);
-            return 1;
+            return SIM_EXIT_ARGS;
         }
     }
 
     if (!opt->png_path || !opt->json_path) {
-        fprintf(stderr, "Missing required option: %s\n",
-                !opt->png_path ? "--output-png" : "--output-json");
+        fprintf(stderr, "Missing required option: %s\n", !opt->png_path ? "--output-png" : "--output-json");
         print_usage(stderr, argv[0]);
-        return 1;
+        return SIM_EXIT_ARGS;
+    }
+    if (opt->actions_path && opt->frame_count > 0) {
+        fprintf(stderr, "--frames and --actions cannot be combined; use wait + capture actions instead\n");
+        return SIM_EXIT_ARGS;
     }
     return -1;
 }
 
 /**********************
- *  Simulation
+ *  Main
  **********************/
-
-/** Advance simulated time by `ms` and run due LVGL timers (rendering included) */
-static void step(uint32_t ms)
-{
-    lv_tick_inc(ms);
-    lv_timer_handler();
-}
-
-/**
- * Run `time_ms` of simulated time, then (with `settle`) continue until no
- * animation runs and nothing is waiting to be redrawn.
- * @return the simulated time actually advanced, in ms
- */
-static int32_t advance(lv_display_t *disp, int32_t time_ms, bool settle)
-{
-    int32_t elapsed = 0;
-
-    while (elapsed < time_ms) {
-        int32_t ms = time_ms - elapsed < STEP_MS ? time_ms - elapsed : STEP_MS;
-        step((uint32_t)ms);
-        elapsed += ms;
-    }
-
-    if (settle) {
-        while (elapsed < SETTLE_CAP_MS &&
-               (lv_anim_count_running() > 0 || disp->inv_p > 0)) {
-            int32_t ms = SETTLE_CAP_MS - elapsed < STEP_MS ? SETTLE_CAP_MS - elapsed : STEP_MS;
-            step((uint32_t)ms);
-            elapsed += ms;
-        }
-    }
-    return elapsed;
-}
-
-static const char *color_format_name(lv_color_format_t cf)
-{
-    switch (cf) {
-        case LV_COLOR_FORMAT_XRGB8888: return "XRGB8888";
-        case LV_COLOR_FORMAT_ARGB8888: return "ARGB8888";
-        case LV_COLOR_FORMAT_RGB888:   return "RGB888";
-        case LV_COLOR_FORMAT_RGB565:   return "RGB565";
-        default:                       return "other";
-    }
-}
-
-/**
- * Write the JSON document (format_version 2). The layers are included only
- * when they have children.
- * @return 0 on success, -1 if the file could not be written
- */
-static int write_json(const char *path, lv_display_t *disp, const sim_options_t *opt,
-                      int32_t elapsed_ms, uint32_t anims_running)
-{
-    FILE *f = fopen(path, "wb");
-    if (!f) return -1;
-
-    fprintf(f, "{\"format_version\":%d,\"lvgl_version\":\"%d.%d.%d\"", FORMAT_VERSION,
-            lv_version_major(), lv_version_minor(), lv_version_patch());
-    fprintf(f, ",\"display\":{\"width\":%d,\"height\":%d,\"rotation\":%d,\"dpi\":%d,"
-            "\"color_format\":\"%s\",\"theme\":\"%s\"}",
-            (int)lv_display_get_horizontal_resolution(disp),
-            (int)lv_display_get_vertical_resolution(disp),
-            (int)opt->rotation, (int)lv_display_get_dpi(disp),
-            color_format_name(lv_display_get_color_format(disp)),
-            opt->dark ? "dark" : "light");
-    fprintf(f, ",\"elapsed_ms\":%d,\"anims_running\":%u", (int)elapsed_ms, (unsigned)anims_running);
-
-    fputs(",\"logs\":[", f);
-    for (uint32_t i = 0; i < log_count; i++) {
-        if (i > 0) fputc(',', f);
-        widget_tree_write_string(f, log_lines[i]);
-    }
-    if (log_dropped > 0) {
-        fprintf(f, "%s\"... (%u more)\"", log_count > 0 ? "," : "", (unsigned)log_dropped);
-    }
-    fputc(']', f);
-
-    fputs(",\"screen\":", f);
-    widget_tree_write_node(f, lv_display_get_screen_active(disp));
-
-    lv_obj_t *top = lv_display_get_layer_top(disp);
-    if (lv_obj_get_child_count(top) > 0) {
-        fputs(",\"layer_top\":", f);
-        widget_tree_write_node(f, top);
-    }
-    lv_obj_t *sys = lv_display_get_layer_sys(disp);
-    if (lv_obj_get_child_count(sys) > 0) {
-        fputs(",\"layer_sys\":", f);
-        widget_tree_write_node(f, sys);
-    }
-    fputs("}\n", f);
-
-    bool failed = ferror(f) != 0;
-    if (fclose(f) != 0) failed = true;
-    return failed ? -1 : 0;
-}
 
 int main(int argc, char *argv[])
 {
-    sim_options_t opt = {
-        .width = 800,
-        .height = 480,
-        .time_ms = 10 * STEP_MS,
-        .dpi = LV_DPI_DEF,
-    };
-    char orig_cwd[CWD_MAX];
-    int exit_code = 0;
+    static char orig_cwd[SIM_PATH_MAX];
+    sim_options_t *opt = &sim.opt;
+    static sim_actions_t *script; /* static: survives the longjmp out of create_ui() */
+    char err[1024];
+
+    opt->width = 800;
+    opt->height = 480;
+    opt->time_ms = 10 * SIM_STEP_MS;
+    opt->dpi = LV_DPI_DEF;
+    opt->scale = 1;
 
     /* User printf output must survive a crash right after it */
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
 
-    int rc = parse_args(argc, argv, &opt);
+    int rc = parse_args(argc, argv, opt);
     if (rc >= 0) return rc;
 
     /*
-     * Relative "S:" paths resolve against the assets directory. Remember the
-     * original directory so relative output paths keep working.
+     * Relative "S:" paths resolve against the assets directory. Output
+     * paths are made absolute first so they keep pointing to the original
+     * directory.
      */
-    if (!sim_getcwd(orig_cwd, CWD_MAX)) {
+    if (!sim_getcwd(orig_cwd, SIM_PATH_MAX)) {
         fprintf(stderr, "Cannot determine the current directory\n");
-        return 1;
+        return SIM_EXIT_ARGS;
     }
-    if (opt.assets_dir && sim_chdir(opt.assets_dir) != 0) {
-        fprintf(stderr, "Cannot open assets directory: %s\n", opt.assets_dir);
-        return 1;
+    if (!sim_resolve_paths(orig_cwd)) {
+        fprintf(stderr, "Output path too long\n");
+        return SIM_EXIT_ARGS;
+    }
+
+    /* Validate the script before anything runs: exit 6 on any error */
+    if (opt->actions_path) {
+        script = actions_load(opt->actions_path, err, sizeof(err));
+        if (!script) {
+            fprintf(stderr, "[sim] %s\n", err);
+            return SIM_EXIT_ACTIONS;
+        }
+        sim.actions_given = true;
+    } else if (opt->frame_count > 0) {
+        script = actions_from_frames(opt->frames, opt->frame_count);
+    }
+
+    if (opt->assets_dir && sim_chdir(opt->assets_dir) != 0) {
+        fprintf(stderr, "Cannot open assets directory: %s\n", opt->assets_dir);
+        return SIM_EXIT_ARGS;
     }
 
 #ifndef _WIN32
@@ -411,53 +380,74 @@ int main(int argc, char *argv[])
     lv_init();
     lv_log_register_print_cb(log_print_cb); /* after lv_init, which resets globals */
 
-    lv_display_t *disp = headless_display_init(opt.width, opt.height);
+    lv_display_t *disp = headless_display_init(opt->width, opt->height,
+                                               opt->rgb565 ? LV_COLOR_FORMAT_RGB565 : LV_COLOR_FORMAT_XRGB8888);
     if (!disp) {
         fprintf(stderr, "Failed to initialize display\n");
-        return 1;
+        return SIM_EXIT_ARGS;
     }
-    lv_display_set_dpi(disp, opt.dpi);
-    lv_display_set_rotation(disp, (lv_display_rotation_t)(opt.rotation / 90));
+    sim.disp = disp;
+    lv_display_set_dpi(disp, opt->dpi);
+    lv_display_set_rotation(disp, (lv_display_rotation_t)(opt->rotation / 90));
 
 #if LV_USE_THEME_DEFAULT
     /* Re-init the theme so it picks up the DPI, rotated size and variant */
     lv_theme_t *theme = lv_theme_default_init(disp, lv_palette_main(LV_PALETTE_BLUE),
-                                              lv_palette_main(LV_PALETTE_RED), opt.dark,
+                                              lv_palette_main(LV_PALETTE_RED), opt->dark,
                                               LV_FONT_DEFAULT);
     lv_display_set_theme(disp, theme);
 #endif
 
-    set_phase("create_ui");
-    create_ui();
+    /* Input devices exist before the UI is built (contract section 2) */
+    if (sim.actions_given) sim_input_init(disp, actions_need_keypad(script));
 
-    set_phase("advance");
-    int32_t elapsed_ms = advance(disp, opt.time_ms, opt.settle);
-
-    set_phase("capture");
-    lv_obj_update_layout(lv_display_get_screen_active(disp));
-    lv_refr_now(disp);
-    uint32_t anims_running = lv_anim_count_running();
-
-    /* Rendering (and image decoding) is done; outputs are relative to the original cwd */
-    if (opt.assets_dir && sim_chdir(orig_cwd) != 0) {
-        fprintf(stderr, "Cannot return to directory: %s\n", orig_cwd);
-        return 2;
+    if (opt->ui_path) {
+        sim_set_phase("ui_load");
+        rc = ui_doc_load(opt->ui_path, disp);
+        if (rc != SIM_EXIT_OK) return rc;
+    } else {
+        sim_set_phase("create_ui");
+        if (setjmp(sim.loop_escape) == 0) {
+            sim.in_user_entry = true;
+            create_ui();
+        }
+        sim.in_user_entry = false;
     }
 
-    if (screenshot_save_png(opt.png_path, disp) != 0) {
-        fprintf(stderr, "[sim] failed to write PNG: %s\n", opt.png_path);
-        exit_code = 2;
+    /*
+     * 2.1.0 behaviour: advance --time-ms (and --settle). With --frames the
+     * frame times are measured from here instead. After a detected
+     * application loop the UI has already run for 5 s.
+     */
+    sim_set_phase("advance");
+    if (!sim.loop_detected && opt->frame_count == 0) {
+        int32_t start = sim.elapsed_ms;
+        sim_run_for(opt->time_ms);
+        /* 2.1.0 criterion: any animation (incl. infinite ones) or a pending redraw */
+        while (opt->settle && sim.elapsed_ms - start < SIM_SETTLE_CAP_MS &&
+               (lv_anim_count_running() > 0 || sim_display_dirty())) {
+            int32_t left = SIM_SETTLE_CAP_MS - (sim.elapsed_ms - start);
+            sim_step((uint32_t)(left < SIM_STEP_MS ? left : SIM_STEP_MS));
+        }
     }
 
-    set_phase("export");
-    if (write_json(opt.json_path, disp, &opt, elapsed_ms, anims_running) != 0) {
-        fprintf(stderr, "[sim] failed to write JSON: %s\n", opt.json_path);
-        exit_code = 2;
+    if (script) {
+        sim_set_phase("actions");
+        if (sim.actions_given) {
+            events_init(disp);
+            events_attach_all(disp);
+            sim_input_sync_group(disp);
+        }
+        rc = actions_run(script);
+        actions_free(script);
+        if (rc == SIM_EXIT_ACTIONS) return rc;
     }
+
+    rc = sim_finish();
 
     /*
      * No LVGL teardown: deleting the widgets would run user delete callbacks
      * after the outputs are written, and the OS reclaims everything anyway.
      */
-    return exit_code;
+    return rc;
 }

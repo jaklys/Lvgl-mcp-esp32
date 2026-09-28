@@ -1,0 +1,83 @@
+{
+  "theme": "light",
+  "active": "home",
+  "screens": {
+    "home": {
+      "type": "lv_obj",
+      "styles": {"bg_color": "#f1f5f9", "pad_all": 0},
+      "children": [
+        {"type": "lv_label", "name": "title", "text": "Living room", "align": "top_left", "x": 20, "y": 16,
+         "styles": {"font": "montserrat_24", "text_color": "#0f172a"}},
+        {"type": "lv_button", "name": "settings_btn", "align": "top_right", "x": -16, "y": 10, "w": 44, "h": 44,
+         "styles": {"bg_color": "#ffffff", "radius": "circle", "shadow_width": 12, "shadow_opa": 40, "shadow_color": "#0f172a"},
+         "children": [{"type": "lv_label", "text": "", "align": "center", "styles": {"text_color": "#334155"}}]},
+        {"type": "lv_obj", "name": "card", "x": 20, "y": 66, "w": 440, "h": 150,
+         "flags": ["-scrollable"],
+         "styles": {"bg_grad_stops": [{"color": "#c2410c", "frac": 0}, {"color": "#ea580c", "frac": 150}, {"color": "#f97316", "frac": 255}],
+                    "bg_grad_dir": "hor", "radius": 18, "border_width": 0, "pad_all": 18,
+                    "shadow_width": 24, "shadow_ofs_y": 8, "shadow_opa": 70, "shadow_color": "#ea580c"},
+         "children": [
+           {"type": "lv_label", "name": "temp_caption", "text": "Target temperature", "align": "top_left",
+            "styles": {"text_color": "#fff7ed", "font": "montserrat_14"}},
+           {"type": "lv_label", "name": "temp_value", "text": "23.5°C", "align": "top_left", "y": 22,
+            "styles": {"text_color": "#ffffff", "font": "montserrat_40"}},
+           {"type": "lv_slider", "name": "target", "align": "bottom_mid", "y": -6, "w": 380, "h": 10, "min": 16, "max": 30, "value": 23,
+            "styles": {"bg_color": "#ffffff", "bg_opa": 90},
+            "indicator": {"bg_color": "#ffffff"},
+            "knob": {"bg_color": "#ffffff", "border_color": "#ea580c", "border_width": 3, "pad_all": 6,
+                     "shadow_color": "#ffffff", "shadow_width": 20, "shadow_spread": 2, "shadow_opa": 200}}
+         ]},
+        {"type": "lv_obj", "name": "modes", "x": 20, "y": 236, "w": 440, "h": "content",
+         "layout": {"type": "flex", "flow": "row", "main": "space_between", "cross": "center"},
+         "styles": {"bg_opa": 0, "border_width": 0, "pad_all": 0},
+         "children": [
+           {"type": "lv_button", "name": "mode_heat", "w": 136, "h": 56, "states": ["checked"], "flags": ["checkable"],
+            "styles": {"bg_color": "#ffffff", "radius": 14, "shadow_width": 0},
+            "styles_checked": {"bg_color": "#0f172a"},
+            "children": [{"type": "lv_label", "text": "Heat", "align": "center", "styles": {"text_color": "#ffffff"}}]},
+           {"type": "lv_button", "name": "mode_eco", "w": 136, "h": 56, "flags": ["checkable"],
+            "styles": {"bg_color": "#ffffff", "radius": 14, "shadow_width": 0},
+            "children": [{"type": "lv_label", "text": "Eco", "align": "center", "styles": {"text_color": "#0f172a"}}]},
+           {"type": "lv_button", "name": "mode_off", "w": 136, "h": 56, "flags": ["checkable"],
+            "styles": {"bg_color": "#ffffff", "radius": 14, "shadow_width": 0},
+            "children": [{"type": "lv_label", "text": "  Off", "align": "center", "styles": {"text_color": "#0f172a"}}]}
+         ]}
+      ]
+    },
+    "settings": {
+      "type": "lv_obj",
+      "styles": {"bg_color": "#0f172a", "pad_all": 20, "pad_row": 10},
+      "layout": {"type": "flex", "flow": "column"},
+      "children": [
+        {"type": "lv_label", "name": "settings_title", "text": "Settings", "styles": {"font": "montserrat_24", "text_color": "#f8fafc"}},
+        {"type": "lv_obj", "name": "row_wifi", "w": "100%", "h": 52,
+         "layout": {"type": "flex", "flow": "row", "main": "space_between", "cross": "center"},
+         "styles": {"bg_color": "#1e293b", "border_width": 0, "radius": 12, "pad_hor": 16, "pad_ver": 0},
+         "children": [
+           {"type": "lv_label", "text": "  Wi-Fi", "styles": {"text_color": "#e2e8f0"}},
+           {"type": "lv_switch", "name": "wifi_switch", "checked": true, "w": 56, "h": 30}
+         ]},
+        {"type": "lv_obj", "name": "row_eco", "w": "100%", "h": 52,
+         "layout": {"type": "flex", "flow": "row", "main": "space_between", "cross": "center"},
+         "styles": {"bg_color": "#1e293b", "border_width": 0, "radius": 12, "pad_hor": 16, "pad_ver": 0},
+         "children": [
+           {"type": "lv_label", "text": "Night eco mode", "styles": {"text_color": "#e2e8f0"}},
+           {"type": "lv_switch", "name": "eco_switch", "w": 56, "h": 30}
+         ]},
+        {"type": "lv_obj", "name": "row_brightness", "w": "100%", "h": 52,
+         "layout": {"type": "flex", "flow": "row", "main": "space_between", "cross": "center"},
+         "styles": {"bg_color": "#1e293b", "border_width": 0, "radius": 12, "pad_hor": 16, "pad_ver": 0},
+         "children": [
+           {"type": "lv_label", "text": "Display", "styles": {"text_color": "#e2e8f0"}},
+           {"type": "lv_slider", "name": "brightness", "w": 200, "value": 70,
+            "indicator": {"bg_color": "#38bdf8"}, "knob": {"bg_color": "#f8fafc"}}
+         ]},
+        {"type": "lv_button", "name": "back_btn", "w": 120, "h": 44, "text": "  Back",
+         "styles": {"bg_color": "#0284c7", "radius": 12}}
+      ]
+    }
+  },
+  "animations": [
+    {"target": "card", "prop": "opa", "from": 0, "to": 255, "duration": 250, "path": "ease_out"}
+  ]
+}

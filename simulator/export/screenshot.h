@@ -15,8 +15,16 @@
  *
  * @param filename output PNG path
  * @param disp     display to capture (render it first, e.g. lv_refr_now)
+ * @param scale    integer nearest-neighbour upscale factor (1 = none)
  * @return 0 on success, -1 on failure (a reason is printed to stderr)
  */
-int screenshot_save_png(const char *filename, lv_display_t *disp);
+int screenshot_save_png(const char *filename, lv_display_t *disp, int32_t scale);
+
+/**
+ * Save the top-left w x h pixels of `buf` as an RGB PNG (same formats and
+ * scaling as screenshot_save_png).
+ */
+int screenshot_save_draw_buf(const char *filename, const lv_draw_buf_t *buf, int32_t w, int32_t h,
+                             int32_t scale);
 
 #endif /* SCREENSHOT_H */

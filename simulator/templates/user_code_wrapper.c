@@ -1,4 +1,8 @@
 #include "lvgl.h"
+#include "sim.h"
+#ifdef LVGL_SIM_ESP_SHIMS
+#include "esp_shim.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
