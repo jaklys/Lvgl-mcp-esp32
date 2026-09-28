@@ -7,6 +7,21 @@ npm version of `lvgl-mcp-server`; release tags are `v<version>`.
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-09-28
+
+The first published 2.2 build: tag `v2.2.0` has no GitHub release and no npm
+package because its release run failed, so everything listed under 2.2.0 ships
+with 2.2.1. No other changes.
+
+### Fixed
+
+- **Release workflow, Windows packaging.** The build steps passed the target
+  platform in a `PLATFORM` environment variable. The MSVC developer
+  environment already sets `Platform=x64`, and Windows environment names are
+  case-insensitive, so the two merged and Git Bash never saw `$PLATFORM`: the
+  "Stage slim archive" step aborted with `PLATFORM: unbound variable`. The
+  variable is now `PREBUILT_PLATFORM`.
+
 ## [2.2.0] - 2026-09-28
 
 "Give the AI everything it needs to see and understand": more than one
@@ -322,7 +337,8 @@ Note: `package.json` still said 1.2.0, so this release run published npm
   `lvgl://api-reference` resource, Windows (MSVC) build scripts, CI and a
   tag-triggered release pipeline.
 
-[Unreleased]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.2.1...HEAD
+[2.2.1]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/jaklys/Lvgl-mcp-esp32/compare/v1.2.2...v2.0.0
