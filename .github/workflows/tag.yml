@@ -1,0 +1,174 @@
+name: Tag release
+
+# Recommended way to cut a release: Actions -> "Tag release" -> Run workflow.
+# Checks the version against mcp-server/package.json, CHANGELOG.md, existing
+# tags, GitHub releases and npm; creates the annotated tag vX.Y.Z on `ref`
+# (default: main) and starts the Release workflow (release.yml) for it.
+# A tag created with GITHUB_TOKEN does not trigger `push: tags` workflows,
+# so release.yml is dispatched explicitly (workflow_dispatch does run).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. 2.1.0 (no leading v; must equal mcp-server/package.json)"
+        required: true
+        type: string
+      ref:
+        description: "Branch or commit to tag"
+        required: false
+        default: main
+        type: string
+      allow_non_default:
+        description: "Allow tagging a commit that is not on the default branch"
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+
+env:
+  PACKAGE_NAME: lvgl-mcp-server
+
+jobs:
+  tag:
+    name: Tag v${{ inputs.version }} and start the release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the tag
+      actions: write # dispatch release.yml
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Check version, package.json, CHANGELOG, tag, GitHub release and npm
+        id: check
+        env:
+          VERSION: ${{ inputs.version }}
+          REF: ${{ inputs.ref }}
+          ALLOW_NON_DEFAULT: ${{ inputs.allow_non_default }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          fail() { echo "::error::$*"; exit 1; }
+          # gh exits non-zero on HTTP errors; only "not found" means absent.
+          absent() { grep -qi "not found" <<<"$1"; }
+
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "version '$VERSION' is not of the form MAJOR.MINOR.PATCH (no leading v)"
+          tag="v$VERSION"
+
+          pkg="$(node -p "require('./mcp-server/package.json').version")"
+          [ "$VERSION" = "$pkg" ] || fail "version $VERSION does not match mcp-server/package.json version $pkg at '$REF'"
+
+          grep -qE "^## \[${VERSION//./\\.}\]" CHANGELOG.md || fail "CHANGELOG.md has no '## [$VERSION]' section at '$REF'"
+
+          sha="$(git rev-parse HEAD)"
+          if [ "$ALLOW_NON_DEFAULT" != "true" ]; then
+            branch="${REF#refs/heads/}"
+            if out="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" --jq .object.sha 2>&1)"; then
+              [ "$branch" = "$DEFAULT_BRANCH" ] || fail "'$REF' is a branch other than $DEFAULT_BRANCH; set allow_non_default to tag it"
+            elif absent "$out"; then
+              # A commit sha (or tag): it must be reachable from the default branch.
+              status="$(gh api "repos/$GITHUB_REPOSITORY/compare/$DEFAULT_BRANCH...$sha" --jq .status)" \
+                || fail "could not compare $sha with $DEFAULT_BRANCH"
+              case "$status" in
+                identical|behind) ;;
+                *) fail "$sha is not on $DEFAULT_BRANCH (compare: $status); set allow_non_default to tag it" ;;
+              esac
+            else
+              fail "could not query branch '$branch': $out"
+            fi
+          fi
+
+          if out="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq .object.sha 2>&1)"; then
+            fail "tag $tag already exists (-> $out); to re-run the release for it, run the Release workflow with tag=$tag"
+          elif ! absent "$out"; then
+            fail "could not query tags: $out"
+          fi
+
+          if out="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName 2>&1)"; then
+            fail "GitHub release $tag already exists"
+          elif ! absent "$out"; then
+            fail "could not query GitHub releases: $out"
+          fi
+
+          npm view "$PACKAGE_NAME" name >/dev/null || fail "npm registry query for $PACKAGE_NAME failed"
+          published="$(npm view "${PACKAGE_NAME}@${VERSION}" version 2>/dev/null || true)"
+          [ -z "$published" ] || fail "${PACKAGE_NAME}@${VERSION} is already published on npm"
+
+          # Tag message: "vX.Y.Z", plus the intro paragraph of the CHANGELOG
+          # section when it has one (text before the first ### heading).
+          intro="$(awk -v v="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found = 1; next } }
+            !found { next }
+            /^[[:space:]]*$/ { if (n) exit; next }
+            !n && /^(#|- |\* |\[)/ { exit }
+            { print; n++ }
+          ' CHANGELOG.md)"
+          {
+            echo "message<<EOF_TAG_MESSAGE"
+            echo "$tag"
+            if [ -n "$intro" ]; then echo; echo "$intro"; fi
+            echo "EOF_TAG_MESSAGE"
+            echo "tag=$tag"
+            echo "sha=$sha"
+          } >> "$GITHUB_OUTPUT"
+          echo "Tagging $sha as $tag"
+
+      - name: Create annotated tag
+        env:
+          TAG: ${{ steps.check.outputs.tag }}
+          SHA: ${{ steps.check.outputs.sha }}
+          MESSAGE: ${{ steps.check.outputs.message }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag_object="$(gh api "repos/$GITHUB_REPOSITORY/git/tags" \
+            -f tag="$TAG" \
+            -f message="$MESSAGE" \
+            -f object="$SHA" \
+            -f type=commit \
+            -f "tagger[name]=$GITHUB_ACTOR" \
+            -f "tagger[email]=${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com" \
+            -f "tagger[date]=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --jq .sha)"
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/$TAG" \
+            -f sha="$tag_object" \
+            --jq .ref
+          echo "Created $TAG (tag object $tag_object) -> $SHA"
+
+      - name: Start the Release workflow
+        env:
+          TAG: ${{ steps.check.outputs.tag }}
+          SHA: ${{ steps.check.outputs.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" -f tag="$TAG"
+
+          run_url=""
+          for _ in 1 2 3 4 5 6; do
+            sleep 5
+            run_url="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow=release.yml \
+              --event workflow_dispatch --limit 10 --json url,headBranch \
+              --jq "map(select(.headBranch == \"$TAG\")) | first | .url // empty")" || true
+            [ -n "$run_url" ] && break
+          done
+          if [ -z "$run_url" ]; then
+            run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/workflows/release.yml"
+            echo "::warning::Release run not listed yet; see $run_url"
+          fi
+
+          {
+            echo "### Tagged $TAG"
+            echo
+            echo "- Tag: [\`$TAG\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/$TAG)"
+            echo "- Commit: [\`$SHA\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$SHA)"
+            echo "- Release workflow: $run_url"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Release workflow: $run_url"

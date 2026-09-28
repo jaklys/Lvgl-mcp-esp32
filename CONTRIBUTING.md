@@ -73,7 +73,11 @@ node mcp-server/scripts/render-examples.mjs
 1. In `mcp-server/`: `npm version X.Y.Z --no-git-tag-version`.
 2. Move the `Unreleased` notes in `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD`
    and add the compare link at the bottom.
-3. Merge to `main`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
+3. Merge to `main`, then run the "Tag release" workflow (Actions -> Tag
+   release -> Run workflow, version `X.Y.Z`; or
+   `gh workflow run tag.yml -f version=X.Y.Z`). It checks the version, creates
+   the annotated tag `vX.Y.Z` on `main` and starts the Release workflow; the
+   job summary links the run. Pushing a tag by hand also starts it.
 4. The Release workflow verifies the tag against `package.json`, the
    CHANGELOG, GitHub releases and npm; builds and tests on Linux, macOS and
    Windows;

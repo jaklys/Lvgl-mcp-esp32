@@ -494,7 +494,8 @@ Lvgl-mcp-esp32/
 │   └── smoke-test.mjs            Simulator smoke test used by the setup scripts
 ├── .github/workflows/
 │   ├── ci.yml                    Lint, unit + e2e tests (Linux, macOS, Windows), submodule pin, actionlint
-│   └── release.yml               Tag → verify → build → GitHub release → npm
+│   ├── release.yml               Tag → verify → build → GitHub release → npm
+│   └── tag.yml                   "Tag release": creates the tag and starts release.yml
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 └── README.md
@@ -523,13 +524,14 @@ Downloads are pinned to the package version and verified with SHA-256; release a
 Maintainers, see also [CONTRIBUTING.md](CONTRIBUTING.md):
 
 1. Bump `mcp-server/package.json` (`npm version X.Y.Z --no-git-tag-version` in `mcp-server/`) and move the `Unreleased` notes of `CHANGELOG.md` into a `## [X.Y.Z] - YYYY-MM-DD` section.
-2. Merge to `main`, then tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-3. The Release workflow then runs:
+2. Merge to `main`, then open **Actions → Tag release → Run workflow** and enter the version (`X.Y.Z`, no `v`). `ref` defaults to `main`; a commit that is not on `main` needs `allow_non_default`. From a terminal: `gh workflow run tag.yml -f version=X.Y.Z`.
+3. **Tag release** checks the version against `package.json`, the CHANGELOG, existing tags, GitHub releases and npm, creates the annotated tag `vX.Y.Z` and starts the Release workflow for it (the job summary links the run). Pushing a tag by hand (`git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`) still works and starts the Release workflow directly.
+4. The Release workflow then runs:
    - **verify-version** — the tag is `vX.Y.Z`, equals the `package.json` version, has a CHANGELOG section, and is neither released on GitHub nor published on npm yet
    - **build** (Linux, macOS, Windows) — Release build, smoke test, unit + e2e tests, slim source archive, and a check that the slim tree still builds
    - **create-release** — `SHA256SUMS.txt`, build provenance attestations, GitHub release with notes from the CHANGELOG
    - **publish-npm** — `npm publish --provenance`, only after the release exists (postinstall of the new version needs its assets)
-4. If a late job fails (for example npm authentication), fix the cause and use **Re-run failed jobs**. `workflow_dispatch` with an existing tag re-runs the whole flow for a tag that has no release yet.
+5. Publishing to npm needs the `NPM_TOKEN` repository secret or npm trusted publishing configured for `release.yml`. If a late job fails (for example npm authentication), fix the cause and use **Re-run failed jobs**. Running the Release workflow by hand with an existing tag re-runs the whole flow for a tag that has no release yet.
 
 ## Troubleshooting
 

@@ -1,8 +1,12 @@
 name: Release
 
-# Release flow: push tag vX.Y.Z (== mcp-server/package.json version)
+# Release flow: tag vX.Y.Z (== mcp-server/package.json version)
 #   -> verify-version -> build (linux, macos, windows) -> create-release -> publish-npm
-# workflow_dispatch re-runs the flow for an EXISTING tag (it never creates one).
+# Recommended: run the "Tag release" workflow (tag.yml). It creates the
+# annotated tag and dispatches this workflow with it, because a tag created
+# with GITHUB_TOKEN does not trigger `push: tags`. Pushing a tag by hand
+# triggers this workflow directly.
+# workflow_dispatch runs the flow for an EXISTING tag (it never creates one).
 # If only a late job failed (e.g. npm publish), use "Re-run failed jobs" instead:
 # verify-version refuses tags that already have a release or an npm version.
 on:
