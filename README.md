@@ -379,7 +379,8 @@ Set these in the `env` block of your MCP client configuration.
 | `LVGL_ASSETS_DIR` | server working dir | Default directory for `S:` file paths (`assets_dir` parameter) |
 | `LVGL_COMPILE_TIMEOUT_MS` | `180000` | Time limit for configure + build |
 | `LVGL_RUN_TIMEOUT_MS` | `15000` | Time limit for one simulator run |
-| `CC` | `cl` (Windows), `cc` (POSIX) | C compiler |
+| `CC` | `cl` (Windows), CMake default, usually `cc` (POSIX) | C compiler |
+| `CXX` | `cl` (Windows), CMake default (POSIX) | C++ compiler |
 | `CMAKE_PATH` | PATH / ESP-IDF | Path to `cmake` |
 | `NINJA_PATH` | PATH / ESP-IDF | Path to `ninja` |
 | `LVGL_CMAKE_GENERATOR` | Ninja if found, else Unix Makefiles | CMake generator (POSIX) |
@@ -395,14 +396,14 @@ Install-time only (postinstall):
 
 ## Examples
 
-The [examples/](examples/) directory contains rendered output from the MCP server — PNG screenshots and the corresponding JSON widget trees. They are regenerated with `node mcp-server/scripts/render-examples.mjs` against the simulator in the checkout.
+The [examples/](examples/) directory contains rendered output from the MCP server — PNG screenshots and the corresponding JSON widget trees. They are regenerated with `node mcp-server/scripts/render-examples.mjs` against the simulator in the checkout. Every example renders at the resolution its script asks for; since `width`/`height` are no longer sticky (2.1.0), the dashboard is now rendered at 800x480 instead of inheriting the 480x320 of the previous example.
 
 ### Demo renders
 
 | Screenshot | JSON | Description |
 |-----------|------|-------------|
-| [01-button-slider.png](examples/01-button-slider.png) | [JSON](examples/01-button-slider.json) | Button + slider basic layout |
-| [02-dashboard.png](examples/02-dashboard.png) | [JSON](examples/02-dashboard.json) | Multi-card dashboard |
+| [01-button-slider.png](examples/01-button-slider.png) | [JSON](examples/01-button-slider.json) | Button + slider basic layout at 480x320 |
+| [02-dashboard.png](examples/02-dashboard.png) | [JSON](examples/02-dashboard.json) | Multi-card dashboard at 800x480 (`lvgl_render_full`) |
 | [04-esp32-small.png](examples/04-esp32-small.png) | [JSON](examples/04-esp32-small.json) | ESP32 status screen at 320x240 |
 
 ### E-BREW brewery control screens (real project)
@@ -462,7 +463,9 @@ Lvgl-mcp-esp32/
 │   ├── bin/lvgl-mcp-server.mjs   npx entry point
 │   ├── scripts/
 │   │   ├── postinstall.mjs       Downloads + verifies the matching simulator
-│   │   └── render-examples.mjs   Regenerates examples/
+│   │   ├── prepack.mjs           Copies README/LICENSE into the npm package
+│   │   ├── render-examples.mjs   Regenerates examples/
+│   │   └── test.mjs              Test runner (node --test + tsx)
 │   ├── src/
 │   │   ├── index.ts              Entry point, stdio transport
 │   │   ├── tools/                lvgl_render(_full), lvgl_inspect, lvgl_check, lvgl_set_resolution
@@ -496,7 +499,7 @@ Lvgl-mcp-esp32/
 
 ## Security
 
-Rendering compiles and runs arbitrary C code **locally, with your user's rights**. There is no sandbox: the code can read and write any file your account can. The simulator and build tools are started with a minimal, allow-listed environment (so your MCP client's secrets are not passed on), but that is not isolation. Only render code you would compile yourself, and use a container or VM if you need a hard boundary.
+Rendering compiles and runs arbitrary C code **locally, with your user's rights**. There is no sandbox: the code can read and write any file your account can. The compiled simulator (which runs your code) is started with a minimal, allow-listed environment, so environment variables such as API keys in your MCP client's configuration are not passed to it; the build tools (CMake, the compiler) inherit the server's environment. None of this is isolation. Only render code you would compile yourself, and use a container or VM if you need a hard boundary.
 
 Downloads are pinned to the package version and verified with SHA-256; release archives also carry GitHub build provenance (`gh attestation verify <archive> --repo jaklys/Lvgl-mcp-esp32`), and npm packages are published with provenance.
 

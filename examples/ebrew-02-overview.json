@@ -1,717 +1,788 @@
 {
-  "type": "obj",
-  "x": 0,
-  "y": 0,
-  "w": 800,
-  "h": 480,
-  "styles": {
-    "bg_color": "#ffffff",
-    "bg_opa": 255,
-    "text_color": "#212121",
-    "text_font_size": 16,
-    "border_width": 0,
-    "border_color": "#000000",
-    "radius": 0,
-    "pad_top": 0,
-    "pad_bottom": 0,
-    "pad_left": 0,
-    "pad_right": 0,
-    "pad_gap": 11,
-    "opa": 255
+  "format_version": 2,
+  "lvgl_version": "9.6.0",
+  "display": {
+    "width": 800,
+    "height": 480,
+    "rotation": 0,
+    "dpi": 130,
+    "color_format": "XRGB8888",
+    "theme": "light"
   },
-  "children": [
-    {
-      "type": "btn",
-      "x": 350,
-      "y": 10,
-      "w": 100,
-      "h": 40,
-      "styles": {
-        "bg_color": "#d4af37",
-        "bg_opa": 255,
-        "text_color": "#ffffff",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 20,
-        "pad_top": 11,
-        "pad_bottom": 11,
-        "pad_left": 20,
-        "pad_right": 20,
-        "pad_gap": 4,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "label",
-          "x": 6,
-          "y": 1,
-          "w": 49,
-          "h": 16,
-          "text": " ZPET",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#ffffff",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        }
-      ]
+  "screen": {
+    "type": "lv_obj",
+    "x": 0,
+    "y": 0,
+    "w": 800,
+    "h": 480,
+    "abs": {
+      "x1": 0,
+      "y1": 0,
+      "x2": 799,
+      "y2": 479
     },
-    {
-      "type": "label",
-      "x": 30,
-      "y": 20,
-      "w": 100,
-      "h": 22,
-      "text": "PREHLED",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#2c2c2c",
-        "text_font_size": 22,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
+    "flags": [
+      "clickable",
+      "scrollable"
+    ],
+    "styles": {
+      "bg_opa": 255,
+      "bg_color": "#ffffff",
+      "pad_row": 11,
+      "pad_column": 11,
+      "text_color": "#212121",
+      "font": "montserrat_14",
+      "line_height": 16
+    },
+    "children": [
+      {
+        "type": "lv_button",
+        "x": 350,
+        "y": 10,
+        "w": 100,
+        "h": 40,
+        "abs": {
+          "x1": 350,
+          "y1": 10,
+          "x2": 449,
+          "y2": 49
+        },
+        "flags": [
+          "clickable"
+        ],
+        "styles": {
+          "bg_opa": 255,
+          "bg_color": "#d4af37",
+          "radius": 20,
+          "pad_top": 11,
+          "pad_bottom": 11,
+          "pad_left": 20,
+          "pad_right": 20,
+          "pad_row": 4,
+          "pad_column": 4,
+          "text_color": "#ffffff",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_label",
+            "x": 6,
+            "y": 1,
+            "w": 49,
+            "h": 16,
+            "abs": {
+              "x1": 376,
+              "y1": 22,
+              "x2": 424,
+              "y2": 37
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": " ZPET",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#ffffff",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          }
+        ]
+      },
+      {
+        "type": "lv_label",
+        "x": 30,
+        "y": 20,
+        "w": 100,
+        "h": 22,
+        "abs": {
+          "x1": 30,
+          "y1": 20,
+          "x2": 129,
+          "y2": 41
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "PREHLED",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#2c2c2c",
+          "font": "montserrat_20",
+          "line_height": 22
+        }
+      },
+      {
+        "type": "lv_label",
+        "x": 730,
+        "y": 20,
+        "w": 50,
+        "h": 22,
+        "abs": {
+          "x1": 730,
+          "y1": 20,
+          "x2": 779,
+          "y2": 41
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "14:25",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#2c2c2c",
+          "font": "montserrat_20",
+          "line_height": 22
+        }
+      },
+      {
+        "type": "lv_obj",
+        "x": 20,
+        "y": 120,
+        "w": 370,
+        "h": 340,
+        "abs": {
+          "x1": 20,
+          "y1": 120,
+          "x2": 389,
+          "y2": 459
+        },
+        "flags": [
+          "clickable"
+        ],
+        "styles": {
+          "bg_opa": 255,
+          "bg_color": "#ffffff",
+          "border_width": 2,
+          "border_color": "#d4af37",
+          "radius": 5,
+          "pad_top": 20,
+          "pad_bottom": 20,
+          "pad_left": 20,
+          "pad_right": 20,
+          "pad_row": 11,
+          "pad_column": 11,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 30,
+            "w": 66,
+            "h": 18,
+            "abs": {
+              "x1": 62,
+              "y1": 172,
+              "x2": 127,
+              "y2": 189
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "BOJLER",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_16",
+              "line_height": 18
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 247,
+            "y": 30,
+            "w": 59,
+            "h": 22,
+            "abs": {
+              "x1": 289,
+              "y1": 172,
+              "x2": 347,
+              "y2": 193
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "62.3 C",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 85,
+            "w": 54,
+            "h": 18,
+            "abs": {
+              "x1": 62,
+              "y1": 227,
+              "x2": 115,
+              "y2": 244
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "KOTEL",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_16",
+              "line_height": 18
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 251,
+            "y": 85,
+            "w": 55,
+            "h": 22,
+            "abs": {
+              "x1": 293,
+              "y1": 227,
+              "x2": 347,
+              "y2": 248
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "78.1 C",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 140,
+            "w": 48,
+            "h": 18,
+            "abs": {
+              "x1": 62,
+              "y1": 282,
+              "x2": 109,
+              "y2": 299
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "RMUT",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_16",
+              "line_height": 18
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 246,
+            "y": 140,
+            "w": 60,
+            "h": 22,
+            "abs": {
+              "x1": 288,
+              "y1": 282,
+              "x2": 347,
+              "y2": 303
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "65.0 C",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 20,
+            "y": 195,
+            "w": 49,
+            "h": 18,
+            "abs": {
+              "x1": 62,
+              "y1": 337,
+              "x2": 110,
+              "y2": 354
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "VODA",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_16",
+              "line_height": 18
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 250,
+            "y": 195,
+            "w": 56,
+            "h": 22,
+            "abs": {
+              "x1": 292,
+              "y1": 337,
+              "x2": 347,
+              "y2": 358
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "18.5 C",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          }
+        ]
+      },
+      {
+        "type": "lv_obj",
+        "x": 410,
+        "y": 120,
+        "w": 370,
+        "h": 340,
+        "abs": {
+          "x1": 410,
+          "y1": 120,
+          "x2": 779,
+          "y2": 459
+        },
+        "flags": [
+          "clickable"
+        ],
+        "styles": {
+          "bg_opa": 255,
+          "bg_color": "#ffffff",
+          "border_width": 2,
+          "border_color": "#d4af37",
+          "radius": 5,
+          "pad_top": 20,
+          "pad_bottom": 20,
+          "pad_left": 20,
+          "pad_right": 20,
+          "pad_row": 11,
+          "pad_column": 11,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_label",
+            "x": 15,
+            "y": 15,
+            "w": 134,
+            "h": 16,
+            "abs": {
+              "x1": 447,
+              "y1": 157,
+              "x2": 580,
+              "y2": 172
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Termostat BOJLER",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 269,
+            "y": 15,
+            "w": 42,
+            "h": 22,
+            "abs": {
+              "x1": 701,
+              "y1": 157,
+              "x2": 742,
+              "y2": 178
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "ZAP",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 25,
+            "y": 40,
+            "w": 85,
+            "h": 15,
+            "abs": {
+              "x1": 457,
+              "y1": 182,
+              "x2": 541,
+              "y2": 196
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Cilova teplota:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#999999",
+              "font": "montserrat_12",
+              "line_height": 15
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 268,
+            "y": 40,
+            "w": 43,
+            "h": 16,
+            "abs": {
+              "x1": 700,
+              "y1": 182,
+              "x2": 742,
+              "y2": 197
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "65.0 C",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#666666",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 15,
+            "y": 80,
+            "w": 124,
+            "h": 16,
+            "abs": {
+              "x1": 447,
+              "y1": 222,
+              "x2": 570,
+              "y2": 237
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Termostat KOTEL",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 270,
+            "y": 80,
+            "w": 41,
+            "h": 22,
+            "abs": {
+              "x1": 702,
+              "y1": 222,
+              "x2": 742,
+              "y2": 243
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "VYP",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 25,
+            "y": 105,
+            "w": 85,
+            "h": 15,
+            "abs": {
+              "x1": 457,
+              "y1": 247,
+              "x2": 541,
+              "y2": 261
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Cilova teplota:",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#999999",
+              "font": "montserrat_12",
+              "line_height": 15
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 267,
+            "y": 105,
+            "w": 44,
+            "h": 16,
+            "abs": {
+              "x1": 699,
+              "y1": 247,
+              "x2": 742,
+              "y2": 262
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "80.0 C",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#666666",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 15,
+            "y": 145,
+            "w": 57,
+            "h": 16,
+            "abs": {
+              "x1": 447,
+              "y1": 287,
+              "x2": 503,
+              "y2": 302
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Michani",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 270,
+            "y": 145,
+            "w": 41,
+            "h": 22,
+            "abs": {
+              "x1": 702,
+              "y1": 287,
+              "x2": 742,
+              "y2": 308
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "VYP",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 15,
+            "y": 177,
+            "w": 116,
+            "h": 16,
+            "abs": {
+              "x1": 447,
+              "y1": 319,
+              "x2": 562,
+              "y2": 334
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Provzdusnovani",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 270,
+            "y": 177,
+            "w": 41,
+            "h": 22,
+            "abs": {
+              "x1": 702,
+              "y1": 319,
+              "x2": 742,
+              "y2": 340
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "VYP",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 15,
+            "y": 209,
+            "w": 66,
+            "h": 16,
+            "abs": {
+              "x1": 447,
+              "y1": 351,
+              "x2": 512,
+              "y2": 366
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Cerpadlo",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 270,
+            "y": 209,
+            "w": 41,
+            "h": 22,
+            "abs": {
+              "x1": 702,
+              "y1": 351,
+              "x2": 742,
+              "y2": 372
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "45%",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 15,
+            "y": 241,
+            "w": 39,
+            "h": 16,
+            "abs": {
+              "x1": 447,
+              "y1": 383,
+              "x2": 485,
+              "y2": 398
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Smer",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#d4af37",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_label",
+            "x": 274,
+            "y": 241,
+            "w": 37,
+            "h": 22,
+            "abs": {
+              "x1": 706,
+              "y1": 383,
+              "x2": 742,
+              "y2": 404
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "CW",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#000000",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
+          }
+        ]
       }
-    },
-    {
-      "type": "label",
-      "x": 730,
-      "y": 20,
-      "w": 50,
-      "h": 22,
-      "text": "14:25",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#2c2c2c",
-        "text_font_size": 22,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
-    },
-    {
-      "type": "obj",
-      "x": 20,
-      "y": 120,
-      "w": 370,
-      "h": 340,
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 255,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 2,
-        "border_color": "#d4af37",
-        "radius": 5,
-        "pad_top": 20,
-        "pad_bottom": 20,
-        "pad_left": 20,
-        "pad_right": 20,
-        "pad_gap": 11,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "label",
-          "x": 20,
-          "y": 30,
-          "w": 66,
-          "h": 18,
-          "text": "BOJLER",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 18,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 247,
-          "y": 30,
-          "w": 59,
-          "h": 22,
-          "text": "62.3 C",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 85,
-          "w": 54,
-          "h": 18,
-          "text": "KOTEL",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 18,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 251,
-          "y": 85,
-          "w": 55,
-          "h": 22,
-          "text": "78.1 C",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 140,
-          "w": 48,
-          "h": 18,
-          "text": "RMUT",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 18,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 246,
-          "y": 140,
-          "w": 60,
-          "h": 22,
-          "text": "65.0 C",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 20,
-          "y": 195,
-          "w": 49,
-          "h": 18,
-          "text": "VODA",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 18,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 250,
-          "y": 195,
-          "w": 56,
-          "h": 22,
-          "text": "18.5 C",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        }
-      ]
-    },
-    {
-      "type": "obj",
-      "x": 410,
-      "y": 120,
-      "w": 370,
-      "h": 340,
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 255,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 2,
-        "border_color": "#d4af37",
-        "radius": 5,
-        "pad_top": 20,
-        "pad_bottom": 20,
-        "pad_left": 20,
-        "pad_right": 20,
-        "pad_gap": 11,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "label",
-          "x": 15,
-          "y": 15,
-          "w": 134,
-          "h": 16,
-          "text": "Termostat BOJLER",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 269,
-          "y": 15,
-          "w": 42,
-          "h": 22,
-          "text": "ZAP",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 25,
-          "y": 40,
-          "w": 85,
-          "h": 15,
-          "text": "Cilova teplota:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#999999",
-            "text_font_size": 15,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 268,
-          "y": 40,
-          "w": 43,
-          "h": 16,
-          "text": "65.0 C",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#666666",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 15,
-          "y": 80,
-          "w": 124,
-          "h": 16,
-          "text": "Termostat KOTEL",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 270,
-          "y": 80,
-          "w": 41,
-          "h": 22,
-          "text": "VYP",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 25,
-          "y": 105,
-          "w": 85,
-          "h": 15,
-          "text": "Cilova teplota:",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#999999",
-            "text_font_size": 15,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 267,
-          "y": 105,
-          "w": 44,
-          "h": 16,
-          "text": "80.0 C",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#666666",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 15,
-          "y": 145,
-          "w": 57,
-          "h": 16,
-          "text": "Michani",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 270,
-          "y": 145,
-          "w": 41,
-          "h": 22,
-          "text": "VYP",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 15,
-          "y": 177,
-          "w": 116,
-          "h": 16,
-          "text": "Provzdusnovani",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 270,
-          "y": 177,
-          "w": 41,
-          "h": 22,
-          "text": "VYP",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 15,
-          "y": 209,
-          "w": 66,
-          "h": 16,
-          "text": "Cerpadlo",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 270,
-          "y": 209,
-          "w": 41,
-          "h": 22,
-          "text": "45%",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 15,
-          "y": 241,
-          "w": 39,
-          "h": 16,
-          "text": "Smer",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#d4af37",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 274,
-          "y": 241,
-          "w": 37,
-          "h": 22,
-          "text": "CW",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#000000",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        }
-      ]
-    }
-  ]
+    ]
+  }
 }

@@ -1,97 +1,131 @@
 {
-  "type": "obj",
-  "x": 0,
-  "y": 0,
-  "w": 320,
-  "h": 240,
-  "styles": {
-    "bg_color": "#003a57",
-    "bg_opa": 255,
-    "text_color": "#212121",
-    "text_font_size": 16,
-    "border_width": 0,
-    "border_color": "#000000",
-    "radius": 0,
-    "pad_top": 0,
-    "pad_bottom": 0,
-    "pad_left": 0,
-    "pad_right": 0,
-    "pad_gap": 10,
-    "opa": 255
+  "format_version": 2,
+  "lvgl_version": "9.6.0",
+  "display": {
+    "width": 320,
+    "height": 240,
+    "rotation": 0,
+    "dpi": 130,
+    "color_format": "XRGB8888",
+    "theme": "light"
   },
-  "children": [
-    {
-      "type": "arc",
-      "x": 100,
-      "y": 47,
-      "w": 120,
-      "h": 120,
-      "value": 72,
-      "min": 0,
-      "max": 100,
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "label",
-          "x": 36,
-          "y": 47,
-          "w": 48,
-          "h": 27,
-          "text": "72%",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#ffffff",
-            "text_font_size": 27,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        }
-      ]
+  "screen": {
+    "type": "lv_obj",
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 240,
+    "abs": {
+      "x1": 0,
+      "y1": 0,
+      "x2": 319,
+      "y2": 239
     },
-    {
-      "type": "label",
-      "x": 110,
-      "y": 177,
-      "w": 99,
-      "h": 16,
-      "text": "Sensor Active",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#4caf50",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
+    "flags": [
+      "clickable",
+      "scrollable"
+    ],
+    "layout": {
+      "type": "flex",
+      "flow": "column",
+      "main": "center",
+      "cross": "center",
+      "track": "center"
+    },
+    "styles": {
+      "bg_opa": 255,
+      "bg_color": "#003a57",
+      "pad_row": 10,
+      "pad_column": 10,
+      "text_color": "#212121",
+      "font": "montserrat_14",
+      "line_height": 16
+    },
+    "children": [
+      {
+        "type": "lv_arc",
+        "x": 100,
+        "y": 47,
+        "w": 120,
+        "h": 120,
+        "abs": {
+          "x1": 100,
+          "y1": 47,
+          "x2": 219,
+          "y2": 166
+        },
+        "flags": [
+          "clickable"
+        ],
+        "value": 72,
+        "min": 0,
+        "max": 100,
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "indicator": {
+          "arc_opa": 255,
+          "arc_width": 10,
+          "arc_color": "#00bcd4"
+        },
+        "knob": {
+          "bg_opa": 255,
+          "bg_color": "#2196f3"
+        },
+        "children": [
+          {
+            "type": "lv_label",
+            "x": 36,
+            "y": 47,
+            "w": 48,
+            "h": 27,
+            "abs": {
+              "x1": 136,
+              "y1": 94,
+              "x2": 183,
+              "y2": 120
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "72%",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#ffffff",
+              "font": "montserrat_24",
+              "line_height": 27
+            }
+          }
+        ]
+      },
+      {
+        "type": "lv_label",
+        "x": 110,
+        "y": 177,
+        "w": 99,
+        "h": 16,
+        "abs": {
+          "x1": 110,
+          "y1": 177,
+          "x2": 208,
+          "y2": 192
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "Sensor Active",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#4caf50",
+          "font": "montserrat_14",
+          "line_height": 16
+        }
       }
-    }
-  ]
+    ]
+  }
 }

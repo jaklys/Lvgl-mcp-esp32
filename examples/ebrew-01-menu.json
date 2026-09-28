@@ -1,422 +1,521 @@
 {
-  "type": "obj",
-  "x": 0,
-  "y": 0,
-  "w": 800,
-  "h": 480,
-  "styles": {
-    "bg_color": "#ffffff",
-    "bg_opa": 255,
-    "text_color": "#212121",
-    "text_font_size": 16,
-    "border_width": 0,
-    "border_color": "#000000",
-    "radius": 0,
-    "pad_top": 0,
-    "pad_bottom": 0,
-    "pad_left": 0,
-    "pad_right": 0,
-    "pad_gap": 11,
-    "opa": 255
+  "format_version": 2,
+  "lvgl_version": "9.6.0",
+  "display": {
+    "width": 800,
+    "height": 480,
+    "rotation": 0,
+    "dpi": 130,
+    "color_format": "XRGB8888",
+    "theme": "light"
   },
-  "children": [
-    {
-      "type": "label",
-      "x": 349,
-      "y": 20,
-      "w": 103,
-      "h": 27,
-      "text": "E-BREW",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#d4af37",
-        "text_font_size": 27,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
+  "screen": {
+    "type": "lv_obj",
+    "x": 0,
+    "y": 0,
+    "w": 800,
+    "h": 480,
+    "abs": {
+      "x1": 0,
+      "y1": 0,
+      "x2": 799,
+      "y2": 479
     },
-    {
-      "type": "label",
-      "x": 736,
-      "y": 22,
-      "w": 54,
-      "h": 16,
-      "text": "12:34:56",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#333333",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
+    "flags": [
+      "clickable",
+      "scrollable"
+    ],
+    "styles": {
+      "bg_opa": 255,
+      "bg_color": "#ffffff",
+      "pad_row": 11,
+      "pad_column": 11,
+      "text_color": "#212121",
+      "font": "montserrat_14",
+      "line_height": 16
     },
-    {
-      "type": "label",
-      "x": 691,
-      "y": 22,
-      "w": 24,
-      "h": 16,
-      "text": "MB",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#4caf50",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
-    },
-    {
-      "type": "label",
-      "x": 637,
-      "y": 22,
-      "w": 33,
-      "h": 16,
-      "text": "WiFi",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#4caf50",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
-    },
-    {
-      "type": "obj",
-      "x": 15,
-      "y": 95,
-      "w": 770,
-      "h": 320,
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#e0e0e0",
-        "radius": 10,
-        "pad_top": 20,
-        "pad_bottom": 20,
-        "pad_left": 20,
-        "pad_right": 20,
-        "pad_gap": 11,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "obj",
-          "x": 10,
-          "y": 10,
-          "w": 240,
-          "h": 140,
-          "styles": {
-            "bg_color": "#d4af37",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 1,
-            "border_color": "#d4af37",
-            "radius": 8,
-            "pad_top": 20,
-            "pad_bottom": 20,
-            "pad_left": 20,
-            "pad_right": 20,
-            "pad_gap": 11,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 49,
-              "y": 38,
-              "w": 100,
-              "h": 22,
-              "text": "PREHLED",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 22,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
+    "children": [
+      {
+        "type": "lv_label",
+        "x": 349,
+        "y": 20,
+        "w": 103,
+        "h": 27,
+        "abs": {
+          "x1": 349,
+          "y1": 20,
+          "x2": 451,
+          "y2": 46
         },
-        {
-          "type": "obj",
-          "x": 260,
-          "y": 10,
-          "w": 240,
-          "h": 140,
-          "styles": {
-            "bg_color": "#5a5a5a",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 1,
-            "border_color": "#d4af37",
-            "radius": 8,
-            "pad_top": 20,
-            "pad_bottom": 20,
-            "pad_left": 20,
-            "pad_right": 20,
-            "pad_gap": 11,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 41,
-              "y": 38,
-              "w": 117,
-              "h": 22,
-              "text": "CERPADLO",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 22,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
-        },
-        {
-          "type": "obj",
-          "x": 510,
-          "y": 10,
-          "w": 240,
-          "h": 140,
-          "styles": {
-            "bg_color": "#4a4a4a",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 1,
-            "border_color": "#d4af37",
-            "radius": 8,
-            "pad_top": 20,
-            "pad_bottom": 20,
-            "pad_left": 20,
-            "pad_right": 20,
-            "pad_gap": 11,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 44,
-              "y": 38,
-              "w": 110,
-              "h": 22,
-              "text": "OVLADANI",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 22,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
-        },
-        {
-          "type": "obj",
-          "x": 10,
-          "y": 160,
-          "w": 240,
-          "h": 140,
-          "styles": {
-            "bg_color": "#2c2c2c",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 1,
-            "border_color": "#d4af37",
-            "radius": 8,
-            "pad_top": 20,
-            "pad_bottom": 20,
-            "pad_left": 20,
-            "pad_right": 20,
-            "pad_gap": 11,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 30,
-              "y": 38,
-              "w": 138,
-              "h": 22,
-              "text": "TERMOSTATY",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 22,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
-        },
-        {
-          "type": "obj",
-          "x": 260,
-          "y": 160,
-          "w": 240,
-          "h": 140,
-          "styles": {
-            "bg_color": "#606060",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 1,
-            "border_color": "#d4af37",
-            "radius": 8,
-            "pad_top": 20,
-            "pad_bottom": 20,
-            "pad_left": 20,
-            "pad_right": 20,
-            "pad_gap": 11,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 64,
-              "y": 38,
-              "w": 71,
-              "h": 22,
-              "text": "GRAFY",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 22,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
-        },
-        {
-          "type": "obj",
-          "x": 510,
-          "y": 160,
-          "w": 240,
-          "h": 140,
-          "styles": {
-            "bg_color": "#3a3a3a",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 1,
-            "border_color": "#d4af37",
-            "radius": 8,
-            "pad_top": 20,
-            "pad_bottom": 20,
-            "pad_left": 20,
-            "pad_right": 20,
-            "pad_gap": 11,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 30,
-              "y": 38,
-              "w": 138,
-              "h": 22,
-              "text": "SYSTEM INFO",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 22,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
+        "flags": [
+          "scrollable"
+        ],
+        "text": "E-BREW",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#d4af37",
+          "font": "montserrat_24",
+          "line_height": 27
         }
-      ]
-    }
-  ]
+      },
+      {
+        "type": "lv_label",
+        "x": 736,
+        "y": 22,
+        "w": 54,
+        "h": 16,
+        "abs": {
+          "x1": 736,
+          "y1": 22,
+          "x2": 789,
+          "y2": 37
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "12:34:56",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#333333",
+          "font": "montserrat_14",
+          "line_height": 16
+        }
+      },
+      {
+        "type": "lv_label",
+        "x": 691,
+        "y": 22,
+        "w": 24,
+        "h": 16,
+        "abs": {
+          "x1": 691,
+          "y1": 22,
+          "x2": 714,
+          "y2": 37
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "MB",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#4caf50",
+          "font": "montserrat_14",
+          "line_height": 16
+        }
+      },
+      {
+        "type": "lv_label",
+        "x": 637,
+        "y": 22,
+        "w": 33,
+        "h": 16,
+        "abs": {
+          "x1": 637,
+          "y1": 22,
+          "x2": 669,
+          "y2": 37
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "WiFi",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#4caf50",
+          "font": "montserrat_14",
+          "line_height": 16
+        }
+      },
+      {
+        "type": "lv_obj",
+        "x": 15,
+        "y": 95,
+        "w": 770,
+        "h": 320,
+        "abs": {
+          "x1": 15,
+          "y1": 95,
+          "x2": 784,
+          "y2": 414
+        },
+        "flags": [
+          "clickable"
+        ],
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "overflow_x": true,
+          "overflow_y": true
+        },
+        "styles": {
+          "bg_opa": 0,
+          "radius": 10,
+          "pad_top": 20,
+          "pad_bottom": 20,
+          "pad_left": 20,
+          "pad_right": 20,
+          "pad_row": 11,
+          "pad_column": 11,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_obj",
+            "x": 10,
+            "y": 10,
+            "w": 240,
+            "h": 140,
+            "abs": {
+              "x1": 45,
+              "y1": 125,
+              "x2": 284,
+              "y2": 264
+            },
+            "flags": [
+              "clickable"
+            ],
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#d4af37",
+              "border_width": 1,
+              "border_color": "#d4af37",
+              "radius": 8,
+              "pad_top": 20,
+              "pad_bottom": 20,
+              "pad_left": 20,
+              "pad_right": 20,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 49,
+                "y": 38,
+                "w": 100,
+                "h": 22,
+                "abs": {
+                  "x1": 115,
+                  "y1": 184,
+                  "x2": 214,
+                  "y2": 205
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "PREHLED",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_20",
+                  "line_height": 22
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_obj",
+            "x": 260,
+            "y": 10,
+            "w": 240,
+            "h": 140,
+            "abs": {
+              "x1": 295,
+              "y1": 125,
+              "x2": 534,
+              "y2": 264
+            },
+            "flags": [
+              "clickable"
+            ],
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#5a5a5a",
+              "border_width": 1,
+              "border_color": "#d4af37",
+              "radius": 8,
+              "pad_top": 20,
+              "pad_bottom": 20,
+              "pad_left": 20,
+              "pad_right": 20,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 41,
+                "y": 38,
+                "w": 117,
+                "h": 22,
+                "abs": {
+                  "x1": 357,
+                  "y1": 184,
+                  "x2": 473,
+                  "y2": 205
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "CERPADLO",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_20",
+                  "line_height": 22
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_obj",
+            "x": 510,
+            "y": 10,
+            "w": 240,
+            "h": 140,
+            "abs": {
+              "x1": 545,
+              "y1": 125,
+              "x2": 784,
+              "y2": 264
+            },
+            "flags": [
+              "clickable"
+            ],
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#4a4a4a",
+              "border_width": 1,
+              "border_color": "#d4af37",
+              "radius": 8,
+              "pad_top": 20,
+              "pad_bottom": 20,
+              "pad_left": 20,
+              "pad_right": 20,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 44,
+                "y": 38,
+                "w": 110,
+                "h": 22,
+                "abs": {
+                  "x1": 610,
+                  "y1": 184,
+                  "x2": 719,
+                  "y2": 205
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "OVLADANI",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_20",
+                  "line_height": 22
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_obj",
+            "x": 10,
+            "y": 160,
+            "w": 240,
+            "h": 140,
+            "abs": {
+              "x1": 45,
+              "y1": 275,
+              "x2": 284,
+              "y2": 414
+            },
+            "flags": [
+              "clickable"
+            ],
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#2c2c2c",
+              "border_width": 1,
+              "border_color": "#d4af37",
+              "radius": 8,
+              "pad_top": 20,
+              "pad_bottom": 20,
+              "pad_left": 20,
+              "pad_right": 20,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 30,
+                "y": 38,
+                "w": 138,
+                "h": 22,
+                "abs": {
+                  "x1": 96,
+                  "y1": 334,
+                  "x2": 233,
+                  "y2": 355
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "TERMOSTATY",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_20",
+                  "line_height": 22
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_obj",
+            "x": 260,
+            "y": 160,
+            "w": 240,
+            "h": 140,
+            "abs": {
+              "x1": 295,
+              "y1": 275,
+              "x2": 534,
+              "y2": 414
+            },
+            "flags": [
+              "clickable"
+            ],
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#606060",
+              "border_width": 1,
+              "border_color": "#d4af37",
+              "radius": 8,
+              "pad_top": 20,
+              "pad_bottom": 20,
+              "pad_left": 20,
+              "pad_right": 20,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 64,
+                "y": 38,
+                "w": 71,
+                "h": 22,
+                "abs": {
+                  "x1": 380,
+                  "y1": 334,
+                  "x2": 450,
+                  "y2": 355
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "GRAFY",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_20",
+                  "line_height": 22
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_obj",
+            "x": 510,
+            "y": 160,
+            "w": 240,
+            "h": 140,
+            "abs": {
+              "x1": 545,
+              "y1": 275,
+              "x2": 784,
+              "y2": 414
+            },
+            "flags": [
+              "clickable"
+            ],
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#3a3a3a",
+              "border_width": 1,
+              "border_color": "#d4af37",
+              "radius": 8,
+              "pad_top": 20,
+              "pad_bottom": 20,
+              "pad_left": 20,
+              "pad_right": 20,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 30,
+                "y": 38,
+                "w": 138,
+                "h": 22,
+                "abs": {
+                  "x1": 596,
+                  "y1": 334,
+                  "x2": 733,
+                  "y2": 355
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "SYSTEM INFO",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_20",
+                  "line_height": 22
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

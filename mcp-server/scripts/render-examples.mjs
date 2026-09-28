@@ -1166,7 +1166,6 @@ for (const s of SCENARIOS) {
   const img = r.content.find((c) => c.type === "image");
   save(`${s.name}.png`, Buffer.from(img.data, "base64"));
   await saveTree(`${s.name}.json`);
-  if (s.name === "02-dashboard") await saveTree("03-inspect.json", { include_styles: false });
   console.log(`  ${textOf(r).split("\n")[0]} (${Date.now() - t0} ms)`);
 }
 

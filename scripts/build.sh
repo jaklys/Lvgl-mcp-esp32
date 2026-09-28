@@ -93,6 +93,12 @@ if [ -f "$CACHE" ]; then
   fi
 fi
 
+# ── Reset the user code ──────────────────────────────────────────────
+# The MCP server writes the last rendered code into build/user_code.c. It may
+# not compile (or may crash the smoke test); configure regenerates the default
+# placeholder when the file is missing. The server rewrites it on every render.
+rm -f "$BUILD_DIR/user_code.c" "$BUILD_DIR/snippet.c"
+
 configure() {
   cmake -S "$SIM_DIR" -B "$BUILD_DIR" -G "$GENERATOR" \
     -DCMAKE_BUILD_TYPE=Release \

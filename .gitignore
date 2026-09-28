@@ -3,8 +3,13 @@ simulator/build/
 mcp-server/node_modules/
 mcp-server/dist/
 
-# npm postinstall downloads (simulator inside mcp-server/)
+# npm postinstall downloads (simulator inside mcp-server/) and its work dir
 mcp-server/simulator/
+mcp-server/.lvgl-download/
+
+# Copied from the repository root by mcp-server/scripts/prepack.mjs
+mcp-server/README.md
+mcp-server/LICENSE
 
 # Tools (downloaded by setup script)
 .tools/

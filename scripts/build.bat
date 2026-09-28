@@ -97,6 +97,13 @@ if exist "%BUILD_DIR%\CMakeCache.txt" (
     )
 )
 
+REM ---------- Reset the user code ----------
+REM The MCP server writes the last rendered code into build\user_code.c. It may
+REM not compile; configure regenerates the default placeholder when it is
+REM missing. The server rewrites it on every render.
+if exist "%BUILD_DIR%\user_code.c" del /f /q "%BUILD_DIR%\user_code.c"
+if exist "%BUILD_DIR%\snippet.c" del /f /q "%BUILD_DIR%\snippet.c"
+
 echo Configuring...
 "%CMAKE%" -S "%SIM_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_MAKE_PROGRAM="%NINJA%" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
 if errorlevel 1 (

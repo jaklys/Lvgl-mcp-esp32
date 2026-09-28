@@ -1,142 +1,179 @@
 {
-  "type": "obj",
-  "x": 0,
-  "y": 0,
-  "w": 480,
-  "h": 320,
-  "styles": {
-    "bg_color": "#f5f5f5",
-    "bg_opa": 255,
-    "text_color": "#212121",
-    "text_font_size": 16,
-    "border_width": 0,
-    "border_color": "#000000",
-    "radius": 0,
-    "pad_top": 0,
-    "pad_bottom": 0,
-    "pad_left": 0,
-    "pad_right": 0,
-    "pad_gap": 10,
-    "opa": 255
+  "format_version": 2,
+  "lvgl_version": "9.6.0",
+  "display": {
+    "width": 480,
+    "height": 320,
+    "rotation": 0,
+    "dpi": 130,
+    "color_format": "XRGB8888",
+    "theme": "light"
   },
-  "children": [
-    {
-      "type": "label",
-      "x": 168,
-      "y": 20,
-      "w": 144,
-      "h": 27,
-      "text": "LVGL Demo",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#212121",
-        "text_font_size": 27,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
+  "screen": {
+    "type": "lv_obj",
+    "x": 0,
+    "y": 0,
+    "w": 480,
+    "h": 320,
+    "abs": {
+      "x1": 0,
+      "y1": 0,
+      "x2": 479,
+      "y2": 319
     },
-    {
-      "type": "btn",
-      "x": 160,
-      "y": 105,
-      "w": 160,
-      "h": 50,
-      "styles": {
-        "bg_color": "#2196f3",
-        "bg_opa": 255,
-        "text_color": "#ffffff",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 10,
-        "pad_top": 10,
-        "pad_bottom": 10,
-        "pad_left": 16,
-        "pad_right": 16,
-        "pad_gap": 4,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "label",
-          "x": 32,
-          "y": 7,
-          "w": 64,
-          "h": 16,
-          "text": " Power",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#ffffff",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
+    "flags": [
+      "clickable",
+      "scrollable"
+    ],
+    "styles": {
+      "bg_opa": 255,
+      "bg_color": "#f5f5f5",
+      "pad_row": 10,
+      "pad_column": 10,
+      "text_color": "#212121",
+      "font": "montserrat_14",
+      "line_height": 16
+    },
+    "children": [
+      {
+        "type": "lv_label",
+        "x": 168,
+        "y": 20,
+        "w": 144,
+        "h": 27,
+        "abs": {
+          "x1": 168,
+          "y1": 20,
+          "x2": 311,
+          "y2": 46
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "LVGL Demo",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#212121",
+          "font": "montserrat_24",
+          "line_height": 27
         }
-      ]
-    },
-    {
-      "type": "slider",
-      "x": 140,
-      "y": 194,
-      "w": 200,
-      "h": 13,
-      "value": 70,
-      "min": 0,
-      "max": 100,
-      "styles": {
-        "bg_color": "#2196f3",
-        "bg_opa": 51,
-        "text_color": "#2196f3",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 32767,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
+      },
+      {
+        "type": "lv_button",
+        "x": 160,
+        "y": 105,
+        "w": 160,
+        "h": 50,
+        "abs": {
+          "x1": 160,
+          "y1": 105,
+          "x2": 319,
+          "y2": 154
+        },
+        "flags": [
+          "clickable"
+        ],
+        "styles": {
+          "bg_opa": 255,
+          "bg_color": "#2196f3",
+          "radius": 10,
+          "pad_top": 10,
+          "pad_bottom": 10,
+          "pad_left": 16,
+          "pad_right": 16,
+          "pad_row": 4,
+          "pad_column": 4,
+          "text_color": "#ffffff",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_label",
+            "x": 32,
+            "y": 7,
+            "w": 64,
+            "h": 16,
+            "abs": {
+              "x1": 208,
+              "y1": 122,
+              "x2": 271,
+              "y2": 137
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": " Power",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#ffffff",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          }
+        ]
+      },
+      {
+        "type": "lv_slider",
+        "x": 140,
+        "y": 194,
+        "w": 200,
+        "h": 13,
+        "abs": {
+          "x1": 140,
+          "y1": 194,
+          "x2": 339,
+          "y2": 206
+        },
+        "flags": [
+          "clickable"
+        ],
+        "value": 70,
+        "min": 0,
+        "max": 100,
+        "styles": {
+          "bg_opa": 51,
+          "bg_color": "#2196f3",
+          "radius": 32767,
+          "text_color": "#2196f3",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "indicator": {
+          "bg_opa": 255,
+          "bg_color": "#2196f3"
+        },
+        "knob": {
+          "bg_opa": 255,
+          "bg_color": "#2196f3"
+        }
+      },
+      {
+        "type": "lv_label",
+        "x": 182,
+        "y": 222,
+        "w": 116,
+        "h": 16,
+        "abs": {
+          "x1": 182,
+          "y1": 222,
+          "x2": 297,
+          "y2": 237
+        },
+        "flags": [
+          "scrollable"
+        ],
+        "text": "Brightness: 70%",
+        "long_mode": "wrap",
+        "styles": {
+          "bg_opa": 0,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        }
       }
-    },
-    {
-      "type": "label",
-      "x": 182,
-      "y": 222,
-      "w": 116,
-      "h": 16,
-      "text": "Brightness: 70%",
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#000000",
-        "radius": 0,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 0,
-        "opa": 255
-      }
-    }
-  ]
+    ]
+  }
 }

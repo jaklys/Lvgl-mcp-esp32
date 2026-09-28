@@ -1,540 +1,715 @@
 {
-  "type": "obj",
-  "x": 0,
-  "y": 0,
-  "w": 480,
-  "h": 320,
-  "styles": {
-    "bg_color": "#1a1a2e",
-    "bg_opa": 255,
-    "text_color": "#212121",
-    "text_font_size": 16,
-    "border_width": 0,
-    "border_color": "#000000",
-    "radius": 0,
-    "pad_top": 20,
-    "pad_bottom": 20,
-    "pad_left": 20,
-    "pad_right": 20,
-    "pad_gap": 15,
-    "opa": 255
+  "format_version": 2,
+  "lvgl_version": "9.6.0",
+  "display": {
+    "width": 800,
+    "height": 480,
+    "rotation": 0,
+    "dpi": 130,
+    "color_format": "XRGB8888",
+    "theme": "light"
   },
-  "children": [
-    {
-      "type": "obj",
-      "x": 0,
-      "y": 0,
-      "w": 440,
-      "h": 50,
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#e0e0e0",
-        "radius": 7,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 10,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "label",
-          "x": 0,
-          "y": 14,
-          "w": 276,
-          "h": 22,
-          "text": " Smart Home Dashboard",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#ffffff",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        },
-        {
-          "type": "label",
-          "x": 391,
-          "y": 14,
-          "w": 49,
-          "h": 22,
-          "text": "14:32",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#888888",
-            "text_font_size": 22,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
-          }
-        }
-      ]
+  "screen": {
+    "type": "lv_obj",
+    "x": 0,
+    "y": 0,
+    "w": 800,
+    "h": 480,
+    "abs": {
+      "x1": 0,
+      "y1": 0,
+      "x2": 799,
+      "y2": 479
     },
-    {
-      "type": "obj",
-      "x": 0,
-      "y": 65,
-      "w": 440,
-      "h": 140,
-      "styles": {
-        "bg_color": "#ffffff",
-        "bg_opa": 0,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 0,
-        "border_color": "#e0e0e0",
-        "radius": 7,
-        "pad_top": 0,
-        "pad_bottom": 0,
-        "pad_left": 0,
-        "pad_right": 0,
-        "pad_gap": 10,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "obj",
-          "x": 0,
-          "y": 10,
-          "w": 180,
-          "h": 120,
-          "styles": {
-            "bg_color": "#e74c3c",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 2,
-            "border_color": "#e0e0e0",
-            "radius": 12,
-            "pad_top": 15,
-            "pad_bottom": 15,
-            "pad_left": 15,
-            "pad_right": 15,
-            "pad_gap": 10,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 0,
-              "y": 0,
-              "w": 109,
-              "h": 16,
-              "text": " Temperature",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 16,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            },
-            {
-              "type": "label",
-              "x": 0,
-              "y": 59,
-              "w": 70,
-              "h": 27,
-              "text": "23.5 C",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 27,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
-        },
-        {
-          "type": "obj",
-          "x": 87,
-          "y": 10,
-          "w": 180,
-          "h": 120,
-          "styles": {
-            "bg_color": "#3498db",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 2,
-            "border_color": "#e0e0e0",
-            "radius": 12,
-            "pad_top": 15,
-            "pad_bottom": 15,
-            "pad_left": 15,
-            "pad_right": 15,
-            "pad_gap": 10,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 0,
-              "y": 0,
-              "w": 59,
-              "h": 16,
-              "text": " Power",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 16,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            },
-            {
-              "type": "label",
-              "x": 0,
-              "y": 59,
-              "w": 77,
-              "h": 27,
-              "text": "1.2 kW",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 27,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
-        },
-        {
-          "type": "obj",
-          "x": 174,
-          "y": 10,
-          "w": 180,
-          "h": 120,
-          "styles": {
-            "bg_color": "#2ecc71",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 2,
-            "border_color": "#e0e0e0",
-            "radius": 12,
-            "pad_top": 15,
-            "pad_bottom": 15,
-            "pad_left": 15,
-            "pad_right": 15,
-            "pad_gap": 10,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 0,
-              "y": 0,
-              "w": 84,
-              "h": 16,
-              "text": " Network",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 16,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            },
-            {
-              "type": "label",
-              "x": 0,
-              "y": 59,
-              "w": 81,
-              "h": 27,
-              "text": "Online",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 27,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
-        },
-        {
-          "type": "obj",
-          "x": 261,
-          "y": 10,
-          "w": 180,
-          "h": 120,
-          "styles": {
-            "bg_color": "#f39c12",
-            "bg_opa": 255,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 2,
-            "border_color": "#e0e0e0",
-            "radius": 12,
-            "pad_top": 15,
-            "pad_bottom": 15,
-            "pad_left": 15,
-            "pad_right": 15,
-            "pad_gap": 10,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 0,
-              "y": 0,
-              "w": 58,
-              "h": 16,
-              "text": " Alerts",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 16,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            },
-            {
-              "type": "label",
-              "x": 0,
-              "y": 59,
-              "w": 72,
-              "h": 27,
-              "text": "3 new",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 27,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
-            }
-          ]
-        }
-      ]
+    "flags": [
+      "clickable",
+      "scrollable"
+    ],
+    "layout": {
+      "type": "flex",
+      "flow": "column",
+      "main": "start",
+      "cross": "start",
+      "track": "start"
     },
-    {
-      "type": "obj",
-      "x": 0,
-      "y": 220,
-      "w": 440,
-      "h": 135,
-      "styles": {
-        "bg_color": "#16213e",
-        "bg_opa": 255,
-        "text_color": "#212121",
-        "text_font_size": 16,
-        "border_width": 2,
-        "border_color": "#e0e0e0",
-        "radius": 12,
-        "pad_top": 20,
-        "pad_bottom": 20,
-        "pad_left": 20,
-        "pad_right": 20,
-        "pad_gap": 15,
-        "opa": 255
-      },
-      "children": [
-        {
-          "type": "obj",
-          "x": 0,
-          "y": 0,
-          "w": 396,
-          "h": 30,
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#212121",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#e0e0e0",
-            "radius": 7,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 10,
-            "opa": 255
-          },
-          "children": [
-            {
-              "type": "label",
-              "x": 0,
-              "y": 7,
-              "w": 160,
-              "h": 16,
-              "text": " Living Room Lights",
-              "styles": {
-                "bg_color": "#ffffff",
-                "bg_opa": 0,
-                "text_color": "#ffffff",
-                "text_font_size": 16,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 0,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
+    "styles": {
+      "bg_opa": 255,
+      "bg_color": "#1a1a2e",
+      "pad_top": 20,
+      "pad_bottom": 20,
+      "pad_left": 20,
+      "pad_right": 20,
+      "pad_row": 15,
+      "pad_column": 15,
+      "text_color": "#212121",
+      "font": "montserrat_14",
+      "line_height": 16
+    },
+    "children": [
+      {
+        "type": "lv_obj",
+        "x": 0,
+        "y": 0,
+        "w": 760,
+        "h": 50,
+        "abs": {
+          "x1": 20,
+          "y1": 20,
+          "x2": 779,
+          "y2": 69
+        },
+        "flags": [
+          "clickable",
+          "scrollable"
+        ],
+        "styles": {
+          "bg_opa": 0,
+          "radius": 10,
+          "pad_row": 11,
+          "pad_column": 11,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_label",
+            "x": 0,
+            "y": 14,
+            "w": 276,
+            "h": 22,
+            "abs": {
+              "x1": 20,
+              "y1": 34,
+              "x2": 295,
+              "y2": 55
             },
-            {
-              "type": "switch",
-              "x": 344,
-              "y": 0,
-              "w": 52,
-              "h": 30,
-              "checked": true,
-              "styles": {
-                "bg_color": "#e0e0e0",
-                "bg_opa": 255,
-                "text_color": "#212121",
-                "text_font_size": 16,
-                "border_width": 0,
-                "border_color": "#000000",
-                "radius": 32767,
-                "pad_top": 0,
-                "pad_bottom": 0,
-                "pad_left": 0,
-                "pad_right": 0,
-                "pad_gap": 0,
-                "opa": 255
-              }
+            "flags": [
+              "scrollable"
+            ],
+            "text": " Smart Home Dashboard",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#ffffff",
+              "font": "montserrat_20",
+              "line_height": 22
             }
-          ]
-        },
-        {
-          "type": "label",
-          "x": 0,
-          "y": 45,
-          "w": 181,
-          "h": 16,
-          "text": "Energy usage today: 67%",
-          "styles": {
-            "bg_color": "#ffffff",
-            "bg_opa": 0,
-            "text_color": "#aaaaaa",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 0,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
+          },
+          {
+            "type": "lv_label",
+            "x": 711,
+            "y": 14,
+            "w": 49,
+            "h": 22,
+            "abs": {
+              "x1": 731,
+              "y1": 34,
+              "x2": 779,
+              "y2": 55
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "14:32",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#888888",
+              "font": "montserrat_20",
+              "line_height": 22
+            }
           }
+        ]
+      },
+      {
+        "type": "lv_obj",
+        "x": 0,
+        "y": 65,
+        "w": 760,
+        "h": 140,
+        "abs": {
+          "x1": 20,
+          "y1": 85,
+          "x2": 779,
+          "y2": 224
         },
-        {
-          "type": "bar",
-          "x": 0,
-          "y": 76,
-          "w": 396,
-          "h": 15,
-          "value": 67,
-          "min": 0,
-          "max": 100,
-          "styles": {
-            "bg_color": "#0a3d62",
-            "bg_opa": 51,
-            "text_color": "#2196f3",
-            "text_font_size": 16,
-            "border_width": 0,
-            "border_color": "#000000",
-            "radius": 5,
-            "pad_top": 0,
-            "pad_bottom": 0,
-            "pad_left": 0,
-            "pad_right": 0,
-            "pad_gap": 0,
-            "opa": 255
+        "flags": [
+          "clickable",
+          "scrollable"
+        ],
+        "layout": {
+          "type": "flex",
+          "flow": "row",
+          "main": "space_between",
+          "cross": "center",
+          "track": "center"
+        },
+        "styles": {
+          "bg_opa": 0,
+          "radius": 10,
+          "pad_row": 11,
+          "pad_column": 11,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_obj",
+            "x": 0,
+            "y": 10,
+            "w": 180,
+            "h": 120,
+            "abs": {
+              "x1": 20,
+              "y1": 95,
+              "x2": 199,
+              "y2": 214
+            },
+            "flags": [
+              "clickable",
+              "scrollable"
+            ],
+            "layout": {
+              "type": "flex",
+              "flow": "column",
+              "main": "space_between",
+              "cross": "start",
+              "track": "start"
+            },
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#e74c3c",
+              "border_width": 2,
+              "border_color": "#e0e0e0",
+              "radius": 12,
+              "pad_top": 15,
+              "pad_bottom": 15,
+              "pad_left": 15,
+              "pad_right": 15,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 0,
+                "w": 109,
+                "h": 16,
+                "abs": {
+                  "x1": 37,
+                  "y1": 112,
+                  "x2": 145,
+                  "y2": 127
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": " Temperature",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_14",
+                  "line_height": 16
+                }
+              },
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 59,
+                "w": 70,
+                "h": 27,
+                "abs": {
+                  "x1": 37,
+                  "y1": 171,
+                  "x2": 106,
+                  "y2": 197
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "23.5 C",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_24",
+                  "line_height": 27
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_obj",
+            "x": 193,
+            "y": 10,
+            "w": 180,
+            "h": 120,
+            "abs": {
+              "x1": 213,
+              "y1": 95,
+              "x2": 392,
+              "y2": 214
+            },
+            "flags": [
+              "clickable",
+              "scrollable"
+            ],
+            "layout": {
+              "type": "flex",
+              "flow": "column",
+              "main": "space_between",
+              "cross": "start",
+              "track": "start"
+            },
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#3498db",
+              "border_width": 2,
+              "border_color": "#e0e0e0",
+              "radius": 12,
+              "pad_top": 15,
+              "pad_bottom": 15,
+              "pad_left": 15,
+              "pad_right": 15,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 0,
+                "w": 59,
+                "h": 16,
+                "abs": {
+                  "x1": 230,
+                  "y1": 112,
+                  "x2": 288,
+                  "y2": 127
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": " Power",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_14",
+                  "line_height": 16
+                }
+              },
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 59,
+                "w": 77,
+                "h": 27,
+                "abs": {
+                  "x1": 230,
+                  "y1": 171,
+                  "x2": 306,
+                  "y2": 197
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "1.2 kW",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_24",
+                  "line_height": 27
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_obj",
+            "x": 386,
+            "y": 10,
+            "w": 180,
+            "h": 120,
+            "abs": {
+              "x1": 406,
+              "y1": 95,
+              "x2": 585,
+              "y2": 214
+            },
+            "flags": [
+              "clickable",
+              "scrollable"
+            ],
+            "layout": {
+              "type": "flex",
+              "flow": "column",
+              "main": "space_between",
+              "cross": "start",
+              "track": "start"
+            },
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#2ecc71",
+              "border_width": 2,
+              "border_color": "#e0e0e0",
+              "radius": 12,
+              "pad_top": 15,
+              "pad_bottom": 15,
+              "pad_left": 15,
+              "pad_right": 15,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 0,
+                "w": 84,
+                "h": 16,
+                "abs": {
+                  "x1": 423,
+                  "y1": 112,
+                  "x2": 506,
+                  "y2": 127
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": " Network",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_14",
+                  "line_height": 16
+                }
+              },
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 59,
+                "w": 81,
+                "h": 27,
+                "abs": {
+                  "x1": 423,
+                  "y1": 171,
+                  "x2": 503,
+                  "y2": 197
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "Online",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_24",
+                  "line_height": 27
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_obj",
+            "x": 579,
+            "y": 10,
+            "w": 180,
+            "h": 120,
+            "abs": {
+              "x1": 599,
+              "y1": 95,
+              "x2": 778,
+              "y2": 214
+            },
+            "flags": [
+              "clickable",
+              "scrollable"
+            ],
+            "layout": {
+              "type": "flex",
+              "flow": "column",
+              "main": "space_between",
+              "cross": "start",
+              "track": "start"
+            },
+            "styles": {
+              "bg_opa": 255,
+              "bg_color": "#f39c12",
+              "border_width": 2,
+              "border_color": "#e0e0e0",
+              "radius": 12,
+              "pad_top": 15,
+              "pad_bottom": 15,
+              "pad_left": 15,
+              "pad_right": 15,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 0,
+                "w": 58,
+                "h": 16,
+                "abs": {
+                  "x1": 616,
+                  "y1": 112,
+                  "x2": 673,
+                  "y2": 127
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": " Alerts",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_14",
+                  "line_height": 16
+                }
+              },
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 59,
+                "w": 72,
+                "h": 27,
+                "abs": {
+                  "x1": 616,
+                  "y1": 171,
+                  "x2": 687,
+                  "y2": 197
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": "3 new",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_24",
+                  "line_height": 27
+                }
+              }
+            ]
           }
-        }
-      ]
-    }
-  ]
+        ]
+      },
+      {
+        "type": "lv_obj",
+        "x": 0,
+        "y": 220,
+        "w": 760,
+        "h": 135,
+        "abs": {
+          "x1": 20,
+          "y1": 240,
+          "x2": 779,
+          "y2": 374
+        },
+        "flags": [
+          "clickable",
+          "scrollable"
+        ],
+        "layout": {
+          "type": "flex",
+          "flow": "column",
+          "main": "start",
+          "cross": "start",
+          "track": "start"
+        },
+        "styles": {
+          "bg_opa": 255,
+          "bg_color": "#16213e",
+          "border_width": 2,
+          "border_color": "#e0e0e0",
+          "radius": 12,
+          "pad_top": 20,
+          "pad_bottom": 20,
+          "pad_left": 20,
+          "pad_right": 20,
+          "pad_row": 15,
+          "pad_column": 15,
+          "text_color": "#212121",
+          "font": "montserrat_14",
+          "line_height": 16
+        },
+        "children": [
+          {
+            "type": "lv_obj",
+            "x": 0,
+            "y": 0,
+            "w": 716,
+            "h": 30,
+            "abs": {
+              "x1": 42,
+              "y1": 262,
+              "x2": 757,
+              "y2": 291
+            },
+            "flags": [
+              "clickable",
+              "scrollable"
+            ],
+            "layout": {
+              "type": "flex",
+              "flow": "row",
+              "main": "space_between",
+              "cross": "center",
+              "track": "center"
+            },
+            "styles": {
+              "bg_opa": 0,
+              "radius": 10,
+              "pad_row": 11,
+              "pad_column": 11,
+              "text_color": "#212121",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "children": [
+              {
+                "type": "lv_label",
+                "x": 0,
+                "y": 7,
+                "w": 160,
+                "h": 16,
+                "abs": {
+                  "x1": 42,
+                  "y1": 269,
+                  "x2": 201,
+                  "y2": 284
+                },
+                "flags": [
+                  "scrollable"
+                ],
+                "text": " Living Room Lights",
+                "long_mode": "wrap",
+                "styles": {
+                  "bg_opa": 0,
+                  "text_color": "#ffffff",
+                  "font": "montserrat_14",
+                  "line_height": 16
+                }
+              },
+              {
+                "type": "lv_switch",
+                "x": 664,
+                "y": 0,
+                "w": 52,
+                "h": 30,
+                "abs": {
+                  "x1": 706,
+                  "y1": 262,
+                  "x2": 757,
+                  "y2": 291
+                },
+                "states": [
+                  "checked"
+                ],
+                "flags": [
+                  "clickable",
+                  "checkable"
+                ],
+                "checked": true,
+                "styles": {
+                  "bg_opa": 255,
+                  "bg_color": "#e0e0e0",
+                  "radius": 32767,
+                  "text_color": "#212121",
+                  "font": "montserrat_14",
+                  "line_height": 16
+                },
+                "indicator": {
+                  "bg_opa": 255,
+                  "bg_color": "#2196f3"
+                },
+                "knob": {
+                  "bg_opa": 255,
+                  "bg_color": "#ffffff"
+                }
+              }
+            ]
+          },
+          {
+            "type": "lv_label",
+            "x": 0,
+            "y": 45,
+            "w": 181,
+            "h": 16,
+            "abs": {
+              "x1": 42,
+              "y1": 307,
+              "x2": 222,
+              "y2": 322
+            },
+            "flags": [
+              "scrollable"
+            ],
+            "text": "Energy usage today: 67%",
+            "long_mode": "wrap",
+            "styles": {
+              "bg_opa": 0,
+              "text_color": "#aaaaaa",
+              "font": "montserrat_14",
+              "line_height": 16
+            }
+          },
+          {
+            "type": "lv_bar",
+            "x": 0,
+            "y": 76,
+            "w": 716,
+            "h": 15,
+            "abs": {
+              "x1": 42,
+              "y1": 338,
+              "x2": 757,
+              "y2": 352
+            },
+            "flags": [
+              "clickable"
+            ],
+            "value": 67,
+            "min": 0,
+            "max": 100,
+            "styles": {
+              "bg_opa": 51,
+              "bg_color": "#0a3d62",
+              "radius": 5,
+              "text_color": "#2196f3",
+              "font": "montserrat_14",
+              "line_height": 16
+            },
+            "indicator": {
+              "bg_opa": 255,
+              "bg_color": "#4caf50"
+            }
+          }
+        ]
+      }
+    ]
+  }
 }

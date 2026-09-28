@@ -44,10 +44,11 @@ install and release pipeline.
   `pad_column`. Trivial style values are omitted.
 - **`lvgl_check` tool:** compiles a snippet or full file without running it and
   returns structured diagnostics.
-- **Render parameters** `time_ms`, `settle`, `rotation`, `theme` and
-  `include_tree` (`summary` default, `full`, `none`) on `lvgl_render` and
-  `lvgl_render_full`; `lvgl_inspect` gained `type`, `name`, `max_depth` and
-  `include_styles` filters.
+- **Render parameters** `time_ms`, `settle`, `rotation`, `theme`, `dpi`,
+  `assets_dir` and `include_tree` (`summary` default, `full`, `none`) on
+  `lvgl_render` and `lvgl_render_full`; `lvgl_inspect` gained `type`, `name`,
+  `max_depth` and `include_styles` filters and `full` (treat `code` as a
+  complete C file).
 - **Structured diagnostics:** compiler warnings and errors as
   `file:line:col severity message`, with paths shortened to `snippet.c` /
   `user_code.c` and snippet line numbers matching your code (`#line`
@@ -60,8 +61,11 @@ install and release pipeline.
   and barcode widgets, and a stdio filesystem driver on drive letter `S:`
   rooted at `--assets-dir`.
 - Snapshot, gridnav, fragment and imgfont support enabled in `lv_conf.h`.
-- `LVGL_SIM_PATH` environment variable: path to a simulator directory, overrides
-  auto-detection.
+- Environment variables: `LVGL_SIM_PATH` (path to a simulator directory,
+  overrides auto-detection), `LVGL_BUILD_DIR` (CMake build directory),
+  `LVGL_ASSETS_DIR` (default for `assets_dir`), `LVGL_CMAKE_GENERATOR`
+  (POSIX), `LVGL_COMPILE_TIMEOUT_MS` (default 180 s) and
+  `LVGL_RUN_TIMEOUT_MS` (default 15 s). `LVGL_PROJECT_ROOT` still works.
 - `lvgl://project-config` resource documented; `lvgl://api-reference` updated to
   9.6 with deprecation notes, a v8 to v9 rename table and simulator constraints.
 - MCP tools registered with titles, annotations (`readOnlyHint`), output schemas
@@ -83,14 +87,17 @@ install and release pipeline.
   trees.
 - **Czech and other UTF-8 text on MSVC:** sources are compiled with `/utf-8`,
   so string literals render correctly on Windows.
+- The compile timeout is 180 s for configure + build together (previously
+  60 s per step), so the first full build of LVGL has room to finish.
 - User code is compiled with stricter warnings
   (`-Werror=implicit-function-declaration`, `int-conversion`,
   `incompatible-pointer-types`; MSVC `/we4013 /we4047 /we4020`), catching the
   mistakes that crash on the device.
 - The simulator is built in Release mode by default; the project is now
   `C CXX` (LVGL 9.6 needs a C++ compiler).
-- **Security:** the simulator and the build tools run with an allow-listed
-  environment instead of inheriting every variable of the MCP client.
+- **Security:** the simulator binary (your code) runs with an allow-listed
+  environment instead of inheriting every variable of the MCP client (the
+  build tools still inherit the server's environment).
 - **postinstall hardening:** downloads the release that exactly matches the
   package version from a direct URL (no GitHub API, no rate limit, no fallback
   to "latest"), verifies it against `SHA256SUMS.txt`, honors
@@ -114,7 +121,9 @@ install and release pipeline.
   `vswhere` (any edition, including VS 2026), CMake/Ninja from PATH before
   ESP-IDF, exit codes checked after every native command, C and C++ compiler
   and CMake >= 3.16 checks, stale CMake caches from moved checkouts are
-  discarded, Release builds, and the smoke test fails the setup on error.
+  discarded, Release builds, the last rendered code in `build/user_code.c` is
+  reset to the default placeholder (a broken snippet no longer breaks the
+  build), and the smoke test fails the setup on error.
 
 ### Removed
 
