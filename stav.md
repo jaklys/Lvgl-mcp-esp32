@@ -1,20 +1,21 @@
 # Stav hry
 
 - Jednání: 2
-- Noc: 1/5 (svítá, den 2)
+- Noc: 2/5 (den 2, poledne)
 
 ## Postavy
 
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
 | Žabák | 16/18 | derringer, 0 ran (nabít!) | 12,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, podvazek s derringerem Madam Dolores (ukradený, 1 rána) | „Kopr“ (Abner, Morty); Abner ho chce zabít |
-| Flame | 22/26 | Colt 5 + 12 nábojů, puška | 13 | Abnerův nůž ve stehně (vytáhnout!) | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
+| Flame | 22/26 | Colt 5 + 12 nábojů, puška | 12,5 | Abnerův nůž ve stehně (vytáhnout!) | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
 | Lucine | 7/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (přešito rybářským háčkem), popálené dlaně, psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
-| Iveta | 8/20 | lovecká puška, 7 nábojů | 10,5 | KOUSNUTÍ DO KRKU (zaškrceno, ztráta krve, slabost, bledá), vyrvaný chomáč vlasů, naražená kostrč | nová noha nasazená (Robertus ji dokonale přiřízl, sedí líp než kdy dřív); zlomená stará, PRSTEN S OKEM = je označená!, cár bílého čepce s vyšitým „R. T.“ a okem s kapkou krve | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
+| Iveta | 8/20 | lovecká puška, 7 nábojů | 10,5 | KOUSNUTÍ DO KRKU (okraje rány černají! Žabákova tinktura to zpomalila; ztráta krve, slabost, bledá), vyrvaný chomáč vlasů, naražená kostrč | nová noha nasazená (Robertus ji dokonale přiřízl, sedí líp než kdy dřív); zlomená stará, PRSTEN S OKEM = je označená!, cár bílého čepce s vyšitým „R. T.“ a okem s kapkou krve | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
 | Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“; protisektářská půlka města ho má za vůdce |
 
 ## Odhalená tajemství
 
+- Dolores: Mexičani tomu říkají chupacabra. Doña Inés (kaňon Suché kosti) prý ví, co to je; gringy nesnáší.
 - Dolores: „R. T.“ = Rachel Thorne, první žena proroka. Loni v zimě prý „umřela na horečku“; Thorne nedovolil Mortymu ji pohřbít, rakev odvezl do Siónu.
 - Tvor se bojí ohně (hráči viděli dvakrát).
 - Tvor vypadá jako vyzáblá žena s dlouhými zuby, v roztrhaných šatech Svatých; na hlavě měla čepec s iniciálami „R. T.“ a znakem oka → DŮKAZ, ŽE TVOR SOUVISÍ SE SEKTOU (konec 1. jednání).
@@ -64,6 +65,8 @@
 - Svítá (konec noci 1). Dolores ví, kdo je „R. T.“, chce za to 10 $ a ví, že jí Žabák ukradl desetidolarovku (o podvazku zatím nemluvila).
 - Kolo 15: Žabák vrátil 10 $, Dolores mu za „mast“ zaplatila 5 $ (Pepř tvrdí, že ji přestalo svědět). Dolores prozradila Rachel Thorne. Hannah chodí k Dolores pro laudanum, přijde dnes v poledne.
 - KONEC 1. JEDNÁNÍ.
+- Kolo 16 (2. jednání): Žabák nalil Ivetě tinkturu do rány – rána syčí, okraje černají, ale šíření se zpomalilo. Flame si koupil doutník od Dolores (0,5 $), zvrací. Dolores řekla o chupacabře a Doně Inés.
+- Poledne: zadními dveřmi přišla sestra Hannah, uviděla hráče a chce utéct.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
