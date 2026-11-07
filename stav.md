@@ -7,11 +7,11 @@
 
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
-| Žabák | 16/18 | derringer, 2 rány | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, ruka od hovna | „Kopr“ (Abner, Morty); Abner ho chce zabít |
+| Žabák | 16/18 | derringer, 0 ran (nabít!) | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, ruka od hovna | „Kopr“ (Abner, Morty); Abner ho chce zabít |
 | Flame | 22/26 | Colt 5 + 12 nábojů, puška | 13 | Abnerův nůž ve stehně (vytáhnout!) | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
 | Lucine | 10/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (krvácí), psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
 | Iveta | 17/20 | lovecká puška, 7 nábojů | 10,5 | vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená! | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
-| Robertus | 22/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | – | lahev pálenky | „Mlíčňák“ (saloon) |
+| Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“ (saloon) |
 
 ## Odhalená tajemství
 
@@ -48,6 +48,8 @@
 - Kolo 9: PŘESTŘELKA. Flame střelil Abnera do břicha (Abner žije, Danité ho odvlekli). Lucine zpívala, Žabák se za ni schoval → Lucine dostala kulku do ramene. Robertus hodil nůž – uřízl Thorneovi půl plnovousu a přišpendlil ho k trámu. Iveta prostřelila lampu, saloon hoří, kulka zabila Danitu. Big Sal rozstřílel dalšího Danitu. Thorne s Danity ustoupil. Venku tvor zavyl a při pohledu na oheň utekl (hráči viděli jen stín, který se lekl plamenů).
 - Big Sal chce po Lucine 60 $ za pianistu a po všech škodu za oheň.
 - Danité: zbývá 6 (Abner těžce raněn do břicha).
+- Kolo 10: Flame mířil na Big Sala („dva dolary za kulku“), Žabák na Sala vypálil oba náboje z derringeru: první rozbil police s chlastem (oheň vybuchl), druhý trefil Sala do ruky → brokovnice vystřelila do stropu, hořící trám přimáčkl Sala k zemi. Sal žije, hoří a volá o pomoc.
+- Před saloonem se srocuje dav: „Cizáci zapálili Vyschlou Prdel!“ Hrozí lynč.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
