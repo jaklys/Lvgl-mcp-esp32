@@ -7,10 +7,10 @@
 
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
-| Žabák | 16/18 | derringer, 0 ran (nabít!) | 12,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, podvazek s derringerem Madam Dolores (ukradený, 1 rána) | „Kopr“ (Abner, Morty); Abner ho chce zabít |
-| Flame | 22/26 | Colt 5 + 12 nábojů, puška | 12,5 | bodná rána ve stehně (kulhá) | fotka koně SHOŘELA se saloonem (zůstala přibitá na baru); Abnerův nůž | „Rabín“ (Thorne, celé město); prohlásil se za žida |
+| Žabák | 15/18 | derringer, 0 ran (nabít!) | 12,5 | zlomený malíček levé ruky (Robertus ho napravil), tříska v půlce | kufřík s „elixíry“, podvazek s derringerem Madam Dolores (ukradený, 1 rána), Hannin růženec | „Kopr“ (Abner, Morty); Abner ho chce zabít |
+| Flame | 22/26 | Colt 4 + 12 nábojů, puška | 12,5 | bodná rána ve stehně (kulhá) | fotka koně SHOŘELA se saloonem (zůstala přibitá na baru); Abnerův nůž | „Rabín“ (Thorne, celé město); prohlásil se za žida |
 | Lucine | 6/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (přešito rybářským háčkem), popálené dlaně, psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
-| Iveta | 8/20 | lovecká puška, 7 nábojů | 10,5 | KOUSNUTÍ DO KRKU (okraje rány černají! Žabákova tinktura to zpomalila; ztráta krve, slabost, bledá), vyrvaný chomáč vlasů, naražená kostrč | nová noha nasazená (Robertus ji dokonale přiřízl, sedí líp než kdy dřív); zlomená stará, PRSTEN S OKEM = je označená!, cár bílého čepce s vyšitým „R. T.“ a okem s kapkou krve | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
+| Iveta | 8/20 | lovecká puška, 7 nábojů | 10,5 | KOUSNUTÍ DO KRKU (okraje rány černají! Žabákova tinktura to zpomalila; ztráta krve, slabost, bledá), vyrvaný chomáč vlasů, naražená kostrč | OBĚ dřevěné nohy zničené (Flame ustřelil novou) – skáče o jedné, potřebuje berli/novou nohu, PRSTEN S OKEM = je označená!, cár bílého čepce s vyšitým „R. T.“ a okem s kapkou krve | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
 | Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“; protisektářská půlka města ho má za vůdce |
 
 ## Odhalená tajemství
@@ -72,6 +72,7 @@
 - Poledne: zadními dveřmi přišla sestra Hannah, uviděla hráče a chce utéct.
 - Kolo 17: Lucine chytila Hannah popálenýma rukama (Hannah vyděšená, důvěru zatím NEMAJÍ). Iveta zablokovala dveře nohou – noha se zasekla ve dveřích. Robertus burcuje dav: protisektářská půlka (cca 20 opilců) chce dnes večer táhnout na Sión. Flame z okna vidí Danitu, který hlídá nevěstinec.
 - Kolo 18: Hráči tvrdě vyslýchali Hannah (Lucine jí omylem říká Rachel). Řekla část pravdy, část zalhala. Danita venku slyšel křik a odcválal do Siónu. Hannah prosí, ať ji vezmou s sebou, jinak ji zabijí.
+- Kolo 19: Hannah jde s hráči (drží se Lucine, Žabákova mlsného pohledu se štítí). Flame ustřelil Ivetě zaseknutou nohu – noha na třísky, jedna se zabodla Žabákovi do zadku. Robertus si myslí, že dav ovládá; dav ve skutečnosti chlastá a v soumrak potáhne na Sión, ať chce nebo ne. Dolores je vyhazuje, Danité dorazí do hodiny.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
