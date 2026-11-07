@@ -1,0 +1,480 @@
+<title>Kat z Mrtvé Muly</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Courier+Prime:wght@400;700&family=Patrick+Hand&family=Rye&display=swap">
+<style>
+/* Layout: komiksový sešit z laciného papíru na tmavé kůži; panely ve dvou sloupcích, široké přes celou šíři */
+:root{
+  --leather:#21170f;
+  --leather-2:#2e2117;
+  --paper:#efe1c0;
+  --ink:#1b1410;
+  --blood:#b3201c;
+  --mustard:#f0cf6a;
+  --bone:#fffaf0;
+  --dust:#c9b48e;
+  --f-title:'Rye', Georgia, 'Times New Roman', serif;
+  --f-sfx:'Bangers', Impact, 'Arial Black', sans-serif;
+  --f-talk:'Patrick Hand', 'Comic Sans MS', 'Trebuchet MS', sans-serif;
+  --f-cap:'Courier Prime', 'Courier New', monospace;
+  color-scheme:dark;
+}
+body{
+  background:var(--leather);
+  background-image:radial-gradient(ellipse at 50% 0%, var(--leather-2), var(--leather) 70%);
+  color:var(--paper);
+  font-family:var(--f-cap);
+}
+.wrap{
+  max-width:1100px;margin:0 auto;
+  padding-block:28px 72px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  display:grid;gap:28px;
+}
+.cover{display:grid;gap:14px;text-align:center}
+.cover .kicker{font-family:var(--f-cap);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--dust)}
+.cover h1{
+  font-family:var(--f-title);font-weight:400;margin:0;
+  font-size:clamp(40px, 9vw, 96px);line-height:.95;color:var(--mustard);
+  text-shadow:4px 4px 0 var(--blood), 7px 7px 0 var(--ink);
+  text-wrap:balance;
+}
+.cover .tag{font-family:var(--f-talk);font-size:clamp(17px, 2.4vw, 22px);color:var(--paper);margin:0}
+.book{
+  display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:14px;
+  background:var(--paper);padding:16px;
+  box-shadow:0 0 0 1px #00000055, 0 18px 40px #00000088;
+}
+.panel{position:relative;margin:0;border:3px solid var(--ink);background:var(--bone);display:flex;flex-direction:column;min-width:0}
+.panel.wide{grid-column:1 / -1}
+.cap{
+  background:var(--mustard);color:var(--ink);
+  font-family:var(--f-cap);font-weight:700;font-size:clamp(12px, 1.45vw, 14.5px);line-height:1.3;
+  padding:6px 10px;border-bottom:3px solid var(--ink);
+}
+.cap.bottom{order:2;border-bottom:0;border-top:3px solid var(--ink)}
+.art{position:relative;container-type:inline-size;aspect-ratio:4 / 3;overflow:hidden;max-width:100%}
+.wide .art{aspect-ratio:8 / 3}
+.art svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.b{
+  position:absolute;z-index:2;
+  background:var(--bone);color:var(--ink);
+  border:2px solid var(--ink);border-radius:1.1em;
+  padding:.32em .62em;
+  font-family:var(--f-talk);font-size:clamp(11px, 4.3cqw, 20px);line-height:1.12;text-align:center;
+}
+.wide .b{font-size:clamp(11px, 2.25cqw, 20px)}
+.b.shout{font-family:var(--f-sfx);letter-spacing:.04em;border-width:3px;font-size:clamp(13px, 5.2cqw, 26px)}
+.wide .b.shout{font-size:clamp(13px, 2.8cqw, 26px)}
+.b::before,.b::after{content:"";position:absolute;border-style:solid;width:0;height:0}
+.b::before{bottom:-13px;left:18%;border-width:13px 9px 0 0;border-color:var(--ink) transparent transparent transparent}
+.b::after{bottom:-9px;left:calc(18% + 2px);border-width:9px 6px 0 0;border-color:var(--bone) transparent transparent transparent}
+.b.tr::before{left:auto;right:18%;border-width:13px 0 0 9px}
+.b.tr::after{left:auto;right:calc(18% + 2px);border-width:9px 0 0 6px}
+.b.none::before,.b.none::after{display:none}
+.sfx{
+  position:absolute;z-index:3;pointer-events:none;line-height:1;white-space:nowrap;
+  font-family:var(--f-sfx);color:var(--mustard);
+  -webkit-text-stroke:2px var(--ink);paint-order:stroke fill;
+  text-shadow:3px 3px 0 var(--blood);
+}
+.tag-name{
+  position:absolute;bottom:4%;transform:translateX(-50%);z-index:2;
+  background:var(--ink);color:var(--mustard);padding:.25em .55em;text-align:center;
+  font-family:var(--f-title);font-size:clamp(10px, 2cqw, 17px);line-height:1.1;white-space:nowrap;
+}
+.tag-name small{display:block;font-family:var(--f-cap);color:var(--paper);font-size:.72em;letter-spacing:.06em}
+.chapter{
+  grid-column:1 / -1;margin:10px 0 0;color:var(--ink);
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;
+  border-bottom:4px double var(--ink);padding-bottom:6px;
+}
+.chapter span{font-family:var(--f-cap);font-weight:700;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--blood)}
+.chapter b{font-family:var(--f-title);font-weight:400;font-size:clamp(22px, 3.4vw, 34px);line-height:1.05;text-wrap:balance}
+.chapter:first-child{margin-top:0}
+.news{background:#ece4cf;color:var(--ink);padding:16px 18px 18px;display:grid;gap:8px;flex:1;align-content:start}
+.news .mast{font-family:var(--f-title);font-size:clamp(24px, 3.6vw, 38px);text-align:center;border-bottom:3px double var(--ink);padding-bottom:4px;letter-spacing:.04em}
+.news .date{font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--ink);padding-bottom:4px}
+.news h3{font-family:var(--f-title);font-weight:400;font-size:clamp(20px, 3vw, 30px);line-height:1.05;margin:4px 0 0;text-align:center;text-wrap:balance}
+.news p{margin:0;font-size:13px;line-height:1.45;columns:2 160px;column-gap:16px}
+.end{text-align:center;display:grid;gap:10px;justify-items:center}
+.end .konec{font-family:var(--f-title);font-size:clamp(48px, 10vw, 110px);color:var(--blood);text-shadow:4px 4px 0 var(--ink);line-height:1}
+.end p{font-family:var(--f-talk);font-size:clamp(17px, 2.3vw, 21px);max-width:60ch;margin:0;color:var(--paper)}
+.end .rating{font-family:var(--f-cap);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dust)}
+@media (max-width:640px){
+  .book{grid-template-columns:minmax(0, 1fr);padding:8px;gap:10px}
+  .wide .art{aspect-ratio:2 / 1}
+  .wide .b{font-size:clamp(10px, 3.1cqw, 17px)}
+  .wide .b.shout{font-size:clamp(12px, 3.8cqw, 22px)}
+  .tag-name{font-size:clamp(8px, 2.6cqw, 14px)}
+}
+</style>
+
+<div class="wrap">
+  <header class="cover">
+    <div class="kicker">Arizona · 1872 · pět nocí · jen pro dospělé</div>
+    <h1>Kat z Mrtvé Muly</h1>
+    <p class="tag">Weird western o pěti hrdinech, kteří si to nezasloužili.</p>
+  </header>
+  <main class="book" id="book"></main>
+  <footer class="end">
+    <div class="konec">KONEC</div>
+    <p>Trapný a tragický konec. Zvítězili omylem, za cenu jednoho života, a slávu i stříbro shrábli jiní.</p>
+    <div class="rating">Rabín · Kopr · Krysa · Beznohá · Mlíčňák</div>
+  </footer>
+</div>
+
+<script>
+(function(){
+const C={ink:'#1b1410',bone:'#efe6d2',blood:'#b3201c',wood:'#8a5a32',crowd:'#6b4a33',gold:'#e8b93c',green:'#4f7a3f',skin:'#9b958a',mesq:'#a65a2a'};
+
+/* ---------- primitives ---------- */
+const G=(x,y,s,inner,o={})=>`<g transform="translate(${x} ${y}) rotate(${o.rot||0}) scale(${o.flip?-s:s} ${s})">${inner}</g>`;
+const P=(d,f=C.ink,x='')=>`<path d="${d}" fill="${f}" ${x}/>`;
+const Ci=(cx,cy,r,f=C.ink,x='')=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${f}" ${x}/>`;
+const E=(cx,cy,rx,ry,f=C.ink,x='')=>`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${f}" ${x}/>`;
+const L=(x1,y1,x2,y2,st=C.ink,w=3,x='')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${st}" stroke-width="${w}" stroke-linecap="round" ${x}/>`;
+const R=(x,y,w,h,f=C.ink,ex='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" ${ex}/>`;
+const T=(x,y,t,size=14,f=C.ink,fam="Bangers, Impact, sans-serif",ex='')=>`<text x="${x}" y="${y}" font-size="${size}" fill="${f}" font-family="${fam}" ${ex}>${t}</text>`;
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+
+/* ---------- body parts ---------- */
+const POSE={down:[[4,14],[6,28]],out:[[15,1],[30,1]],up:[[10,-13],[13,-28]],point:[[14,-3],[30,-9]],hip:[[11,10],[3,19]],reach:[[16,5],[34,9]],gun:[[15,0],[30,-1]]};
+function arm(x,y,pose,side,c,w=5.5){
+  const p=POSE[pose]||POSE.down;
+  const e=[x+side*p[0][0],y+p[0][1]],h=[x+side*p[1][0],y+p[1][1]];
+  let s=`<polyline points="${x},${y} ${e[0]},${e[1]} ${h[0]},${h[1]}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if(pose==='gun') s+=P(`M${h[0]},${h[1]-2} h${side*12} v3.5 h${-side*8} v5 h${-side*4}z`,c);
+  return s;
+}
+function hat(t,c){
+  switch(t){
+    case 'cowboy':return E(0,-93,15,3.2,c)+P('M-8,-93 Q-9,-107 0,-104 Q9,-107 8,-93Z',c);
+    case 'flat':return E(0,-93,17,2.6,c)+R(-8,-101,16,8,c);
+    case 'top':return E(0,-93,12,2.6,c)+R(-7,-114,14,21,c);
+    case 'sombrero':return E(0,-93,27,4.5,c)+P('M-9,-93 Q0,-121 9,-93Z',c);
+    default:return '';
+  }
+}
+function man(o={}){
+  const c=o.c||C.ink;let s='';
+  s+=L(-5,-44,-7,-3,c,7)+L(5,-44,7,-3,c,7);
+  if(!o.barefoot) s+=P('M-12,-4 h9 v4 h-10z',c)+P('M3,-4 h9 l1,4 h-10z',c);
+  else s+=E(-8,-1,5,2,'#c79a74')+E(8,-1,5,2,'#c79a74');
+  if(o.coat) s+=P('M-12,-76 L12,-76 L20,-14 L5,-16 L0,-42 L-5,-16 L-20,-14Z',c);
+  s+=P('M-11,-77 Q0,-80 11,-77 L9,-42 L-9,-42Z',c);
+  if(o.apron) s+=P('M-8,-66 L8,-66 L11,-28 L-11,-28Z',C.bone);
+  s+=arm(-10,-74,o.armL||'down',-1,c)+arm(10,-74,o.armR||'down',1,c);
+  s+=R(-3,-82,6,6,c)+Ci(0,-86,8,c);
+  if(o.eyes) s+=Ci(-3,-87,1.9,'#fff')+Ci(3,-87,1.9,'#fff')+Ci(-3,-87,.7,c)+Ci(3,-87,.7,c);
+  if(o.blink) s+=L(-5,-87,-1,-87,'#fff',1.3)+L(1,-87,5,-87,'#fff',1.3);
+  if(o.xeye) s+=L(-5,-89,-1,-85,C.blood,1.4)+L(-5,-85,-1,-89,C.blood,1.4)+Ci(3,-87,1.9,'#fff');
+  if(o.bald) s+=E(-3,-90,3,1.6,'rgba(255,255,255,.45)');
+  s+=hat(o.hat,c);
+  return s;
+}
+
+/* ---------- cast ---------- */
+const flame=(o={})=>man({hat:o.nohat?null:'cowboy',coat:true,...o})+(o.tears?P('M5,-86 q2,4 0,6 q-2,-2 0,-6z','#9fd3ff')+P('M-4,-84 q2,4 0,6 q-2,-2 0,-6z','#9fd3ff'):'');
+function zabak(o={}){
+  const c=C.ink;let s='';
+  s+=L(-7,-24,-8,-3,c,8)+L(7,-24,8,-3,c,8)+P('M-14,-4 h10 v4 h-11z',c)+P('M4,-4 h10 l1,4 h-11z',c);
+  s+=E(0,-40,19,22,c);
+  s+=arm(-14,-54,o.armL||'down',-1,c,6)+arm(14,-54,o.armR||'down',1,c,6);
+  s+=Ci(0,-68,10,c)+E(-3,-73,4,2,'rgba(255,255,255,.5)');
+  if(o.sweat!==false) s+=P('M13,-76 q2,4 0,6 q-2,-2 0,-6z','#8fd0ff')+P('M-15,-72 q2,4 0,6 q-2,-2 0,-6z','#8fd0ff');
+  if(o.kufrik) s+=R(17,-28,20,14,C.wood,'rx="2"')+P('M23,-28 v-3 h8 v3 h-2 v-1.5 h-4 v1.5z',c);
+  if(o.kasa) s+=R(-16,-52,32,18,'#5a3a1e','rx="2"')+R(-4,-46,8,5,C.gold);
+  if(o.whistle) s+=R(7,-69,16,4.5,C.bone,'rx="2"');
+  return s;
+}
+function lucine(o={}){
+  const c=C.ink;let s='';
+  if(o.torn){
+    s+=P('M-7,-58 L7,-58 Q14,-30 22,-2 L4,-2 L3,-28 L-2,-28 L-4,-2 L-11,-2 Q-9,-30 -7,-58Z',c);
+    s+=P('M-3,-30 L3,-30 L4,-8 L-11,-8 L-9,-28Z',C.bone)+R(-7,-22,4,4,'#c9a36a')+R(-2,-14,4,3,'#7a8fa8');
+  } else s+=P('M-7,-58 L7,-58 Q13,-30 23,-2 L-23,-2 Q-13,-30 -7,-58Z',c)+E(-15,-44,8,11,c);
+  s+=P('M-8,-78 Q0,-81 8,-78 L6,-56 L-6,-56Z',c);
+  s+=arm(-8,-75,o.armL||'down',-1,c,4.5)+arm(8,-75,o.armR||'down',1,c,4.5);
+  s+=R(-2.5,-82,5,5,c)+Ci(0,-86,7.5,c)+Ci(-5,-93,5,c)+P('M-4,-95 Q-10,-112 -19,-118 Q-12,-105 -7,-94Z',C.blood);
+  return s;
+}
+function iveta(o={}){
+  const c=C.ink;let s='';
+  s+=L(-4,-46,-5,-3,c,6)+P('M-10,-4 h8 v4 h-9z',c);
+  if(o.leg==='none') s+=L(4,-46,6,-30,c,6);
+  else s+=L(4,-46,5,-30,c,6)+L(5,-30,5,-1,o.leg==='mesquite'?C.mesq:C.wood,3.4);
+  s+=P('M-9,-78 Q0,-81 9,-78 L7,-44 L-7,-44Z',c);
+  s+=arm(-9,-75,o.armL||'down',-1,c,4.5)+arm(9,-75,o.armR||'down',1,c,4.5);
+  s+=P('M-6,-92 Q-15,-80 -12,-58 L-6,-62 Q-8,-80 -1,-90Z',c);
+  s+=R(-2.5,-82,5,5,c)+Ci(0,-87,7,c);
+  if(o.glow) s+=Ci(0,-88,9,'#ffe066','opacity=".25"')+Ci(-2.6,-88,1.8,'#ffe066')+Ci(2.6,-88,1.8,'#ffe066');
+  if(o.bite) s+=Ci(3,-79,2.6,C.blood)+P('M3,-78 q1,6 0,10 q-1,-4 0,-10z',C.blood);
+  if(o.rifle) s+=L(-18,-64,34,-92,c,3.2)+L(-18,-64,-8,-70,C.wood,5);
+  return s;
+}
+function robertus(o={}){
+  const c=C.ink;let s='';
+  s+=L(-2,-12,26,-4,c,7)+L(2,-10,28,-2,c,7)+P('M24,-9 h6 v9 h-6z',c);
+  s+=P('M-10,-46 Q0,-50 10,-44 L6,-10 L-10,-10Z',c);
+  s+=Ci(8,-50,8,c)+E(10,-55,14,3,c)+P('M3,-55 Q2,-66 10,-64 Q18,-66 17,-55Z',c);
+  s+=arm(4,-40,'reach',1,c,5);
+  if(o.bottle!==false) s+=R(35,-40,6,14,C.green,'rx="2"')+R(36.5,-45,3,6,C.green);
+  if(o.milk) s+=E(13,-46,5,1.4,'#fff');
+  if(o.zzz) s+=T(22,-62,'z',10)+T(30,-72,'Z',13)+T(40,-85,'Z',16);
+  return s;
+}
+const robertusStand=(o={})=>man({hat:'cowboy',armL:o.armL||'down',armR:o.armR||'down'})+(o.knives?L(40,-73,53,-79,C.bone,2.2)+L(-40,-73,-53,-79,C.bone,2.2):'')+(o.milk?E(1,-82,5,1.3,'#fff'):'');
+function thorne(o={}){
+  let s=man({hat:'top',coat:true,armL:o.armL||'up',armR:o.armR||'up'});
+  if(o.robe) s+=P('M-12,-77 Q0,-80 12,-77 L21,-2 L-21,-2Z','#ddd5c4');
+  s+= o.half ? P('M-7,-84 Q0,-79 7,-84 L6,-73 L3,-69 L1,-74 L-1,-67 L-3,-73 L-6,-70Z','#b9b2a5')
+             : P('M-7,-84 Q0,-79 7,-84 L5,-58 Q2,-44 0,-36 Q-2,-44 -5,-58Z','#b9b2a5');
+  s+=Ci(-3,-88,1.1,C.bone)+Ci(3,-88,1.1,C.bone);
+  return s;
+}
+const abner=(o={})=>man({hat:'flat',coat:true,eyes:!o.blink&&!o.xeye,...o});
+const danite=(o={})=>man({hat:'flat',coat:true,...o});
+const morty=(o={})=>man({hat:'top',armR:'out',armL:o.armL||'down'})+(o.tape!==false?L(40,-73,95,-58,C.gold,2.2,'stroke-dasharray="4 2"'):'')+R(-24,-50,5,12,C.green,'rx="1.5"');
+function ines(o={}){
+  let s=man({hat:'sombrero',armL:o.armL||'hip',armR:o.armR||'down'});
+  s+=P('M-13,-78 L13,-78 L19,-50 L-19,-50Z',C.blood)+L(-16,-58,16,-58,C.gold,2)+L(-17,-53,17,-53,C.gold,1.4);
+  s+=L(-3,-91,3,-82,'#d7b49a',1.3);
+  if(o.machete) s+=P('M23,-102 L31,-132 L35,-130 L26,-100Z','#d9dde3');
+  if(o.smoke) s+=Ci(10,-84,1.4,'#ff8a3d')+`<path d="M11,-86 q4,-6 0,-12 q-4,-6 1,-12" fill="none" stroke="#cfc6b8" stroke-width="1" opacity=".7"/>`;
+  return s;
+}
+function hannah(o={}){
+  const c='#5f5a55';let s='';
+  s+=P('M-7,-58 L7,-58 Q11,-30 18,-2 L-18,-2 Q-11,-30 -7,-58Z',c)+P('M-8,-78 Q0,-81 8,-78 L6,-56 L-6,-56Z',c);
+  s+=arm(-8,-75,o.armL||'down',-1,c,4.5)+arm(8,-75,o.armR||'down',1,c,4.5);
+  s+=R(-5,-79,10,3,C.bone)+R(-2.5,-82,5,5,C.ink)+Ci(0,-86,7.5,C.ink);
+  s+=P('M-10,-84 Q-10,-98 0,-98 Q11,-98 10,-84 L7,-84 Q7,-93 0,-93 Q-7,-93 -7,-84Z',C.bone);
+  if(o.wrists) s+=Ci(-13,-48,2,C.blood)+Ci(13,-48,2,C.blood);
+  return s;
+}
+function rachel(o={}){
+  const sk=C.skin;let s='';
+  if(o.burn) s+=Ci(0,-50,60,'#dfe8ff','opacity=".35"')+Ci(0,-50,38,'#f4f8ff','opacity=".5"');
+  s+=L(-4,-30,-6,-2,sk,3)+L(4,-30,6,-2,sk,3);
+  s+=P('M-8,-74 L8,-74 L14,-22 L10,-28 L6,-18 L2,-27 L-2,-16 L-6,-27 L-10,-19 L-14,-24Z','#3b3531');
+  for(let i=0;i<4;i++) s+=L(-5,-70+i*4,5,-70+i*4,sk,1.2);
+  s+=`<polyline points="-7,-72 -22,-62 -38,-58" fill="none" stroke="${sk}" stroke-width="3" stroke-linecap="round"/>`;
+  s+=`<polyline points="7,-72 22,-64 40,-60" fill="none" stroke="${sk}" stroke-width="3" stroke-linecap="round"/>`;
+  s+=L(40,-60,47,-64,'#fff',1)+L(40,-60,48,-59,'#fff',1)+L(40,-60,46,-55,'#fff',1);
+  s+=L(-38,-58,-45,-62,'#fff',1)+L(-38,-58,-46,-57,'#fff',1)+L(-38,-58,-44,-53,'#fff',1);
+  s+=Ci(0,-84,8.5,sk);
+  s+=P('M-10,-82 Q-11,-97 0,-97 Q11,-97 10,-82 L7,-84 Q6,-92 0,-92 Q-6,-92 -7,-84Z',C.bone)+P('M-10,-82 L-13,-73 L-8,-78Z',C.bone);
+  s+=Ci(-3.2,-86,4,C.blood,'opacity=".4"')+Ci(3.2,-86,4,C.blood,'opacity=".4"')+Ci(-3.2,-86,1.8,'#ff3b30')+Ci(3.2,-86,1.8,'#ff3b30');
+  s+=E(0,-79,5.5,3,C.ink)+P('M-5,-80 L5,-80 L4,-77 L3,-79.5 L2,-75.5 L1,-79.5 L0,-75.5 L-1,-79.5 L-2,-75.5 L-3,-79.5 L-4,-77Z','#fff');
+  if(o.burn) for(let i=0;i<7;i++){const a=i*0.9;s+=L(0,-50,Math.cos(a)*70,-50+Math.sin(a)*70,'#ffffff',1.4,'opacity=".8"');}
+  return s;
+}
+const bigSal=(o={})=>man({bald:true,apron:true,armL:'out',armR:'out'})+(o.gun?L(-8,-72,66,-75,C.ink,4.5)+R(-14,-77,16,7,C.wood):'');
+const pianist=()=>man({hat:'top',armL:'reach',armR:'reach'});
+
+/* ---------- props ---------- */
+function crowd(x0,y,n,s,gap,o={}){
+  let out='';const hats=['cowboy','flat','cowboy','top','cowboy'];
+  for(let i=0;i<n;i++){
+    const torch=o.torch&&i%2===0;
+    out+=G(x0+i*gap,y+(i%2)*3,s*(0.9+(i%3)*0.07),man({c:o.c||C.crowd,hat:hats[i%5],armR:torch||o.up&&i%3===0?'up':'down',armL:o.chained?'up':'down'})+(torch?fireTiny(23,-104):'')+(o.chained?L(-13,-102,-13,-130,'#555',1.5)+L(13,-102,13,-130,'#555',1.5):''),{flip:o.flip});
+  }
+  return out;
+}
+const fireTiny=(x,y)=>P(`M${x-4},${y} Q${x-6},${y-8} ${x},${y-14} Q${x+6},${y-8} ${x+4},${y}Z`,'#f6a23b')+P(`M${x-2},${y} Q${x-2},${y-5} ${x},${y-8} Q${x+2},${y-5} ${x+2},${y}Z`,'#fff3c4');
+function dog(c=C.ink){return E(0,-16,20,9,c)+L(-14,-10,-15,0,c,4)+L(-6,-10,-6,0,c,4)+L(8,-10,8,0,c,4)+L(15,-10,16,0,c,4)+Ci(22,-22,8,c)+P('M26,-21 L37,-18 L36,-13 L26,-15Z',c)+P('M17,-29 L22,-24 L15,-25Z',c)+L(-19,-18,-26,-26,c,3)+P('M30,-17 l1,3 l1,-3 l1,3 l1,-3z','#fff')+Ci(24,-24,1.2,'#ff3b30');}
+function cowSkel(){
+  let s=E(0,-6,34,7,'#7d5634','opacity=".5"')+L(-30,-10,30,-10,C.bone,2.5);
+  for(let i=-24;i<=20;i+=6) s+=`<path d="M${i},-10 q4,-13 9,0" fill="none" stroke="${C.bone}" stroke-width="2"/>`;
+  s+=P('M30,-15 L47,-12 L49,-6 L32,-4Z',C.bone)+Ci(38,-11,1.7,C.ink)+P('M32,-15 q-4,-9 2,-13 q-1,6 2,11z',C.bone);
+  s+=L(-20,-6,-32,0,C.bone,2)+L(14,-6,24,0,C.bone,2)+Ci(28,-11,1,C.blood)+Ci(29.8,-11,1,C.blood)+Ci(28.9,-9.6,1,C.blood);
+  return s;
+}
+function wheel(x,y,r){let s=`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${C.ink}" stroke-width="3"/>`;for(let a=0;a<180;a+=30){const t=a*Math.PI/180;s+=L(x-r*Math.cos(t),y-r*Math.sin(t),x+r*Math.cos(t),y+r*Math.sin(t),C.ink,1.5);}return s;}
+const wagon=()=>R(-50,-40,100,22,C.wood)+P('M-46,-40 Q-46,-92 0,-94 Q46,-92 46,-40Z','#e8dcc0')+L(-24,-40,-24,-86,'#b9a985',1.5)+L(0,-40,0,-94,'#b9a985',1.5)+L(24,-40,24,-86,'#b9a985',1.5)+wheel(-32,-14,14)+wheel(32,-14,14);
+const coach=()=>R(-46,-66,92,5,C.ink)+R(-40,-62,80,42,C.ink,'rx="4"')+R(-30,-54,20,14,'#e8b45a')+R(10,-54,20,14,'#e8b45a')+wheel(-26,-14,14)+wheel(28,-14,14)+R(-20,-80,22,14,C.wood)+R(8,-78,14,12,'#5a3a1e');
+const dust=(x,y,n=5)=>{let s='';for(let i=0;i<n;i++)s+=E(x-i*26,y-6-(i%2)*8,18+i*3,9+i,'#e9c48a',`opacity="${0.65-i*0.1}"`);return s;};
+const fire=(x,y,s=1)=>G(x,y,s,P('M-20,0 Q-26,-30 -10,-50 Q-12,-30 0,-28 Q-4,-55 10,-72 Q10,-40 22,-36 Q28,-20 20,0Z','#e8731f')+P('M-12,0 Q-14,-22 -4,-34 Q-2,-20 6,-18 Q6,-40 14,-48 Q16,-24 14,0Z','#f6c344')+P('M-5,0 Q-6,-12 0,-18 Q4,-10 6,0Z','#fff3c4'));
+const splat=(x,y,s=1)=>G(x,y,s,P('M0,-14 Q6,-20 10,-12 Q22,-16 16,-4 Q26,2 14,6 Q16,18 4,12 Q-2,22 -6,10 Q-18,16 -14,4 Q-26,-2 -12,-6 Q-16,-20 0,-14Z',C.blood)+Ci(24,-14,3,C.blood)+Ci(-22,10,2.5,C.blood)+Ci(18,16,2,C.blood)+Ci(-14,-18,1.8,C.blood));
+function stalactites(w,col='#2a1d15'){let s='';seed=11;for(let x=0;x<w;x+=34){const len=20+rnd()*45;s+=P(`M${x},0 L${x+16},0 L${x+8},${len}Z`,col);}return s;}
+function palisade(x0,x1,y,bodies){
+  let s='';let k=0;
+  for(let x=x0;x<x1;x+=16){
+    s+=P(`M${x},${y} v-92 l7,-12 l7,12 v92z`,C.wood)+L(x+3,y-90,x+3,y-4,'#6b4426',1);
+    if(bodies&&k%3===1){s+=L(x+7,y-104,x+7,y-82,'#3a2a1a',1.5)+G(x+7,y-28,.52,man({c:'#2a201a',hat:k%2?'cowboy':null,armL:'down',armR:'down'}),{rot:(k%2?6:-5)});}
+    k++;
+  }
+  return s;
+}
+const bonnetHead=(x,y)=>Ci(x,y,7,C.ink)+P(`M${x-9},${y+2} Q${x-9},${y-11} ${x},${y-11} Q${x+10},${y-11} ${x+9},${y+2} L${x+6},${y+2} Q${x+6},${y-7} ${x},${y-7} Q${x-6},${y-7} ${x-6},${y+2}Z`,C.bone);
+const bar=(w,y)=>R(0,y,w,300-y,'#4a2c18')+R(0,y-6,w,9,'#6b4022')+L(0,y+20,w,y+20,'#3a2212',2);
+function shelf(x,y,n){let s=R(x,y,n*16+8,4,'#3a2212');const cols=['#4f7a3f','#7a3f2a','#3f5a7a','#8a7a3a'];for(let i=0;i<n;i++)s+=R(x+6+i*16,y-18,7,18,cols[i%4],'rx="2"')+R(x+8+i*16,y-24,3,7,cols[i%4]);return s;}
+const notes=(x,y)=>T(x,y,'♪',22,C.ink,'serif')+T(x+18,y-16,'♫',20,C.ink,'serif')+T(x+40,y-4,'♪',16,C.ink,'serif');
+
+/* ---------- backgrounds ---------- */
+function bg(t,w,h,id){
+  const g='g'+id;const grad=(a,b)=>`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>`;
+  const mesas=(col,op)=>P(`M0,${h-80} L${w*.12},${h-80} L${w*.15},${h-125} L${w*.3},${h-125} L${w*.33},${h-80} L${w*.58},${h-80} L${w*.61},${h-108} L${w*.74},${h-108} L${w*.77},${h-80} L${w},${h-80} L${w},${h} L0,${h}Z`,col,`opacity="${op}"`);
+  let s='';
+  switch(t){
+    case 'day':s+=grad('#f6d38a','#e79a45')+R(0,0,w,h,`url(#${g})`)+Ci(w*.84,58,30,'#fff1c1')+mesas('#b8642f',.75)+R(0,h-50,w,50,'#d9a35f');break;
+    case 'dusk':s+=grad('#f29a4a','#8c2a1c')+R(0,0,w,h,`url(#${g})`)+Ci(w*.2,h-80,46,'#ffd27a')+mesas('#4a1d14',.95)+R(0,h-50,w,50,'#5c2b1a');break;
+    case 'night':{s+=grad('#0d1330','#2c3a6b')+R(0,0,w,h,`url(#${g})`)+Ci(w*.84,52,22,'#f3ecd2')+Ci(w*.84-8,46,20,'#1c2650','opacity=".25"');seed=3;for(let i=0;i<40;i++)s+=Ci(rnd()*w,rnd()*(h-110),rnd()*1.3+.3,'#fff','opacity=".8"');s+=mesas('#0b0f22',1)+R(0,h-50,w,50,'#151b30');break;}
+    case 'saloon':{s+=R(0,0,w,h,'#6e4426');for(let x=0;x<w;x+=22)s+=L(x,0,x,h,'#5a361d',2);s+=R(0,h-50,w,50,'#3b2414');break;}
+    case 'fire':{s+=R(0,0,w,h,'#6e4426');for(let x=0;x<w;x+=22)s+=L(x,0,x,h,'#5a361d',2);s+=R(0,h-50,w,50,'#3b2414')+R(0,0,w,h,'#e8731f','opacity=".35"');break;}
+    case 'brothel':{s+=R(0,0,w,h,'#6d1f27');for(let x=0;x<w;x+=18)s+=R(x,0,6,h,'#5a1820');s+=R(0,h-50,w,50,'#3a1a14');break;}
+    case 'cave':{s+=grad('#9a6236','#4a2c18')+R(0,0,w,h,`url(#${g})`)+E(w/2,h*.45,w*.45,h*.4,'#e09a52','opacity=".25"')+R(0,h-50,w,50,'#3a2416')+stalactites(w,'#3a2416');break;}
+    case 'canyon':{s+=grad('#f2b866','#e0894a')+R(0,0,w,h,`url(#${g})`)+P(`M0,0 L${w*.28},0 L${w*.22},${h*.4} L${w*.3},${h*.7} L${w*.18},${h} L0,${h}Z`,'#8a3b1f')+P(`M${w},0 L${w*.74},0 L${w*.8},${h*.35} L${w*.7},${h*.65} L${w*.82},${h} L${w},${h}Z`,'#7a321a')+R(0,h-50,w,50,'#b8703c');break;}
+    case 'canyonNight':{s+=grad('#0d1330','#2c3a6b')+R(0,0,w,h,`url(#${g})`)+P(`M0,0 L${w*.28},0 L${w*.22},${h*.4} L${w*.3},${h*.7} L${w*.18},${h} L0,${h}Z`,'#2a1410')+P(`M${w},0 L${w*.74},0 L${w*.8},${h*.35} L${w*.7},${h*.65} L${w*.82},${h} L${w},${h}Z`,'#24110d')+R(0,h-50,w,50,'#2b1a14');break;}
+    case 'sand':{s+=R(0,0,w,h,'#d9a35f');seed=5;for(let i=0;i<60;i++)s+=Ci(rnd()*w,rnd()*h,rnd()*2+.5,'#b98546','opacity=".6"');break;}
+    case 'red':{s+=`<defs><radialGradient id="${g}"><stop offset="0" stop-color="#d23a2a"/><stop offset="1" stop-color="#3a0606"/></radialGradient></defs>`+R(0,0,w,h,`url(#${g})`);break;}
+  }
+  s+=`<defs><pattern id="h${id}" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.05" fill="#000" opacity=".1"/></pattern></defs>`;
+  return s;
+}
+
+/* ---------- the book ---------- */
+const GY=255;
+const B=(x,y,w,t,tail='tl',shout=false)=>({x,y,w,t,tail,shout});
+const S=(x,y,t,size,r=-8)=>({x,y,t,size,r});
+
+const book=[
+ {chapter:['Obsazení','Pět hrdinů, kteří si to nezasloužili']},
+ {wide:true,bg:'dusk',alt:'Pět hrdinů v řadě proti západu slunce',
+  draw:()=>G(100,GY-8,1.45,zabak({kufrik:true}))+G(260,GY-8,1.55,flame({armR:'hip'}))+G(400,GY-8,1.5,lucine({armL:'hip',armR:'point'}))+G(540,GY-8,1.5,iveta({leg:'wood',rifle:true}))+G(680,GY-8,1.5,robertus({zzz:true})),
+  tags:[[12.5,'Žabák','Kopr'],[32.5,'Flame','Rabín'],[50,'Lucine','Krysa'],[67.5,'Iveta','Beznohá'],[87,'Robertus','Mlíčňák']]},
+
+ {chapter:['Kapitola první','Kráva, která už nic nevypoví']},
+ {wide:true,bg:'day',cap:'Mrtvá Mula, 1872. Vítá vás jen smrad.',alt:'Dostavník vyhazuje hrdiny do prachu',
+  draw:()=>dust(600,GY,5)+G(690,GY,1.35,coach())+R(300,GY-14,26,14,C.wood)+R(330,GY-10,20,10,'#5a3a1e')+G(80,GY,1.3,robertus({zzz:true}))+G(170,GY,1.2,zabak({kufrik:true}))+G(235,GY,1.35,flame({armL:'hip'}))+G(560,GY,1.35,lucine({armL:'hip',armR:'point'}),{flip:true})+G(440,175,1.3,iveta({armL:'up',armR:'up'}),{rot:-70}),
+  b:[B(62,6,30,'Dál nejedu. Vypadněte, kurva, všichni!','tr')],sfx:[S(34,46,'BUCH!',7,-10)]},
+ {bg:'day',cap:'Pohřebák Morty. Nejšťastnější člověk ve městě.',alt:'Morty měří mrtvého hostinského',
+  draw:()=>G(330,GY,1.5,cowSkel())+R(85,GY-12,110,9,C.wood)+G(184,GY-12,1,man({c:'#8d877c'}),{rot:-90})+G(250,GY,1.4,morty({}),{flip:true}),
+  b:[B(38,5,58,'Pět stop, čtyři palce. Ani kapka krve! Á, noví zákazníci!','tl')]},
+ {bg:'day',cap:'Prorok Ezekiel Thorne. Čtrnáct manželek, plnovous až k pupku.',alt:'Prorok káže před vozem',
+  draw:()=>G(140,GY,1.55,wagon())+bonnetHead(105,GY-75)+bonnetHead(128,GY-78)+G(285,GY,1.6,thorne({armL:'up',armR:'point'}),{flip:true}),
+  b:[B(4,5,56,'Bůh vás trestá, hříšníci! Cizinci… ty Anděl miluje nejvíc.','tr')]},
+ {bg:'day',cap:'Bratr Abner nikdy nemrká. Žabák mu řekl „nic“ a uchechtl se.',alt:'Abner láme Žabákovi malíček',
+  draw:()=>G(140,GY,1.5,abner({armR:'reach'}))+G(250,GY,1.45,zabak({armR:'up'}),{flip:true})+crowd(320,GY,2,1,40),
+  b:[B(3,6,52,'Ten chechot si nech na pohřeb, Kopře.','tr')],sfx:[S(46,26,'KŘUP!',15,-12)]},
+ {bg:'day',cap:'Od té chvíle je to Rabín.',alt:'Flame se představuje jako žid',
+  draw:()=>crowd(20,GY,3,1.05,38,{up:true})+G(175,GY,1.45,flame({armR:'up'}))+G(320,GY,1.6,thorne({armL:'up',armR:'point'}),{flip:true}),
+  b:[B(3,5,44,'Shalom, gójové. Jsem vyznavačem staré víry.','tr'),B(52,5,45,'ŽID! Bůh nám poslal ŽIDA!','tl',true)]},
+ {bg:'day',cap:'Mastif táhne Lucine ulicí. Abner na ni ani nepohlédne: „Krysa.“',alt:'Pes vleče Lucine s roztrženou sukní',
+  draw:()=>G(90,GY-6,1.25,lucine({torn:true,armL:'up',armR:'up'}),{rot:80})+G(265,GY,1.6,dog(),{flip:true})+crowd(310,GY,3,.95,32,{up:true}),
+  b:[B(50,5,47,'Hele! Záplatovaný spodky!','tr')]},
+ {bg:'day',cap:'Iveta odmítla být patnáctou ženou. Obličejem v prorokově rozkroku.',alt:'Iveta padá Thorneovi do rozkroku',
+  draw:()=>G(250,GY,1.6,thorne({armL:'down',armR:'reach'}),{flip:true})+G(140,GY,1.35,iveta({armL:'up',armR:'up',leg:'wood'}),{rot:60}),
+  b:[B(2,5,50,'Mmmf! Do saloonu půjdu jen se svými kumpány!','tr'),B(56,5,40,'Tak přiveď celé stádo, sestro.','tl')]},
+ {wide:true,bg:'day',cap:'Žabák mu prsten vrátil i s koňským hovnem. Abner mrkl. Poprvé za dvacet let.',alt:'Žabák hází prsten Abnerovi do oka',
+  draw:()=>crowd(20,GY,3,1,40)+G(170,GY,1.4,zabak({armR:'up'}))+`<circle cx="360" cy="120" r="7" fill="none" stroke="${C.gold}" stroke-width="3"/>`+P('M352,128 q8,-10 16,0 q4,8 -6,8 q-12,2 -10,-8z','#5a3b1a')+L(240,150,330,126,C.ink,1.5,'stroke-dasharray="6 6"')+G(560,GY,1.7,abner({blink:true}),{flip:true})+crowd(650,GY,4,1,40),
+  b:[B(68,5,30,'Tvoje rakev, Morty. Malá a široká.','tl')],sfx:[S(52,14,'PLESK!',6,-6)]},
+
+ {chapter:['Kapitola druhá','Ementál']},
+ {bg:'saloon',cap:'Saloon U Vyschlé Prdele. Od té chvíle je to Mlíčňák.',alt:'Robertus si u Big Sala objednává mléko',
+  draw:()=>shelf(210,90,10)+G(285,205,1.5,bigSal())+bar(400,190)+R(178,166,11,20,'#fff','rx="2"')+G(130,GY,1.45,robertusStand({armR:'reach',milk:true})),
+  b:[B(3,6,24,'Mlíko.','tr'),B(48,4,48,'Krávy jsou vysátý. Dolar.','tl')]},
+ {bg:'saloon',cap:'Za flašku whiskey Morty vyklopí, co ví. Platili všichni kromě Rabína.',alt:'Morty vypráví o prstenech',
+  draw:()=>shelf(40,90,6)+G(110,GY,1.4,morty({tape:false}))+G(250,GY,1.3,zabak({}))+G(335,GY,1.4,flame({armL:'hip'}),{flip:true}),
+  b:[B(3,4,64,'Žádnej anděl. Na krcích jsou otisky zubů. A každá mrtvola měla ten prsten s okem.','tl')]},
+ {wide:true,bg:'saloon',cap:'Mexické patt. Všechny ruce jsou klidné. Kromě Rabínovy.',alt:'Mexické patt v saloonu',
+  draw:()=>G(55,GY,1.35,danite({armR:'gun'}))+G(115,GY,1.35,danite({armR:'gun'}))+G(175,GY,1.35,danite({armR:'point'}))+G(250,GY,1.3,zabak({armR:'up'}))+G(300,GY,1.35,lucine({armR:'gun'}))+G(385,GY,1.5,abner({}))+G(470,GY,1.45,flame({armR:'gun'}),{flip:true})+G(560,GY,1.35,robertusStand({armR:'up',knives:true}))+R(600,215,90,9,C.wood)+L(608,224,608,GY,C.wood,5)+L(682,224,682,GY,C.wood,5)+G(645,215,1.15,thorne({armL:'up',armR:'up'}))+shelf(705,120,5)+G(752,GY,1.4,bigSal({gun:true}),{flip:true}),
+  b:[B(40,4,32,'Ať tvoji chlapi odhodí železo, nebo z tebe udělám ementál.','tl'),B(75,4,24,'Kdo mi zabije pianistu, toho rozprsknu po stěně.','tr')]},
+ {bg:'saloon',cap:'Žabák vrátil Lucine facku. Revolver vystřelil. Píseň o Krysiných spodkách už nikdo nedohraje.',alt:'Pianista zastřelený u piana',
+  draw:()=>R(190,160,190,95,'#2a1a10')+R(190,160,190,12,'#f3ead6')+(()=>{let s='';for(let x=196;x<380;x+=12)s+=R(x,160,5,7,C.ink);return s;})()+G(230,GY,1.3,pianist(),{rot:28})+splat(300,150,1.2),
+  sfx:[S(4,8,'PRÁSK!',18,-10)]},
+ {bg:'fire',cap:'Robertův nůž ufikl prorokovi půl plnovousu. Ivetina kulka trefila lampu.',alt:'Thorne s napůl uříznutým vousem v hořícím saloonu',
+  draw:()=>R(0,36,400,14,'#3b2414')+P('M300,50 l4,-14 l3,0 l-2,14z','#d9dde3')+R(301,50,4,10,C.ink)+G(250,GY,1.6,thorne({half:true,armL:'up',armR:'point'}),{flip:true})+fire(70,GY,1.3)+fire(140,GY,.9)+fire(370,GY,1.1),
+  b:[B(4,6,36,'ÚSTUP!','tr',true)],sfx:[S(6,58,'FŠŠŠ!',12,-6)]},
+ {wide:true,bg:'night',cap:'Jediný poctivý člověk v Mrtvé Mule dohořel. Hrdinové mu pomohli tím, že zavřeli dveře.',alt:'Saloon hoří, hrdinové prchají zadem',
+  draw:()=>R(400,70,280,185,'#4a2a18')+R(420,50,240,30,'#4a2a18')+T(440,72,'U VYSCHLÉ PRDELE',20,C.bone,"Rye, Georgia, serif")+R(440,120,50,50,'#f6a23b')+R(590,120,50,50,'#f6a23b')+R(515,175,50,80,'#f6c344')+fire(450,62,1.2)+fire(540,52,1.5)+fire(630,62,1.2)+G(110,GY,1.2,zabak({kasa:true}))+G(185,GY,1.3,flame({armL:'out',armR:'out'}),{flip:true})+G(250,GY,1.25,lucine({armR:'out'}),{flip:true})+G(330,GY-4,1.1,iveta({leg:'none',armL:'reach',armR:'reach'}),{rot:-80})+crowd(700,GY,3,.9,34,{torch:true}),
+  b:[B(57,36,15,'AAAAA!','tl',true)]},
+ {chapter:['Kapitola třetí','Patnáctá žena']},
+ {bg:'brothel',cap:'Když někdo slušně zaklepe, Iveta otevře.',alt:'Stvůra v okně kouše Ivetu do krku',
+  draw:()=>R(140,40,170,150,'#0f1530')+Ci(270,75,14,'#f3ecd2')+R(108,40,32,150,'#3b2414')+R(310,40,32,150,'#3b2414')+R(132,186,186,10,'#3b2414')+G(232,188,1.25,rachel())+G(205,GY,1.4,iveta({bite:true,armL:'up',armR:'up',leg:'wood'}),{rot:-14})+fire(330,GY,.8),
+  sfx:[S(4,10,'ŠLURP',13,-8)]},
+
+ {bg:'brothel',cap:'Sestra Hannah. Prorokova nejmladší žena, s otlaky od provazu na zápěstích.',alt:'Hannah v nevěstinci',
+  draw:()=>R(300,80,80,175,'#4a2a18')+Ci(312,170,3,C.gold)+G(130,GY,1.4,lucine({armR:'reach'}))+G(215,GY,1.45,hannah({armL:'up',wrists:true}))+G(345,GY,1.35,iveta({leg:'wood',bite:true}),{flip:true}),
+  b:[B(30,4,58,'Rachel ji kousla… Do třetího západu slunce bude patřit jí.','tl')]},
+
+ {chapter:['Kapitola čtvrtá','Dvacet ožralů a jedna palisáda']},
+ {wide:true,bg:'dusk',cap:'Dvacet opilců proti palisádě. Devatenáct visí na kůlech. Dvacátý si šel ulevit do příkopu a usnul.',alt:'Palisáda s oběšenými, Robertus v příkopu',
+  draw:()=>palisade(300,800,GY,true)+E(150,GY+12,150,22,'#2e140c')+G(140,GY+8,1.4,robertus({bottle:true})),
+  b:[B(8,14,9,'Hm.','tl')]},
+
+ {chapter:['Kapitola pátá','Cena za prst']},
+ {bg:'canyon',cap:'Doña Inés si bere platbu krví. Žabákův malíček jí bude viset na krku.',alt:'Doña Inés usekává Žabákovi malíček',
+  draw:()=>G(150,GY,1.5,ines({armR:'up',machete:true}))+G(262,GY+6,1.35,zabak({armR:'reach'}),{flip:true})+splat(215,170,.7)+R(196,150,6,3,'#c79a74'),
+  b:[B(2,5,42,'Stejně byl na nic.','tr')],sfx:[S(55,18,'ŠMIK!',15,-10)]},
+ {bg:'sand',cap:'Prorok, který mluví s Bohem, tři dny hledá píšťalku. Ukradl mu ji plešatý uprchlík z okurkového sudu.',alt:'Obsah Žabákových kapes, uprostřed kostěná píšťala',
+  draw:()=>Ci(205,160,62,'#fff3c4','opacity=".55"')+P('M60,210 q10,-30 30,-26 q16,4 10,22 l-6,22 q-14,6 -34,-2z','#7d776e')+R(300,190,46,28,C.gold,'rx="4"')+R(306,196,34,16,'#c99a2a')+P('M120,240 q4,-12 8,0 q-1,8 -4,8 q-3,0 -4,-8z','#fff')+(()=>{let s='';for(let i=0;i<14;i++){const a=i/14*Math.PI*2;s+=Ci(300+Math.cos(a)*26,90+Math.sin(a)*18,3.2,'#d9dde3');}return s+L(300,108,300,128,'#d9dde3',2.5)+L(292,118,308,118,'#d9dde3',2.5);})()+R(140,148,130,26,'#efe2c4','rx="12"')+R(140,148,130,26,'none','rx="12" stroke="#1b1410" stroke-width="2"')+Ci(180,161,4,C.ink)+Ci(205,161,4,C.ink)+Ci(230,161,4,C.ink)+E(158,161,7,4.5,'none','stroke="#1b1410" stroke-width="1.5"')+Ci(158,161,1.6,C.blood),
+  b:[B(3,4,46,'To je prorokova píšťala!','none'),B(46,72,50,'Visela mu u pasu. Byla tam.','none')]},
+ {bg:'canyonNight',cap:'Třetí západ slunce. Inés vypálila Ivetě ránu stříbrem. Iveta přežila. Oči jí ve tmě svítí jako kočce.',alt:'Doña Inés vypaluje Ivetě ránu',
+  draw:()=>fire(55,GY,.9)+G(140,GY,1.45,ines({armR:'reach'}))+L(189,152,214,160,'#ffb347',4)+Ci(214,160,6,'#ffd27a','opacity=".6"')+G(370,GY-8,1.3,iveta({glow:true,leg:'none',bite:true}),{rot:-90}),
+  sfx:[S(55,30,'SSSSS!',12,-8)]},
+ {bg:'canyonNight',cap:'Čtvrtá noc. Flame vyšel ze stanu Doni Inés bez bot a beze zbytku důstojnosti.',alt:'Flame vychází ze stanu bos',
+  draw:()=>P('M20,255 L110,110 L200,255Z','#c9b48a')+P('M110,110 L140,255 L80,255Z','#8f7c58')+G(150,GY,1.4,ines({armR:'up',smoke:true}))+G(285,GY,1.45,flame({barefoot:true,armL:'down',armR:'down',nohat:true}),{flip:true}),
+  b:[B(2,5,44,'Lepší než nic. O kousek.','tr')]},
+
+ {chapter:['Kapitola sedmá','Noc krvavého smíření']},
+ {wide:true,bg:'cave',cap:'Dvě stříbrné kulky. Jedna ustřelila krápník. Druhá kováře Hobbse.',alt:'Jeskyně pod Siónem, Flame střílí',
+  draw:()=>crowd(20,GY,5,1,48,{c:'#4a3a2e',chained:true})+splat(165,GY-118,.6)+R(320,200,160,55,'#3b2a1f')+G(400,200,1.3,thorne({robe:true,half:true,armL:'up',armR:'up'}))+G(570,24,1.15,rachel(),{rot:180})+P('M505,52 l14,0 l-7,30z','#2a1d15')+L(660,150,520,70,'#ffffff',1.5,'stroke-dasharray="5 4"')+L(660,150,200,140,'#ffffff',1.5,'stroke-dasharray="5 4"')+G(700,GY,1.45,flame({armR:'gun'}),{flip:true})+fire(300,GY-120,.5)+fire(500,GY-120,.5),
+  b:[B(73,4,26,'Ezekieli Thorne! Pět set dolarů, mrtvý nebo živý!','tr'),B(28,4,22,'Díky, Rabíne!','tr')],sfx:[S(66,40,'PRÁSK!',5,-8)]},
+ {bg:'cave',cap:'Žabák pískne. Stvůra ztuhne. Prorok zezelená.',alt:'Žabák píská na kostěnou píšťalu',
+  draw:()=>G(110,GY,1.45,zabak({whistle:true,armR:'up'}))+notes(160,120)+G(290,GY,1.45,rachel(),{flip:true}),
+  b:[B(48,4,48,'TO JE MOJE!','none',true),B(2,6,26,'Už ne.','tr')],sfx:[S(38,46,'PÍÍÍP',9,-6)]},
+ {bg:'red',cap:'Thorne ještě chvíli káže. Teď už jen bublá krví.',alt:'Stvůra trhá proroka',
+  draw:()=>splat(110,90,2.2)+splat(310,200,1.6)+G(150,235,1.4,thorne({half:true,armL:'up',armR:'up'}),{rot:-80})+G(215,230,1.35,rachel(),{rot:28})+splat(200,150,1.1)},
+ {bg:'cave',cap:'Poprvé mrkl kvůli Žabákovi. Naposledy taky.',alt:'Žabák střílí Abnera do oka',
+  draw:()=>G(110,GY,1.4,zabak({armR:'gun'}))+G(290,GY,1.5,abner({xeye:true}),{rot:24,flip:true})+splat(268,120,.6),
+  b:[B(50,5,46,'Malá… a široká…','tl')],sfx:[S(38,36,'PUF!',11,-8)]},
+ {bg:'cave',cap:'Čtyři vteřiny. Jeden oholený, jeden na plec a kýtu, jeden sešitý. Pak Robertus usne na stříbře.',alt:'Robertus pobíjí tři Danity',
+  draw:()=>`<path d="M120,120 Q200,60 280,120" fill="none" stroke="#efe6d2" stroke-width="3"/><path d="M110,170 Q200,230 300,165" fill="none" stroke="#efe6d2" stroke-width="2"/>`+G(80,GY,1.3,danite(),{rot:-62})+G(320,GY,1.3,danite(),{rot:62})+G(372,GY,1.15,danite(),{rot:86})+splat(330,190,.7)+splat(90,200,.6)+G(200,GY,1.5,robertusStand({armL:'out',armR:'out',knives:true})),
+  sfx:[S(62,8,'ŠVIH!',11,8)]},
+ {bg:'cave',cap:'Iveta zakopne o tmu a rozšlápne píšťalu. Stvůra se otočí od mrtvého proroka.',alt:'Iveta rozšlapuje píšťalu',
+  draw:()=>G(110,GY,1.4,zabak({armL:'up',armR:'up'}))+G(250,GY,1.4,iveta({leg:'mesquite',armL:'up',armR:'out',glow:true}),{rot:-18})+G(278,GY-3,1,R(-12,-3,9,4,C.bone,'rx="2"'),{rot:-25})+G(292,GY-2,1,R(0,-3,8,4,C.bone,'rx="2"'),{rot:30}),
+  b:[B(3,5,40,'Ne, ne, ne…','tr')],sfx:[S(62,46,'KŘUP!',12,8)]},
+ {bg:'cave',cap:'Bez zubů, se spálenýma rukama a se čtyřmi olověnými kulkami k ničemu.',alt:'Lucine se staví mezi Hannah a stvůru',
+  draw:()=>G(70,GY,1.35,hannah({armL:'up',armR:'up'}))+G(185,GY,1.45,lucine({armR:'gun'}))+G(320,GY,1.45,rachel(),{flip:true}),
+  b:[B(3,4,58,'Tak pojď, ty vyschlá rakvová kurvo. Zazpívám ti ukolébavku.','tr')]},
+ {wide:true,bg:'cave',cap:'Poslední stříbrná kulka. Iveta poprvé v životě míří pečlivě. Pak zakopne.',alt:'Iveta zakopne, kulka se odrazí a zabije stvůru',
+  draw:()=>splat(330,GY-6,1)+G(270,GY-4,1.3,lucine(),{rot:-90})+G(160,GY,1.4,iveta({leg:'mesquite',rifle:true,glow:true,armL:'up'}),{rot:48})+`<polyline points="250,170 380,26 540,40 640,170" fill="none" stroke="#dfe8ff" stroke-width="2.5" stroke-dasharray="7 5"/>`+P('M532,0 l18,0 l-9,46z','#2a1d15')+G(650,GY,1.5,rachel({burn:true}),{flip:true}),
+  sfx:[S(44,6,'PING!',4.5,-10),S(63,12,'PING!',4.5,8),S(82,34,'AAAAAH!',4,-6)]},
+
+ {chapter:['Epilog','Kdo shrábl slávu']},
+ {news:true,cap:'Flame si článek vystřihl a pláče do něj místo do klobouku.'},
+ {bg:'dusk',cap:'Hannah a třináct manželek naložily Thorneovo stříbro na šest vozů. Ráno byly pryč.',alt:'Vozy se stříbrem odjíždějí do západu slunce',
+  draw:()=>dust(200,GY,4)+G(250,GY,1.3,wagon())+G(345,GY-30,.7,wagon())+G(395,GY-42,.45,wagon())+bonnetHead(225,GY-72)+bonnetHead(248,GY-75)+Ci(290,GY-46,3,'#fff')+Ci(300,GY-42,2,'#fff')+Ci(282,GY-40,2,'#fff'),
+  b:[B(4,6,56,'„Děkuji. Lucine byla jediná slušná. Vy ostatní smrdíte.“ H.','none')]},
+ {bg:'day',cap:'Morty udělal první rakev zadarmo. V dílně čeká další: malá a široká.',alt:'Hrob Lucine a Morty s metrem',
+  draw:()=>E(140,GY+4,90,16,'#8a5a32')+R(132,120,10,140,C.wood)+R(96,150,82,10,C.wood)+R(70,168,140,40,'#efe2c4')+T(140,186,'LUCINE',16,C.ink,"Rye, Georgia, serif",'text-anchor="middle"')+T(140,201,'Řekla, co si myslí.',11,C.ink,"Courier Prime, monospace",'text-anchor="middle"')+G(300,GY,1.4,morty({}),{flip:true})+P('M330,250 l40,0 l8,-14 l-8,-18 l-40,0 l-8,18z','#5a3a1e')},
+ {bg:'saloon',cap:'U Vyschlé Prdele II. Jedenáct slok. Lucine konečně proslavila písnička. O jejích spodkách.',alt:'Nový pianista zpívá písničku o Krysiných spodkách',
+  draw:()=>R(60,24,280,34,'#2a1a10')+T(200,48,'U VYSCHLÉ PRDELE II',18,C.gold,"Rye, Georgia, serif",'text-anchor="middle"')+R(40,170,170,85,'#2a1a10')+R(40,170,170,10,'#f3ead6')+G(110,GY,1.3,man({hat:'top',armL:'reach',armR:'reach'}),{flip:true})+notes(220,140)+G(300,GY,1.35,robertus({milk:true,bottle:false})),
+  b:[B(28,30,62,'♪ Krysa měla spodky záplatovaný… ♪','tl')]},
+ {wide:true,bg:'night',cap:'Žabák v Prescottu jen tak pro legraci pískne. Sto mil odtud se Iveta zastaví v půli kroku. Pak vyrazí. Nezakopne ani jednou.',alt:'Žabák píská v baru, Iveta se svítícíma očima v poušti',
+  draw:()=>R(0,0,396,300,'#6e4426')+(()=>{let s='';for(let x=0;x<396;x+=22)s+=L(x,0,x,300,'#5a361d',2);return s;})()+R(0,250,396,50,'#3b2414')+shelf(40,110,8)+G(200,GY,1.45,zabak({whistle:true,armR:'up'}))+notes(250,130)+R(396,0,8,300,C.ink)+G(640,GY,1.5,iveta({glow:true,leg:'mesquite'}),{flip:true}),
+  sfx:[S(34,30,'píííp',5,-6)]},
+];
+
+const host=document.getElementById('book');
+let html='';
+book.forEach((p,i)=>{
+  if(p.chapter){html+=`<h2 class="chapter"><span>${p.chapter[0]}</span><b>${p.chapter[1]}</b></h2>`;return;}
+  if(p.news){
+    html+=`<figure class="panel"><div class="news"><div class="mast">PRESCOTT MINER</div><div class="date"><span>Prescott, Arizona</span><span>Léta Páně 1872</span><span>Cena 5 centů</span></div><h3>Statečný šerif zachránil Mrtvou Mulu!</h3><p>Šerif Hollis, který se z cest vrátil dva dny po krveprolití v jeskyních pod Novým Siónem, se dal vyfotografovat s mrtvolou šíleného proroka Thornea. Odměnu 500 dolarů vypsanou státem Missouri převzal osobně. O pěti cizincích, kteří byli v jeskyních také, se šerif nezmínil. Jeden z nich prý kulhá, druhý smrdí koprem a třetí pije mléko.</p></div><figcaption class="cap bottom">${p.cap}</figcaption></figure>`;
+    return;
+  }
+  const w=p.wide?800:400,h=300;
+  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${p.alt||''}">${bg(p.bg,w,h,i)}${p.draw()}${R(0,0,w,h,`url(#h${i})`)}</svg>`;
+  const balloons=(p.b||[]).map(b=>`<div class="b ${b.tail}${b.shout?' shout':''}" style="left:${b.x}%;top:${b.y}%;width:${b.w}%">${b.t}</div>`).join('');
+  const sfx=(p.sfx||[]).map(s=>`<div class="sfx" style="left:${s.x}%;top:${s.y}%;font-size:${s.size}cqw;transform:rotate(${s.r}deg)">${s.t}</div>`).join('');
+  const tags=(p.tags||[]).map(t=>`<div class="tag-name" style="left:${t[0]}%">${t[1]}<small>„${t[2]}“</small></div>`).join('');
+  html+=`<figure class="panel${p.wide?' wide':''}">${p.cap?`<figcaption class="cap">${p.cap}</figcaption>`:''}<div class="art">${svg}${balloons}${sfx}${tags}</div></figure>`;
+});
+host.innerHTML=html;
+})();
+</script>
