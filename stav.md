@@ -37,6 +37,7 @@
 - Lucine vytáhla Ivetu za vlasy; chomáč Ivetiných vlasů si Thorne vzal „na památku“ (!).
 - Robertus si u Big Sala koupil mléko za 1 $ (krávy vysáté, mléko je luxus).
 - Morty nabízí info o „prstenech na mrtvolách“ za flašku.
+- Kolo 5: Žabák vyhrožoval Mortymu hovnem, Morty se vysmál. Morty chce pravou whiskey od Big Sala (2 $), ne Žabákovy „elixíry“. Flame vybírá peníze do klobouku, sám nedal nic.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
@@ -49,4 +50,5 @@
 - Celkový tón: škodolibý
 - Styl: autentický Divoký západ 1872 (žádné anachronismy, dobový slang), vulgární
 - Inspirace: Tarantino (kapitoly s názvy, dlouhé napjaté dialogy co vybuchnou, mexické patty, přehnaná krev, náhlé násilí)
+- Styl odpovědí: stručně popisovat situaci, pečlivě spisovná a gramaticky správná čeština (přímá řeč NPC může být hovorová)
 - Délka odpovědí: KRÁTKÉ (stav + cca 2 krátké odstavce + otázka)
