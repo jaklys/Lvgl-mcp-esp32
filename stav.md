@@ -8,9 +8,9 @@
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
 | Žabák | 16/18 | derringer, 2 rány | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, ruka od hovna | „Kopr“ (Abner, Morty); Abner ho chce zabít |
-| Flame | 26/26 | Colt 6 + 12 nábojů, puška | 13 | – | fotka koně | „Rabín“ (Thorne, celé město); prohlásil se za žida |
+| Flame | 26/26 | Colt 6 + 12 nábojů, puška | 13 | – | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
 | Lucine | 15/16 | malý revolver, 5 ran | 2,5 | psí kousanec do lýtka, roztržená sukně | kasino žetony | „Krysa“ (Abner) |
-| Iveta | 19/20 | lovecká puška, 8 nábojů | 10,5 | vyrvaný chomáč vlasů, prasklá noha | náhradní dřevěná noha (nasazená praskla, teď kulhá na úlomku) | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
+| Iveta | 18/20 | lovecká puška, 8 nábojů | 10,5 | vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená! | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
 | Robertus | 22/22 | sada nožů | 0,5 | – | lahev pálenky | „Mlíčňák“ (saloon) |
 
 ## Odhalená tajemství
@@ -41,6 +41,8 @@
 - Kolo 5: Žabák vyhrožoval Mortymu hovnem, Morty se vysmál. Morty chce pravou whiskey od Big Sala (2 $), ne Žabákovy „elixíry“. Flame vybírá peníze do klobouku, sám nedal nic.
 - Kolo 6: Všichni se složili (Flame ne), Morty dostal whiskey a vyklopil info. Big Sal donutil Rabína zaplatit druhou flašku (2 $). V saloonu se už zpívá o Krysiných spodkách.
 - Thorne s Danity dorazil na kázání. Abner položil prsten s okem na bar před Žabáka: „Dárek, Kopře.“ → Žabák je označený!
+- Kolo 7: Žabák chňapl po prstenu, Lucine mu ho vyrazila fackou, Iveta ho zašlápla a vzala si ho → Iveta je teď označená. Thorne veřejně ohlásil, že Anděl dnes v noci přijde pro nositele znamení.
+- Abner Flameovi vytáhl fotku Generála a přibil ji nožem na bar.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
