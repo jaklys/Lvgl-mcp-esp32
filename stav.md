@@ -31,3 +31,5 @@
 - Formát: DM popíše scénu, hráč napíše reakce všech pěti postav
 - Tón: maximálně brutální, vtipný, ponižující pro postavy
 - Délka: kratší příběh (cca 15–20 odpovědí) se zvratem
+- Sex: ano, oplzle a škodolibě (trapné svádění, fiaska, drby); explicitní detaily střih
+- Celkový tón: škodolibý
