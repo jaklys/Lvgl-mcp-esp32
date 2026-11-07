@@ -8,10 +8,10 @@
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
 | Žabák | 16/18 | derringer, 2 rány | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, ruka od hovna | „Kopr“ (Abner, Morty); Abner ho chce zabít |
-| Flame | 26/26 | Colt 6 + 12 nábojů, puška | 13 | – | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
-| Lucine | 15/16 | malý revolver, 4 rány | 2,5 | psí kousanec do lýtka, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
-| Iveta | 18/20 | lovecká puška, 8 nábojů | 10,5 | vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená! | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
-| Robertus | 22/22 | sada nožů | 0,5 | – | lahev pálenky | „Mlíčňák“ (saloon) |
+| Flame | 22/26 | Colt 5 + 12 nábojů, puška | 13 | Abnerův nůž ve stehně (vytáhnout!) | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
+| Lucine | 10/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (krvácí), psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
+| Iveta | 17/20 | lovecká puška, 7 nábojů | 10,5 | vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená! | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
+| Robertus | 22/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | – | lahev pálenky | „Mlíčňák“ (saloon) |
 
 ## Odhalená tajemství
 
@@ -45,6 +45,9 @@
 - Kolo 7: Žabák chňapl po prstenu, Lucine mu ho vyrazila fackou, Iveta ho zašlápla a vzala si ho → Iveta je teď označená. Thorne veřejně ohlásil, že Anděl dnes v noci přijde pro nositele znamení.
 - Abner Flameovi vytáhl fotku Generála a přibil ji nožem na bar.
 - Kolo 8: MEXICKÉ PATT v saloonu. Flame míří Coltem Abnerovi na břicho, Lucine revolverem na hlavu. Žabák dal Lucine facku → výstřel ustřelil Abnerovi lalůček ucha a zabil pianistu (píseň o Krysě skončila uprostřed sloky). Danité tasili, Big Sal míří brokovnicí na všechny, Robertus drží nůž namířený na Thornea. Iveta Thornea odmítla.
+- Kolo 9: PŘESTŘELKA. Flame střelil Abnera do břicha (Abner žije, Danité ho odvlekli). Lucine zpívala, Žabák se za ni schoval → Lucine dostala kulku do ramene. Robertus hodil nůž – uřízl Thorneovi půl plnovousu a přišpendlil ho k trámu. Iveta prostřelila lampu, saloon hoří, kulka zabila Danitu. Big Sal rozstřílel dalšího Danitu. Thorne s Danity ustoupil. Venku tvor zavyl a při pohledu na oheň utekl (hráči viděli jen stín, který se lekl plamenů).
+- Big Sal chce po Lucine 60 $ za pianistu a po všech škodu za oheň.
+- Danité: zbývá 6 (Abner těžce raněn do břicha).
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
