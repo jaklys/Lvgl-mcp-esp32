@@ -40,3 +40,4 @@
 - Celkový tón: škodolibý
 - Styl: autentický Divoký západ 1872 (žádné anachronismy, dobový slang), vulgární
 - Inspirace: Tarantino (kapitoly s názvy, dlouhé napjaté dialogy co vybuchnou, mexické patty, přehnaná krev, náhlé násilí)
+- Délka odpovědí: KRÁTKÉ (stav + cca 2 krátké odstavce + otázka)
