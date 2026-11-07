@@ -7,10 +7,10 @@
 
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
-| Žabák | 16/18 | derringer, 2 rány | 7 | zlomený malíček levé ruky | kufřík s „elixíry“, tabatěrka kočího, hřeben Lucine, ponožka Roberta (vše vysypáno v prachu) | „Kopr“ (Abner, Morty) |
+| Žabák | 16/18 | derringer, 2 rány | 7 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, prsten hostinského se znakem Svatých (od koňského hovna) | „Kopr“ (Abner, Morty) |
 | Flame | 26/26 | Colt 6 + 12 nábojů, puška | 15 | – | fotka koně | „Rabín“ (Thorne, celé město); prohlásil se za žida |
 | Lucine | 15/16 | malý revolver, 5 ran | 3 | psí kousanec do lýtka, roztržená sukně | kasino žetony | „Krysa“ (Abner) |
-| Iveta | 20/20 | lovecká puška, 8 nábojů | 11 | – | náhradní dřevěná noha (nasazená je naštípnutá) | Thorne ji chce jako „patnáctou“ |
+| Iveta | 20/20 | lovecká puška, 8 nábojů | 11 | – | náhradní dřevěná noha (nasazená praskla, teď kulhá na úlomku) | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
 | Robertus | 22/22 | sada nožů | 2 | – | lahev pálenky | – |
 
 ## Odhalená tajemství
@@ -28,6 +28,10 @@
 - Kolo 2: Abner vysypal Žabákovi kapsy; vypadl i prsten sundaný z mrtvého hostinského se znakem Svatých (oko s kapkou krve). Abner prsten tiše shrábl a schoval. Zlomil Žabákovi malíček.
 - Lucine pod vozem viděla mladou manželku (sestra Hannah) s modřinami od provazu na zápěstích; Hannah jí dala prst na rty. Pak Lucine vytáhl mastif za sukni na ulici.
 - Flame se prohlásil za žida („Shalom, gójové“). Thorne ho prohlásil za „ztracenou ovečku Izraele“ – chce ho obrátit.
+- Kolo 3: Iveta Thornea odmítla, do saloonu půjde jen s kumpány. Thorne souhlasil.
+- Flame se zeptal na odměnu: Thorne sám přiznal 500 $ v Missouri (vražda, 1866), „přijď si pro ně“. Danité se smáli.
+- Robertus bleskově a precizně narovnal Žabákovi malíček, pak usnul vestoje.
+- Žabák získal zpět prsten (vypadl Abnerovi do koňského hovna, když se splašil kůň). Abner to viděl.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
