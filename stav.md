@@ -7,11 +7,11 @@
 
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
-| Žabák | 16/18 | derringer, 0 ran (nabít!) | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, KASA ze saloonu (cca 40 $, ještě nespočítáno) | „Kopr“ (Abner, Morty); Abner ho chce zabít |
+| Žabák | 16/18 | derringer, 0 ran (nabít!) | 16,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, podvazek s derringerem Madam Dolores (ukradený, 1 rána) | „Kopr“ (Abner, Morty); Abner ho chce zabít |
 | Flame | 22/26 | Colt 5 + 12 nábojů, puška | 13 | Abnerův nůž ve stehně (vytáhnout!) | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
-| Lucine | 9/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (krvácí), psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
+| Lucine | 9/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (zašitý děvkou Dolores), psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
 | Iveta | 17/20 | lovecká puška, 7 nábojů | 10,5 | vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená! | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
-| Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“ (saloon) |
+| Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“; protisektářská půlka města ho má za vůdce |
 
 ## Odhalená tajemství
 
@@ -54,6 +54,8 @@
 - Kolo 11: Všichni utekli zadem, Sala nechali uhořet; střecha se zřítila. Žabák ukradl kasu. Robertus vynesl hlavním vchodem mrtvého Danitu → dav si myslí, že Danitu zabil Mlíčňák (půlka města ho oslavuje).
 - V zadní uličce je zastavila Madam Dolores: schová je v nevěstinci za kasu.
 - Saloon U Vyschlé Prdele shořel.
+- Kolo 12: Žabák smlouval o kasu (43 $); Dolores si vzala kasu, Žabák jí při předávce šlohl 10 $ a její podvazkový derringer (zatím neví). Robertus zahuhlal k davu – protisektářská půlka města ho prohlásila za vůdce a odnesla ho na ramenou. Druhá půlka odešla prosit Svaté o ochranu. Město je rozdělené.
+- Hráči (bez Roberta) jsou v nevěstinci Madam Dolores. Noc 1: na okenici pokoje, kde leží Iveta (s prstenem), škrábe něco zvenku.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
