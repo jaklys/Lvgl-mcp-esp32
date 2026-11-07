@@ -23,7 +23,8 @@
 
 ## Důležité události
 
-–
+- Kolo 1: Hráči dorazili dostavníkem do Mrtvé Muly (kočí je vyhodil u vysáté krávy). Morty měří hostinského (hostinec U Zlatého telete, ne saloon). Do města vjel prorok Thorne se 6 vozy Svatých, bratr Abner a Danité. Thorne si cizince všiml.
+- Kočí dostavníku ujel zpět, další spoj až za týden.
 
 ## Nastavení hry
 
