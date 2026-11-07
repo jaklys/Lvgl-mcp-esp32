@@ -33,3 +33,4 @@
 - Délka: kratší příběh (cca 15–20 odpovědí) se zvratem
 - Sex: ano, oplzle a škodolibě (trapné svádění, fiaska, drby); explicitní detaily střih
 - Celkový tón: škodolibý
+- Styl: autentický Divoký západ 1872 (žádné anachronismy, dobový slang), vulgární
