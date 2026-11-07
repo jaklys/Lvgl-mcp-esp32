@@ -10,11 +10,13 @@
 | Žabák | 16/18 | derringer, 0 ran (nabít!) | 16,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, podvazek s derringerem Madam Dolores (ukradený, 1 rána) | „Kopr“ (Abner, Morty); Abner ho chce zabít |
 | Flame | 22/26 | Colt 5 + 12 nábojů, puška | 13 | Abnerův nůž ve stehně (vytáhnout!) | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
 | Lucine | 9/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (zašitý děvkou Dolores), psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
-| Iveta | 17/20 | lovecká puška, 7 nábojů | 10,5 | vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená! | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
+| Iveta | 8/20 | lovecká puška, 7 nábojů | 10,5 | KOUSNUTÍ DO KRKU (ztráta krve, slabost), vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená!, cár bílého čepce s vyšitým „R. T.“ a okem s kapkou krve | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
 | Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“; protisektářská půlka města ho má za vůdce |
 
 ## Odhalená tajemství
 
+- Tvor se bojí ohně (hráči viděli dvakrát).
+- Tvor vypadá jako vyzáblá žena s dlouhými zuby, v roztrhaných šatech Svatých; na hlavě měla čepec s iniciálami „R. T.“ a znakem oka → DŮKAZ, ŽE TVOR SOUVISÍ SE SEKTOU (konec 1. jednání).
 - Morty: rány na tělech jsou od zubů (lidských, ale dlouhých), ne od „anděla“.
 - Každá oběť měla prsten s okem a kapkou krve. Prsten dostal každý, kdo odmítl prodat půdu/majetek Svatým; do týdne zemřel. (Prsten = značka pro tvora.)
 
@@ -56,6 +58,7 @@
 - Saloon U Vyschlé Prdele shořel.
 - Kolo 12: Žabák smlouval o kasu (43 $); Dolores si vzala kasu, Žabák jí při předávce šlohl 10 $ a její podvazkový derringer (zatím neví). Robertus zahuhlal k davu – protisektářská půlka města ho prohlásila za vůdce a odnesla ho na ramenou. Druhá půlka odešla prosit Svaté o ochranu. Město je rozdělené.
 - Hráči (bez Roberta) jsou v nevěstinci Madam Dolores. Noc 1: na okenici pokoje, kde leží Iveta (s prstenem), škrábe něco zvenku.
+- Kolo 13: Iveta otevřela okno. Tvor (žena-stvůra v čepci Svatých) ji kousl do krku a pil. Iveta při pádu shodila lampu, oheň tvora zahnal. Iveta urvala cár čepce s „R. T.“. Záclona hoří.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
