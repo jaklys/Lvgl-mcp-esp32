@@ -24,3 +24,10 @@
 ## Důležité události
 
 –
+
+## Nastavení hry
+
+- Hráči: 5 (všechny postavy hrané), všichni 30+
+- Formát: DM popíše scénu, hráč napíše reakce všech pěti postav
+- Tón: maximálně brutální, vtipný, ponižující pro postavy
+- Délka: kratší příběh (cca 15–20 odpovědí) se zvratem
