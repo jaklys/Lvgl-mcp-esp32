@@ -34,3 +34,4 @@
 - Sex: ano, oplzle a škodolibě (trapné svádění, fiaska, drby); explicitní detaily střih
 - Celkový tón: škodolibý
 - Styl: autentický Divoký západ 1872 (žádné anachronismy, dobový slang), vulgární
+- Inspirace: Tarantino (kapitoly s názvy, dlouhé napjaté dialogy co vybuchnou, mexické patty, přehnaná krev, náhlé násilí)
