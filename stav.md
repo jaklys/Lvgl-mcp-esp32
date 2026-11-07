@@ -9,12 +9,13 @@
 |---|---|---|---|---|---|---|
 | Žabák | 16/18 | derringer, 0 ran (nabít!) | 12,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, podvazek s derringerem Madam Dolores (ukradený, 1 rána) | „Kopr“ (Abner, Morty); Abner ho chce zabít |
 | Flame | 22/26 | Colt 5 + 12 nábojů, puška | 12,5 | bodná rána ve stehně (kulhá) | fotka koně SHOŘELA se saloonem (zůstala přibitá na baru); Abnerův nůž | „Rabín“ (Thorne, celé město); prohlásil se za žida |
-| Lucine | 7/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (přešito rybářským háčkem), popálené dlaně, psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
+| Lucine | 6/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (přešito rybářským háčkem), popálené dlaně, psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
 | Iveta | 8/20 | lovecká puška, 7 nábojů | 10,5 | KOUSNUTÍ DO KRKU (okraje rány černají! Žabákova tinktura to zpomalila; ztráta krve, slabost, bledá), vyrvaný chomáč vlasů, naražená kostrč | nová noha nasazená (Robertus ji dokonale přiřízl, sedí líp než kdy dřív); zlomená stará, PRSTEN S OKEM = je označená!, cár bílého čepce s vyšitým „R. T.“ a okem s kapkou krve | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
 | Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“; protisektářská půlka města ho má za vůdce |
 
 ## Odhalená tajemství
 
+- Hannah se prořekla: „Rachel ji kousla.“ Kousnutí do třetího západu slunce promění oběť (Iveta!) – do Noci 3 potřebuje pomoc (Doña Inés?).
 - Dolores: Mexičani tomu říkají chupacabra. Doña Inés (kaňon Suché kosti) prý ví, co to je; gringy nesnáší.
 - Dolores: „R. T.“ = Rachel Thorne, první žena proroka. Loni v zimě prý „umřela na horečku“; Thorne nedovolil Mortymu ji pohřbít, rakev odvezl do Siónu.
 - Tvor se bojí ohně (hráči viděli dvakrát).
@@ -67,6 +68,7 @@
 - KONEC 1. JEDNÁNÍ.
 - Kolo 16 (2. jednání): Žabák nalil Ivetě tinkturu do rány – rána syčí, okraje černají, ale šíření se zpomalilo. Flame si koupil doutník od Dolores (0,5 $), zvrací. Dolores řekla o chupacabře a Doně Inés.
 - Poledne: zadními dveřmi přišla sestra Hannah, uviděla hráče a chce utéct.
+- Kolo 17: Lucine chytila Hannah popálenýma rukama (Hannah vyděšená, důvěru zatím NEMAJÍ). Iveta zablokovala dveře nohou – noha se zasekla ve dveřích. Robertus burcuje dav: protisektářská půlka (cca 20 opilců) chce dnes večer táhnout na Sión. Flame z okna vidí Danitu, který hlídá nevěstinec.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
