@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|---|
 | Žabák | 16/18 | derringer, 2 rány | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, ruka od hovna | „Kopr“ (Abner, Morty); Abner ho chce zabít |
 | Flame | 26/26 | Colt 6 + 12 nábojů, puška | 13 | – | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
-| Lucine | 15/16 | malý revolver, 5 ran | 2,5 | psí kousanec do lýtka, roztržená sukně | kasino žetony | „Krysa“ (Abner) |
+| Lucine | 15/16 | malý revolver, 4 rány | 2,5 | psí kousanec do lýtka, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
 | Iveta | 18/20 | lovecká puška, 8 nábojů | 10,5 | vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená! | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
 | Robertus | 22/22 | sada nožů | 0,5 | – | lahev pálenky | „Mlíčňák“ (saloon) |
 
@@ -21,6 +21,7 @@
 ## Mrtví a zmizelí
 
 - hostinský (vysátý)
+- pianista v saloonu (zastřelen Lucine omylem)
 
 ## Důležité události
 
@@ -43,6 +44,7 @@
 - Thorne s Danity dorazil na kázání. Abner položil prsten s okem na bar před Žabáka: „Dárek, Kopře.“ → Žabák je označený!
 - Kolo 7: Žabák chňapl po prstenu, Lucine mu ho vyrazila fackou, Iveta ho zašlápla a vzala si ho → Iveta je teď označená. Thorne veřejně ohlásil, že Anděl dnes v noci přijde pro nositele znamení.
 - Abner Flameovi vytáhl fotku Generála a přibil ji nožem na bar.
+- Kolo 8: MEXICKÉ PATT v saloonu. Flame míří Coltem Abnerovi na břicho, Lucine revolverem na hlavu. Žabák dal Lucine facku → výstřel ustřelil Abnerovi lalůček ucha a zabil pianistu (píseň o Krysě skončila uprostřed sloky). Danité tasili, Big Sal míří brokovnicí na všechny, Robertus drží nůž namířený na Thornea. Iveta Thornea odmítla.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
