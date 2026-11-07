@@ -7,9 +7,9 @@
 
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
-| Žabák | 16/18 | derringer, 0 ran (nabít!) | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, ruka od hovna | „Kopr“ (Abner, Morty); Abner ho chce zabít |
+| Žabák | 16/18 | derringer, 0 ran (nabít!) | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, KASA ze saloonu (cca 40 $, ještě nespočítáno) | „Kopr“ (Abner, Morty); Abner ho chce zabít |
 | Flame | 22/26 | Colt 5 + 12 nábojů, puška | 13 | Abnerův nůž ve stehně (vytáhnout!) | fotka koně (Abner ji přišpendlil nožem na bar – propíchnutá) | „Rabín“ (Thorne, celé město); prohlásil se za žida |
-| Lucine | 10/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (krvácí), psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
+| Lucine | 9/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (krvácí), psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
 | Iveta | 17/20 | lovecká puška, 7 nábojů | 10,5 | vyrvaný chomáč vlasů, naražená kostrč | náhradní dřevěná noha (nasazená je zlomená, potřebuje vyměnit), PRSTEN S OKEM = je označená! | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
 | Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“ (saloon) |
 
@@ -20,6 +20,7 @@
 
 ## Mrtví a zmizelí
 
+- Big Sal (uhořel v saloonu, hráči ho nechali hořet)
 - hostinský (vysátý)
 - pianista v saloonu (zastřelen Lucine omylem)
 
@@ -50,6 +51,9 @@
 - Danité: zbývá 6 (Abner těžce raněn do břicha).
 - Kolo 10: Flame mířil na Big Sala („dva dolary za kulku“), Žabák na Sala vypálil oba náboje z derringeru: první rozbil police s chlastem (oheň vybuchl), druhý trefil Sala do ruky → brokovnice vystřelila do stropu, hořící trám přimáčkl Sala k zemi. Sal žije, hoří a volá o pomoc.
 - Před saloonem se srocuje dav: „Cizáci zapálili Vyschlou Prdel!“ Hrozí lynč.
+- Kolo 11: Všichni utekli zadem, Sala nechali uhořet; střecha se zřítila. Žabák ukradl kasu. Robertus vynesl hlavním vchodem mrtvého Danitu → dav si myslí, že Danitu zabil Mlíčňák (půlka města ho oslavuje).
+- V zadní uličce je zastavila Madam Dolores: schová je v nevěstinci za kasu.
+- Saloon U Vyschlé Prdele shořel.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
