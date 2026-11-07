@@ -15,6 +15,8 @@
 
 ## Odhalená tajemství
 
+- Hannah (pod výslechem): Chupacabra JE Rachel Thorne, Thorne ji proměnil krvavým obřadem v jeskyních pod Siónem. Poslouchá jen jeho. Pátou noc (Noc krvavého smíření) ji pustí na Mrtvou Mulu.
+- [DM: Hannah LHALA, že ji zabije olověná kulka do srdce – nezabije. O píšťale zamlčela. Důvěru nemají.]
 - Hannah se prořekla: „Rachel ji kousla.“ Kousnutí do třetího západu slunce promění oběť (Iveta!) – do Noci 3 potřebuje pomoc (Doña Inés?).
 - Dolores: Mexičani tomu říkají chupacabra. Doña Inés (kaňon Suché kosti) prý ví, co to je; gringy nesnáší.
 - Dolores: „R. T.“ = Rachel Thorne, první žena proroka. Loni v zimě prý „umřela na horečku“; Thorne nedovolil Mortymu ji pohřbít, rakev odvezl do Siónu.
@@ -69,6 +71,7 @@
 - Kolo 16 (2. jednání): Žabák nalil Ivetě tinkturu do rány – rána syčí, okraje černají, ale šíření se zpomalilo. Flame si koupil doutník od Dolores (0,5 $), zvrací. Dolores řekla o chupacabře a Doně Inés.
 - Poledne: zadními dveřmi přišla sestra Hannah, uviděla hráče a chce utéct.
 - Kolo 17: Lucine chytila Hannah popálenýma rukama (Hannah vyděšená, důvěru zatím NEMAJÍ). Iveta zablokovala dveře nohou – noha se zasekla ve dveřích. Robertus burcuje dav: protisektářská půlka (cca 20 opilců) chce dnes večer táhnout na Sión. Flame z okna vidí Danitu, který hlídá nevěstinec.
+- Kolo 18: Hráči tvrdě vyslýchali Hannah (Lucine jí omylem říká Rachel). Řekla část pravdy, část zalhala. Danita venku slyšel křik a odcválal do Siónu. Hannah prosí, ať ji vezmou s sebou, jinak ji zabijí.
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
