@@ -7,15 +7,16 @@
 
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
-| Žabák | 16/18 | derringer, 2 rány | 7 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, ruka od hovna | „Kopr“ (Abner, Morty); Abner ho chce zabít |
-| Flame | 26/26 | Colt 6 + 12 nábojů, puška | 15 | – | fotka koně | „Rabín“ (Thorne, celé město); prohlásil se za žida |
-| Lucine | 15/16 | malý revolver, 5 ran | 3 | psí kousanec do lýtka, roztržená sukně | kasino žetony | „Krysa“ (Abner) |
-| Iveta | 19/20 | lovecká puška, 8 nábojů | 11 | vyrvaný chomáč vlasů, prasklá noha | náhradní dřevěná noha (nasazená praskla, teď kulhá na úlomku) | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
-| Robertus | 22/22 | sada nožů | 1 | – | lahev pálenky | „Mlíčňák“ (saloon) |
+| Žabák | 16/18 | derringer, 2 rány | 6,5 | zlomený malíček levé ruky (Robertus ho napravil) | kufřík s „elixíry“, ruka od hovna | „Kopr“ (Abner, Morty); Abner ho chce zabít |
+| Flame | 26/26 | Colt 6 + 12 nábojů, puška | 13 | – | fotka koně | „Rabín“ (Thorne, celé město); prohlásil se za žida |
+| Lucine | 15/16 | malý revolver, 5 ran | 2,5 | psí kousanec do lýtka, roztržená sukně | kasino žetony | „Krysa“ (Abner) |
+| Iveta | 19/20 | lovecká puška, 8 nábojů | 10,5 | vyrvaný chomáč vlasů, prasklá noha | náhradní dřevěná noha (nasazená praskla, teď kulhá na úlomku) | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
+| Robertus | 22/22 | sada nožů | 0,5 | – | lahev pálenky | „Mlíčňák“ (saloon) |
 
 ## Odhalená tajemství
 
-–
+- Morty: rány na tělech jsou od zubů (lidských, ale dlouhých), ne od „anděla“.
+- Každá oběť měla prsten s okem a kapkou krve. Prsten dostal každý, kdo odmítl prodat půdu/majetek Svatým; do týdne zemřel. (Prsten = značka pro tvora.)
 
 ## Mrtví a zmizelí
 
@@ -38,6 +39,8 @@
 - Robertus si u Big Sala koupil mléko za 1 $ (krávy vysáté, mléko je luxus).
 - Morty nabízí info o „prstenech na mrtvolách“ za flašku.
 - Kolo 5: Žabák vyhrožoval Mortymu hovnem, Morty se vysmál. Morty chce pravou whiskey od Big Sala (2 $), ne Žabákovy „elixíry“. Flame vybírá peníze do klobouku, sám nedal nic.
+- Kolo 6: Všichni se složili (Flame ne), Morty dostal whiskey a vyklopil info. Big Sal donutil Rabína zaplatit druhou flašku (2 $). V saloonu se už zpívá o Krysiných spodkách.
+- Thorne s Danity dorazil na kázání. Abner položil prsten s okem na bar před Žabáka: „Dárek, Kopře.“ → Žabák je označený!
 - Thorne zve všechny na večerní kázání v saloonu U Vyschlé Prdele; chce Ivetu k sobě do vozu.
 
 ## Nastavení hry
