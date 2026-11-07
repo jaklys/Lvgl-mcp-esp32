@@ -1,17 +1,18 @@
 # Stav hry
 
-- Jednání: 2
-- Noc: 2/5 (den 2, poledne)
+- Jednání: 3 – KONEC HRY
+- Noc: 5/5
+- Konec: trapný + tragický
 
 ## Postavy
 
 | Postava | HP | Zbraně a munice | $ | Zranění | Předměty | Pověst / přezdívka |
 |---|---|---|---|---|---|---|
-| Žabák | 15/18 | derringer, 0 ran (nabít!) | 12,5 | zlomený malíček levé ruky (Robertus ho napravil), tříska v půlce | kufřík s „elixíry“, podvazek s derringerem Madam Dolores (ukradený, 1 rána), Hannin růženec | „Kopr“ (Abner, Morty); Abner ho chce zabít |
-| Flame | 22/26 | Colt 4 + 12 nábojů, puška | 12,5 | bodná rána ve stehně (kulhá) | fotka koně SHOŘELA se saloonem (zůstala přibitá na baru); Abnerův nůž | „Rabín“ (Thorne, celé město); prohlásil se za žida |
-| Lucine | 6/16 | malý revolver, 4 rány | 2,5 | průstřel ramene (přešito rybářským háčkem), popálené dlaně, psí kousanec, roztržená sukně | kasino žetony, nůž (z baru) | „Krysa“ (Abner) |
-| Iveta | 8/20 | lovecká puška, 7 nábojů | 10,5 | KOUSNUTÍ DO KRKU (okraje rány černají! Žabákova tinktura to zpomalila; ztráta krve, slabost, bledá), vyrvaný chomáč vlasů, naražená kostrč | OBĚ dřevěné nohy zničené (Flame ustřelil novou) – skáče o jedné, potřebuje berli/novou nohu, PRSTEN S OKEM = je označená!, cár bílého čepce s vyšitým „R. T.“ a okem s kapkou krve | Thorne ji chce jako „patnáctou“; upadla mu obličejem do rozkroku |
-| Robertus | 20/22 | sada nožů (jeden nůž zapíchnutý v trámu v saloonu) | 0,5 | popálená prdel | lahev pálenky | „Mlíčňák“; protisektářská půlka města ho má za vůdce |
+| Žabák | 9/18 | derringer 0 | 12,5 | useknutý malíček (cena Doni Inés), tříska v půlce | slepená kostěná píšťala | „Kopr“, zabil Abnera, „pán píšťaly“ |
+| Flame | 20/26 | Colt 0 + 10 | 0 | stehno | Generál II (kůň, shodil ho) | „Rabín s kýblem“ |
+| Lucine | MRTVÁ | – | – | roztrhána Rachel, zachránila Hannah | – | „Krysa“, písnička o spodkách |
+| Iveta | 11/20 | puška 0 | 10,5 | napůl proměněná (oči ve tmě svítí, pije krev dobytka) | mesquitová noha | „Beznohá“, noční hlídka města |
+| Robertus | 20/22 | sada nožů | 0,5 + stříbrňák v puse | prdel | útržek zatykače z New Orleans | „Mlíčňák“ |
 
 ## Odhalená tajemství
 
@@ -29,9 +30,22 @@
 
 - Big Sal (uhořel v saloonu, hráči ho nechali hořet)
 - hostinský (vysátý)
+- 19 opilců z davu (noc 2)
+- Pepř (noc 3)
+- kovář Hobbs (Flameova stříbrná kulka)
+- Lucine (noc 5)
+- prorok Thorne, Rachel, Abner, 4 Danité (noc 5)
 - pianista v saloonu (zastřelen Lucine omylem)
 
 ## Důležité události
+
+### FINÁLE (kola 20+)
+- Noc 2: dav 19 opilců vyvražděn u palisády Siónu, Robertus přežil spánkem v příkopu. Dolores zastřelila Danitu a utekla.
+- Kaňon Suché kosti: Doña Inés vzala Žabákovi malíček jako cenu. Lucine bránila Hannah, přišla o dva zuby. Hannah přiznala lež (jen posvěcené stříbro), Hannin stříbrný růženec → 3 posvěcené kulky. TWIST: Žabák ukradl kostěnou píšťalu Thorneovi první den – proto Rachel lovila sama.
+- Noc 3: Inés vyřízla Ivetě ránu; Iveta přežila napůl proměněná. Pepř nalezena vysátá.
+- Noc 4: Flame strávil noc ve stanu Doni Inés, ráno bez bot a důstojnosti.
+- Noc 5: Finále v jeskyních. Flame obě stříbrné kulky promarnil (krápník, kovář Hobbs). Žabák píšťalou poštval Rachel na Thornea – Thorne mrtvý. Žabák zastřelil Abnera do oka. Robertus rozporcoval 3 Danity. Iveta rozšlápla píšťalu, Rachel zabila Lucine. Iveta zakopla o Lucine, výstřel se odrazil a zabil Rachel stříbrem.
+- Epilog: Hannah a manželky ujely se stříbrem do San Franciska. Šerif Hollis se vrátil, přivlastnil si slávu i odměnu 500 $. Dolores otevřela U Vyschlé Prdele II. Žabák slepil píšťalu – a Iveta na ni slyší.
 
 - Kolo 1: Hráči dorazili dostavníkem do Mrtvé Muly (kočí je vyhodil u vysáté krávy). Morty měří hostinského (hostinec U Zlatého telete, ne saloon). Do města vjel prorok Thorne se 6 vozy Svatých, bratr Abner a Danité. Thorne si cizince všiml.
 - Kočí dostavníku ujel zpět, další spoj až za týden.
